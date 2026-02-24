@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import theme from "../../../../../constants/theme";
+import ImageViewer from "../../../../ui/ImageViewer";
 
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 60) / 2;
@@ -19,6 +20,14 @@ const MENU_IMAGES = [
 ];
 
 const SpaMenuContent = () => {
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleImagePress = (source) => {
+    setSelectedImage(source);
+    setViewerVisible(true);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
@@ -27,11 +36,18 @@ const SpaMenuContent = () => {
             key={index}
             style={styles.imageWrapper}
             activeOpacity={0.9}
+            onPress={() => handleImagePress(img)}
           >
             <Image source={img} style={styles.image} />
           </TouchableOpacity>
         ))}
       </View>
+
+      <ImageViewer
+        isVisible={viewerVisible}
+        imageSource={selectedImage}
+        onClose={() => setViewerVisible(false)}
+      />
     </View>
   );
 };

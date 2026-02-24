@@ -1,6 +1,14 @@
-import React from "react";
-import { View, StyleSheet, Image, Dimensions, ScrollView } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import theme from "../../../../../constants/theme";
+import ImageViewer from "../../../../ui/ImageViewer";
 
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 55) / 2;
@@ -49,31 +57,53 @@ const GALLERY_IMAGES = [
 ];
 
 const GalleryContent = () => {
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleImagePress = (uri) => {
+    setSelectedImage(uri);
+    setViewerVisible(true);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
         {/* Left Column */}
         <View style={styles.column}>
           {GALLERY_IMAGES.filter((_, i) => i % 2 === 0).map((item) => (
-            <Image
+            <TouchableOpacity
               key={item.id}
-              source={{ uri: item.uri }}
-              style={[styles.image, { height: item.height }]}
-            />
+              onPress={() => handleImagePress(item.uri)}
+            >
+              <Image
+                source={{ uri: item.uri }}
+                style={[styles.image, { height: item.height }]}
+              />
+            </TouchableOpacity>
           ))}
         </View>
 
         {/* Right Column */}
         <View style={styles.column}>
           {GALLERY_IMAGES.filter((_, i) => i % 2 !== 0).map((item) => (
-            <Image
+            <TouchableOpacity
               key={item.id}
-              source={{ uri: item.uri }}
-              style={[styles.image, { height: item.height }]}
-            />
+              onPress={() => handleImagePress(item.uri)}
+            >
+              <Image
+                source={{ uri: item.uri }}
+                style={[styles.image, { height: item.height }]}
+              />
+            </TouchableOpacity>
           ))}
         </View>
       </View>
+
+      <ImageViewer
+        isVisible={viewerVisible}
+        imageSource={selectedImage}
+        onClose={() => setViewerVisible(false)}
+      />
     </View>
   );
 };
