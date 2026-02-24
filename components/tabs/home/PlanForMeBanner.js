@@ -1,11 +1,18 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 
 const PlanForMeBanner = () => {
+  const router = useRouter();
+
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={styles.container}
+      activeOpacity={0.9}
+      onPress={() => router.push("/home/plan")}
+    >
       <View style={styles.content}>
         <View style={styles.textContainer}>
           <Text style={styles.title}>Plan for me</Text>
