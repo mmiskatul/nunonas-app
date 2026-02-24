@@ -1,20 +1,26 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import theme from "../../../../../constants/theme";
 import Button from "../../../../ui/Button";
 
 const DetailsActions = () => {
+  const router = useRouter();
+
+  const handleCall = () => {
+    Linking.openURL("tel:+1234567890");
+  };
+
   return (
     <View style={styles.container}>
       <Button
         title="Book a Table"
-        onPress={() => {}}
+        onPress={() => router.push("/(tabs)/home/dining/booking")}
         style={styles.bookBtn}
         textStyle={styles.bookBtnText}
       />
 
-      <TouchableOpacity style={styles.callBtn}>
+      <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
         <Ionicons name="call" size={20} color={theme.COLORS.primary} />
       </TouchableOpacity>
 
