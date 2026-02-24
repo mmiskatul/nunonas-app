@@ -1,12 +1,166 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  FlatList,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import theme from "../../constants/theme";
 
+// Import Components
+import SavedCard from "../../components/tabs/save/SavedCard";
+
+const FILTERS = ["All", "Restaurants", "Events", "Spas", "Hotels"];
+
+const SAVED_ITEMS = [
+  {
+    id: "1",
+    title: "The Garden Bistro",
+    type: "Restaurant",
+    categoryIcon: "restaurant",
+    rating: "4.8",
+    subInfo: "Italian Cuisine",
+    location: "Downtown",
+    distance: "2.5 km",
+    actionLabel: "Book Now",
+    image: require("../../assets/images/discover-experience.png"),
+  },
+  {
+    id: "2",
+    title: "Summer Jazz Festival",
+    type: "Event",
+    categoryIcon: "calendar",
+    rating: null,
+    subInfo: "Jun 15, 2024 • 6:00 PM",
+    location: "Central Park Arena",
+    distance: "4.2 km",
+    actionLabel: "Get Tickets",
+    image: require("../../assets/images/events.webp"),
+  },
+  {
+    id: "3",
+    title: "Serenity Wellness Spa",
+    type: "Spa",
+    categoryIcon: "leaf",
+    rating: "4.9",
+    subInfo: "Massage & Therapy",
+    location: "Wellness District",
+    distance: "3.2 km",
+    actionLabel: "Book Now",
+    image: require("../../assets/images/spa/galley/Rectangle 2.png"),
+  },
+  {
+    id: "4",
+    title: "The Royal Plaza Hotel",
+    type: "Hotel",
+    categoryIcon: "bed",
+    rating: "4.7",
+    subInfo: "5-Star Luxury",
+    location: "City Center",
+    distance: "1.8 km",
+    price: "$189",
+    actionLabel: "Book Now",
+    image: require("../../assets/images/hotel/hotel.jpg"),
+  },
+];
+
 export default function SaveScreen() {
+  const [activeFilter, setActiveFilter] = useState("All");
+
+  const filteredItems =
+    activeFilter === "All"
+      ? SAVED_ITEMS
+      : SAVED_ITEMS.filter((item) => activeFilter.includes(item.type));
+
+  const renderFilterItem = ({ item }) => {
+    const isActive = activeFilter === item;
+    return (
+      <TouchableOpacity
+        style={[styles.filterChip, isActive && styles.filterChipActive]}
+        onPress={() => setActiveFilter(item)}
+        activeOpacity={0.7}
+      >
+        {item !== "All" && (
+          <Ionicons
+            name={
+              item === "Restaurants"
+                ? "restaurant"
+                : item === "Events"
+                  ? "calendar"
+                  : item === "Spas"
+                    ? "leaf"
+                    : "bed"
+            }
+            size={16}
+            color={isActive ? theme.COLORS.white : theme.COLORS.textSecondary}
+            style={styles.filterIcon}
+          />
+        )}
+        <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.text}>Save Screen</Text>
+      {/* Header with Title */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Saved Items</Text>
+        <TouchableOpacity style={styles.moreBtn}>
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={24}
+            color={theme.COLORS.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter Horizontal List */}
+      <View style={styles.filterContainer}>
+        <FlatList
+          data={FILTERS}
+          renderItem={renderFilterItem}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterList}
+        />
+      </View>
+
+      {/* Saved Items List */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {filteredItems.map((item) => (
+          <SavedCard
+            key={item.id}
+            item={item}
+            onDetails={() => {}}
+            onAction={() => {}}
+          />
+        ))}
+
+        {filteredItems.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="heart-dislike-outline"
+              size={64}
+              color={theme.COLORS.textSecondary}
+              opacity={0.3}
+            />
+            <Text style={styles.emptyText}>
+              No saved {activeFilter.toLowerCase()} yet.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -15,12 +169,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.COLORS.white,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+  },
+  moreBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.COLORS.surface,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
   },
-  text: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.COLORS.textPrimary,
+  filterContainer: {
+    marginVertical: 16,
+  },
+  filterList: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.COLORS.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+  },
+  filterChipActive: {
+    backgroundColor: theme.COLORS.primary,
+    borderColor: theme.COLORS.primary,
+  },
+  filterIcon: {
+    marginRight: 6,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.COLORS.textSecondary,
+  },
+  filterTextActive: {
+    color: theme.COLORS.white,
+  },
+  scrollContent: {
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+  emptyState: {
+    marginTop: 100,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: theme.COLORS.textSecondary,
+    fontWeight: "500",
   },
 });
