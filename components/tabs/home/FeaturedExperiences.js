@@ -35,10 +35,18 @@ const FeaturedExperiences = () => {
             <View style={styles.cardContent}>
               <Text style={styles.title}>{item.title}</Text>
               <View style={styles.detailsRow}>
-                <View style={styles.ratingBox}>
+                <TouchableOpacity
+                  style={styles.ratingBox}
+                  onPress={() => {
+                    router.push({
+                      pathname: `/home/reviews/${item.id}`,
+                      params: { title: `${item.title} Reviews` },
+                    });
+                  }}
+                >
                   <Ionicons name="star" size={14} color="#f59e0b" />
                   <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
+                </TouchableOpacity>
                 <Text style={styles.separator}>•</Text>
                 <Text style={styles.distance}>{item.distance}</Text>
               </View>

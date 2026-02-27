@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import theme from "../../constants/theme";
+import { useRouter } from "expo-router";
+import theme from "../../../constants/theme";
 
 // Import Components
-import ProfileMenuItem from "../../components/tabs/profile/ProfileMenuItem";
-import ProfileHeader from "../../components/tabs/profile/ProfileHeader";
-import BonusPointsCard from "../../components/tabs/profile/BonusPointsCard";
+import ProfileMenuItem from "../../../components/tabs/profile/ProfileMenuItem";
+import ProfileHeader from "../../../components/tabs/profile/ProfileHeader";
+import BonusPointsCard from "../../../components/tabs/profile/BonusPointsCard";
 
 // Helper Components
 const ProfileHeaderSection = ({ title }) => (
@@ -35,6 +36,7 @@ const ProfileLinkItem = ({ title, onPress }) => (
 );
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [nearbyEvents, setNearbyEvents] = useState(false);
   const [bookingReminders, setBookingReminders] = useState(true);
 
@@ -49,7 +51,7 @@ export default function ProfileScreen() {
           name="Sarah Mitchell"
           email="sarah.mitchell@email.com"
           imageUrl="https://i.pravatar.cc/300?img=32"
-          onEditPress={() => {}}
+          onEditPress={() => router.push("/profile/edit")}
         />
 
         {/* Bonus Points Card section */}
@@ -62,7 +64,7 @@ export default function ProfileScreen() {
           <ProfileMenuItem
             icon="calendar-outline"
             title="View all my bookings"
-            onPress={() => {}}
+            onPress={() => router.push("/profile/bookings")}
           />
 
           {/* Your activity */}
@@ -78,7 +80,7 @@ export default function ProfileScreen() {
           <ProfileMenuItem
             icon="person-outline"
             title="Personal details"
-            onPress={() => {}}
+            onPress={() => router.push("/profile/edit")}
           />
           <ProfileMenuItem
             icon="settings-outline"
@@ -91,7 +93,7 @@ export default function ProfileScreen() {
           <ProfileMenuItem
             icon="headset-outline"
             title="Get support"
-            onPress={() => {}}
+            onPress={() => router.push("/profile/support")}
           />
 
           {/* Notifications */}

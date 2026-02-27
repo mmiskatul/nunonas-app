@@ -24,7 +24,15 @@ const SpaCard = ({ spa }) => {
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.title}>{spa.title}</Text>
-        <View style={styles.ratingRow}>
+        <TouchableOpacity
+          style={styles.ratingRow}
+          onPress={() => {
+            router.push({
+              pathname: `/home/reviews/${spa.id}`,
+              params: { title: `${spa.title} Reviews` },
+            });
+          }}
+        >
           <Ionicons name="star" size={16} color="#f59e0b" />
           <Text style={styles.ratingText}>{spa.rating}</Text>
           <Text style={styles.reviewText}>({spa.reviews})</Text>
@@ -32,7 +40,7 @@ const SpaCard = ({ spa }) => {
           <Text style={styles.infoText}>
             {spa.cuisine} • {spa.type}
           </Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.locationRow}>
           <Ionicons
             name="location"

@@ -11,6 +11,7 @@ import DetailsTabs from "../../../../components/tabs/home/dining/details/Details
 import OverviewContent from "../../../../components/tabs/home/dining/details/OverviewContent";
 import MenuContent from "../../../../components/tabs/home/dining/details/MenuContent";
 import GalleryContent from "../../../../components/tabs/home/dining/details/GalleryContent";
+import ReviewsContent from "../../../../components/tabs/home/reviews/ReviewsContent";
 import Button from "../../../../components/ui/Button";
 
 const RESTAURANTS_DATA = {
@@ -87,11 +88,7 @@ export default function RestaurantDetailsScreen() {
           {activeTab === "Overview" && <OverviewContent />}
           {activeTab === "Menu" && <MenuContent />}
           {activeTab === "Gallery" && <GalleryContent />}
-          {activeTab === "Offers" && (
-            <View style={styles.offersContainer}>
-              <Text style={styles.offersText}>Offers</Text>
-            </View>
-          )}
+          {activeTab === "Reviews" && <ReviewsContent />}
         </View>
       </ScrollView>
     </View>

@@ -64,14 +64,23 @@ const HotelCard = ({ hotel }) => {
       <View style={styles.details}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{hotel.title}</Text>
-          <View style={styles.ratingBox}>
+          <TouchableOpacity
+            style={styles.ratingBox}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push({
+                pathname: `/home/reviews/${hotel.id}`,
+                params: { title: `${hotel.title} Reviews` },
+              });
+            }}
+          >
             <Ionicons name="star" size={14} color="#facc15" />
             <Ionicons name="star" size={14} color="#facc15" />
             <Ionicons name="star" size={14} color="#facc15" />
             <Ionicons name="star" size={14} color="#facc15" />
             <Ionicons name="star" size={14} color="#facc15" />
             <Text style={styles.reviewsText}>({hotel.reviews} reviews)</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.locationRow}>

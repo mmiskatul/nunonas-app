@@ -25,7 +25,15 @@ const RestaurantCard = ({ restaurant }) => {
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.title}>{restaurant.title}</Text>
-        <View style={styles.ratingRow}>
+        <TouchableOpacity
+          style={styles.ratingRow}
+          onPress={() => {
+            router.push({
+              pathname: `/home/reviews/${restaurant.id}`,
+              params: { title: `${restaurant.title} Reviews` },
+            });
+          }}
+        >
           <Ionicons name="star" size={16} color="#f59e0b" />
           <Text style={styles.ratingText}>{restaurant.rating}</Text>
           <Text style={styles.reviewText}>({restaurant.reviews})</Text>
@@ -33,7 +41,7 @@ const RestaurantCard = ({ restaurant }) => {
           <Text style={styles.infoText}>
             {restaurant.cuisine} • {restaurant.type}
           </Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.locationRow}>
           <Ionicons
             name="location"

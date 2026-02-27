@@ -49,10 +49,18 @@ const TrendingNow = () => {
             <View style={styles.cardContent}>
               <View style={styles.titleRow}>
                 <Text style={styles.title}>{item.title}</Text>
-                <View style={styles.ratingBox}>
+                <TouchableOpacity
+                  style={styles.ratingBox}
+                  onPress={() => {
+                    router.push({
+                      pathname: `/home/reviews/${item.id}`,
+                      params: { title: `${item.title} Reviews` },
+                    });
+                  }}
+                >
                   <Ionicons name="star" size={14} color="#f59e0b" />
                   <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
+                </TouchableOpacity>
               </View>
               <View style={styles.locationRow}>
                 <Ionicons

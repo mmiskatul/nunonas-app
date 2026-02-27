@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import theme from "../../../../../constants/theme";
 
-const TABS = ["Overview", "Menu", "Gallery", "Offers"];
+const TABS = ["Overview", "Menu", "Gallery", "Reviews"];
 
 const DetailsTabs = ({ activeTab, onTabPress }) => {
   return (

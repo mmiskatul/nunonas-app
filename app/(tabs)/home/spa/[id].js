@@ -11,6 +11,7 @@ import SpaDetailsTabs from "../../../../components/tabs/home/spa/details/SpaDeta
 import SpaOverviewContent from "../../../../components/tabs/home/spa/details/SpaOverviewContent";
 import SpaMenuContent from "../../../../components/tabs/home/spa/details/SpaMenuContent";
 import SpaGalleryContent from "../../../../components/tabs/home/spa/details/SpaGalleryContent";
+import ReviewsContent from "../../../../components/tabs/home/reviews/ReviewsContent";
 
 const SPA_DATA = {
   1: {
@@ -101,11 +102,7 @@ export default function SpaDetailsScreen() {
           {activeTab === "Overview" && <SpaOverviewContent />}
           {activeTab === "Menu" && <SpaMenuContent />}
           {activeTab === "Gallery" && <SpaGalleryContent />}
-          {activeTab === "Reviews" && (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Reviews</Text>
-            </View>
-          )}
+          {activeTab === "Reviews" && <ReviewsContent />}
         </View>
       </ScrollView>
     </View>

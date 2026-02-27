@@ -5,8 +5,12 @@ import theme from "../../constants/theme";
 export default function TabLayout() {
   const segments = useSegments();
 
-  // Hide tab bar on nested screens (e.g., home/dining)
-  const isTabHidden = segments.length > 2 || segments.includes("dining");
+  // Hide tab bar on nested screens or specific sub-pages
+  const isTabHidden =
+    segments.length > 2 ||
+    segments.includes("dining") ||
+    segments.includes("edit") ||
+    segments.includes("bookings");
 
   return (
     <Tabs
