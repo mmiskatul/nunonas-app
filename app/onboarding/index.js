@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
+import { markOnboardingSeen } from "../../lib/onboarding";
 
 const { width } = Dimensions.get("window");
 
@@ -43,16 +44,21 @@ export default function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const router = useRouter();
 
-  const handleNext = () => {
+  const finishOnboarding = async () => {
+    await markOnboardingSeen();
+    router.replace("/auth/login");
+  };
+
+  const handleNext = async () => {
     if (currentPage < ONBOARDING_DATA.length - 1) {
       setCurrentPage(currentPage + 1);
     } else {
-      router.push("/auth/login");
+      await finishOnboarding();
     }
   };
 
-  const handleSkip = () => {
-    router.push("/auth/login");
+  const handleSkip = async () => {
+    await finishOnboarding();
   };
 
   const data = ONBOARDING_DATA[currentPage];
