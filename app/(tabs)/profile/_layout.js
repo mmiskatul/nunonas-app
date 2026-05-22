@@ -7,6 +7,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="edit" />
       <Stack.Screen name="bookings" />
       <Stack.Screen name="support" />
+      <Stack.Screen name="legal" />
     </Stack>
   );
 }

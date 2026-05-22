@@ -143,8 +143,8 @@ export default function ProfileScreen() {
 
           {/* Links */}
           <View style={styles.linksContainer}>
-            <ProfileLinkItem title="Terms & Conditions" onPress={() => {}} />
-            <ProfileLinkItem title="Privacy Policy" onPress={() => {}} />
+            <ProfileLinkItem title="Terms & Conditions" onPress={() => router.push("/profile/legal?doc=terms")} />
+            <ProfileLinkItem title="Privacy Policy" onPress={() => router.push("/profile/legal?doc=privacy")} />
           </View>
 
           {/* Logout */}
