@@ -1,14 +1,13 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 
 // Import Dining Components
@@ -17,74 +16,86 @@ import DiningViewToggle from "../../../../components/tabs/home/dining/DiningView
 import DiningFilters from "../../../../components/tabs/home/dining/DiningFilters";
 import RestaurantCard from "../../../../components/tabs/home/dining/RestaurantCard";
 
-const RESTAURANTS = [
-  {
-    id: 1,
-    title: "The Golden Spoon",
-    rating: "4.8",
-    reviews: "324",
-    cuisine: "Italian",
-    type: "Fine Dining",
-    distance: "1.2 km",
-    location: "Al Qassar",
-    badge: "30% OFF",
-    badgeColor: "#ef4444",
-    image: require("../../../../assets/images/discover-experience.png"),
-  },
-  {
-    id: 3,
-    title: "Brew & Bite",
-    rating: "4.5",
-    reviews: "257",
-    cuisine: "Cafe",
-    type: "Continental",
-    distance: "2.1 km",
-    location: "Doha Industrial Area",
-    badge: "Free Delivery",
-    badgeColor: "#22c55e",
-    image: require("../../../../assets/images/plan-smarter-with-ai.png"),
-  },
-  {
-    id: 2,
-    title: "Sakura Sushi",
-    rating: "4.6",
-    reviews: "189",
-    cuisine: "Japanese",
-    type: "Sushi",
-    distance: "0.8 km",
-    location: "New Doha",
-    image: require("../../../../assets/images/discover-experience.png"),
-  },
-  {
-    id: 4,
-    title: "Mediterranean Breeze",
-    rating: "4.4",
-    reviews: "98",
-    cuisine: "Mediterranean",
-    type: "Healthy",
-    distance: "3.2 km",
-    location: "Lekhwair",
-    badge: "New",
-    badgeColor: "#3b82f6",
-    image: require("../../../../assets/images/plan-smarter-with-ai.png"),
-  },
-];
+import { listRestaurants } from "../../../../lib/customer-api";
 
 export default function DiningScreen() {
-  const router = useRouter();
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({ open_now: null, top_rated: null, offers: null });
+
+  const fetchRestaurants = useCallback(async (options = {}) => {
+    try {
+      const params = {
+        limit: 30,
+        skip: 0,
+        ...(searchQuery ? { search: searchQuery } : {}),
+        ...(filters.open_now != null ? { open_now: filters.open_now } : {}),
+        ...(filters.top_rated != null ? { top_rated: filters.top_rated } : {}),
+        ...(filters.offers != null ? { offers: filters.offers } : {}),
+        ...options,
+      };
+      const data = await listRestaurants(params);
+      const list = data?.items ?? data ?? [];
+      setRestaurants(list);
+    } catch (err) {
+      console.warn("Failed to load restaurants:", err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [searchQuery, filters]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchRestaurants();
+  }, [fetchRestaurants]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchRestaurants();
+  };
+
+  const handleSearch = (q) => {
+    setSearchQuery(q);
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <DiningSearch />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <DiningSearch onSearch={handleSearch} />
         <DiningViewToggle />
-        <DiningFilters />
+        <DiningFilters onFilterChange={handleFilterChange} />
 
-        <View style={styles.list}>
-          {RESTAURANTS.map((restaurant) => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-          ))}
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.COLORS.primary} />
+          </View>
+        ) : restaurants.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No restaurants found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {restaurants.map((restaurant) => (
+              <RestaurantCard
+                key={restaurant.id ?? restaurant._id}
+                restaurant={restaurant}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -98,5 +109,23 @@ const styles = StyleSheet.create({
   list: {
     marginTop: 5,
     paddingBottom: 20,
+  },
+  loadingContainer: {
+    paddingTop: 60,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    paddingTop: 60,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: theme.COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: theme.COLORS.textSecondary,
   },
 });

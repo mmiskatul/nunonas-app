@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import BookingCard from "../../../../components/tabs/profile/bookings/BookingCard";
+import { listMyBookings } from "../../../../lib/customer-api";
+
 
 const bookingsData = [
   {
@@ -63,37 +67,48 @@ const bookingsData = [
 export default function BookingsScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Upcoming");
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBookings = useCallback(async (tab) => {
+    try {
+      const data = await listMyBookings({ status: tab.toLowerCase(), limit: 50 });
+      const items = data?.items ?? data ?? [];
+      setBookings(items);
+    } catch (err) {
+      console.warn("Failed to load bookings:", err.message);
+      setBookings([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchBookings(activeTab);
+  }, [fetchBookings, activeTab]);
 
   const handleViewDetails = (item) => {
     router.push({
       pathname: "/profile/bookings/details",
       params: {
-        id: item.id,
-        category: item.category,
-        title: item.title,
+        id: item.id ?? item._id,
+        category: item.provider_type ?? item.category ?? "Restaurant",
+        title: item.provider_name ?? item.title ?? "Booking",
         status: item.status,
         date: item.date,
-        location: item.location,
-        imageUrl: item.imageUrl,
-        // Hotel specific
-        rating: item.rating,
-        checkIn: item.checkIn,
-        checkOut: item.checkOut,
-        nights: item.nights,
-        roomType: item.roomType,
-        guests: item.guests,
-        pricePerNight: item.pricePerNight,
-        totalPrice: item.totalPrice,
-        taxes: item.taxes,
-        totalPaid: item.totalPaid,
-        // Restaurant specific
         time: item.time,
-        phone: item.phone,
-        notes: item.notes,
-        bookingId: item.bookingId,
+        location: item.provider_area ?? item.location ?? "",
+        imageUrl: item.provider_image ?? item.imageUrl ?? "",
+        guests: item.guests,
+        notes: item.special_notes ?? item.notes ?? "",
+        bookingId: `#${(item.id ?? item._id ?? "").slice(0, 8).toUpperCase()}`,
       },
     });
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -138,23 +153,35 @@ export default function BookingsScreen() {
       </View>
 
       {/* Bookings List */}
-      <FlatList
-        data={activeTab === "Upcoming" ? bookingsData : []}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <BookingCard
-            item={item}
-            onViewDetails={() => handleViewDetails(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No bookings found</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={theme.COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={bookings}
+          keyExtractor={(item) => item.id ?? item._id ?? String(Math.random())}
+          renderItem={({ item }) => (
+            <BookingCard
+              item={item}
+              onViewDetails={() => handleViewDetails(item)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); fetchBookings(activeTab); }}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No {activeTab.toLowerCase()} bookings</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
