@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import theme from "../../constants/theme";
@@ -14,50 +15,145 @@ import ChatHeader from "../../components/tabs/chat/ChatHeader";
 import ChatMessage from "../../components/tabs/chat/ChatMessage";
 import ChatInput from "../../components/tabs/chat/ChatInput";
 
-const MOCK_MESSAGES = [
-  {
-    id: "1",
-    sender: "ai",
-    text: "Hello! I'm your personal concierge. Tell me what you'd like to do, and I'll help create the perfect plan for you.",
-    time: "Just now",
-  },
-  {
-    id: "2",
-    sender: "user",
-    text: "I want to plan a romantic weekend getaway for my anniversary next month",
-    time: "2:34 PM",
-  },
-  {
-    id: "3",
-    sender: "ai",
-    text: "That sounds wonderful! To create the perfect romantic getaway, I'd love to know:\n• What's your ideal setting? (beach, mountains, city, countryside)\n• Any specific budget range?\n• How far are you willing to travel?",
-    time: "2:35 PM",
-  },
-  {
-    id: "4",
-    sender: "user",
-    text: "Maybe somewhere cozy with a fireplace? We love wine and good food. Budget around $2000",
-    time: "2:37 PM",
-  },
-];
+import {
+  listAiSessions,
+  createAiSession,
+  listAiMessages,
+  sendAiMessage,
+} from "../../lib/customer-api";
 
 export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef(null);
 
-  const handleSend = () => {
-    if (inputText.trim()) {
-      const newMessage = {
-        id: Date.now().toString(),
-        sender: "user",
-        text: inputText,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setMessages([...messages, newMessage]);
-      setInputText("");
+  // Initialize a session on mount
+  const initSession = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Try to load existing sessions first
+      let sid = null;
+      try {
+        const sessionsData = await listAiSessions();
+        const sessions = sessionsData?.items ?? sessionsData ?? [];
+        if (sessions.length > 0) {
+          sid = sessions[0].id ?? sessions[0]._id;
+        }
+      } catch {
+        // No existing sessions — create new
+      }
+
+      if (!sid) {
+        const newSession = await createAiSession();
+        sid = newSession?.id ?? newSession?._id;
+      }
+
+      setSessionId(sid);
+
+      if (sid) {
+        // Load messages for this session
+        try {
+          const msgData = await listAiMessages(sid);
+          const msgs = msgData?.items ?? msgData ?? [];
+          setMessages(
+            msgs.map((m) => ({
+              id: m.id ?? m._id ?? String(Math.random()),
+              sender: m.role === "user" ? "user" : "ai",
+              text: m.content ?? m.message ?? "",
+              time: m.created_at
+                ? new Date(m.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Just now",
+            }))
+          );
+        } catch {
+          // No messages yet — start fresh
+          setMessages([
+            {
+              id: "welcome",
+              sender: "ai",
+              text: "Hello! I'm your personal AI concierge. Tell me what you'd like to do today!",
+              time: "Just now",
+            },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.warn("AI session init failed:", err.message);
+      // Show welcome message as fallback
+      setMessages([
+        {
+          id: "welcome",
+          sender: "ai",
+          text: "Hello! I'm your personal AI concierge. Tell me what you'd like to do today!",
+          time: "Just now",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    initSession();
+  }, [initSession]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  const handleSend = async () => {
+    const text = inputText.trim();
+    if (!text || sending) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      sender: "user",
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputText("");
+    setSending(true);
+
+    try {
+      if (sessionId) {
+        const reply = await sendAiMessage(sessionId, text);
+        const aiText =
+          reply?.reply ?? reply?.message ?? reply?.content ?? "Got it! Let me look into that for you.";
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString() + "_ai",
+            sender: "ai",
+            text: aiText,
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+      }
+    } catch (err) {
+      console.warn("Failed to send AI message:", err.message);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString() + "_err",
+          sender: "ai",
+          text: "Sorry, I'm having trouble responding right now. Please try again.",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -71,27 +167,35 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
+          ref={scrollRef}
           style={styles.messagesList}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              text={msg.text}
-              sender={msg.sender}
-              time={msg.time}
-            />
-          ))}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={theme.COLORS.primary} />
+            </View>
+          ) : (
+            messages.map((msg) => (
+              <ChatMessage
+                key={msg.id}
+                text={msg.text}
+                sender={msg.sender}
+                time={msg.time}
+              />
+            ))
+          )}
 
-          {/* Typing Indicator */}
-          <ChatMessage sender="ai" isTyping={true} />
+          {/* Typing Indicator while AI is responding */}
+          {sending && <ChatMessage sender="ai" isTyping={true} />}
         </ScrollView>
 
         <ChatInput
           value={inputText}
           onChangeText={setInputText}
           onSend={handleSend}
+          disabled={sending || loading}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -112,5 +216,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
   },
 });

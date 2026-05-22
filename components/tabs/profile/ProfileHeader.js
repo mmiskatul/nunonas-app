@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../constants/theme";
+import ProfileAvatarPlaceholder from "./ProfileAvatarPlaceholder";
 
 const ProfileHeader = ({ name, email, imageUrl, onEditPress }) => {
   return (
@@ -10,10 +11,11 @@ const ProfileHeader = ({ name, email, imageUrl, onEditPress }) => {
       <SafeAreaView edges={["top"]}>
         <View style={styles.headerContent}>
           <View style={styles.profileImageContainer}>
-            <Image
-              source={{ uri: imageUrl || "https://i.pravatar.cc/300?img=32" }}
-              style={styles.profileImage}
-            />
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.profileImage} />
+            ) : (
+              <ProfileAvatarPlaceholder size={100} style={styles.profileImage} />
+            )}
           </View>
           <Text style={styles.userName}>{name}</Text>
           <Text style={styles.userEmail}>{email}</Text>

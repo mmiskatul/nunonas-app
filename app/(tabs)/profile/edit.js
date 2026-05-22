@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,84 +6,87 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Image,
   Modal,
   TouchableWithoutFeedback,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Calendar } from "react-native-calendars";
-import * as ImagePicker from "expo-image-picker";
 import theme from "../../../constants/theme";
-import ImagePickerModal from "../../../components/ui/ImagePickerModal";
+import { apiGetAuth, apiPatchAuth } from "../../../lib/auth-api";
+import ProfileAvatarPlaceholder from "../../../components/tabs/profile/ProfileAvatarPlaceholder";
 
 const EditProfileScreen = () => {
   const router = useRouter();
   const [showCalendar, setShowCalendar] = useState(false);
-  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    phoneNumber: "+1 (555) 123-4567",
-    dob: "1992-03-15",
-    profileImage: "https://i.pravatar.cc/300?img=32",
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    dob: "",
+    memberSince: "",
   });
 
-  const handleSave = () => {
-    // Implement save logic here
-    router.back();
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      try {
+        const profile = await apiGetAuth("/api/v1/users/me");
+        if (!active) {
+          return;
+        }
+
+        setFormData({
+          fullName: profile.full_name || "",
+          email: profile.email || "",
+          phoneNumber: profile.phone || "",
+          dob: profile.date_of_birth || "",
+          memberSince: profile.created_at ? new Date(profile.created_at).getFullYear().toString() : "",
+        });
+      } catch (error) {
+        if (active) {
+          Alert.alert("Profile unavailable", error.message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await apiPatchAuth("/api/v1/users/me/personal-details", {
+        full_name: formData.fullName.trim(),
+        email: formData.email.trim().toLowerCase() || null,
+        phone: formData.phoneNumber.trim() || null,
+        date_of_birth: formData.dob || null,
+      });
+      router.back();
+    } catch (error) {
+      Alert.alert("Save failed", error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const onDateSelect = (day) => {
     setFormData({ ...formData, dob: day.dateString });
     setShowCalendar(false);
-  };
-
-  const pickImage = async () => {
-    // Ask for permissions
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "We need access to your gallery to change your profile picture.",
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setFormData({ ...formData, profileImage: result.assets[0].uri });
-    }
-  };
-
-  const takePhoto = async () => {
-    // Ask for permissions
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "We need access to your camera to take a profile picture.",
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setFormData({ ...formData, profileImage: result.assets[0].uri });
-    }
   };
 
   const InputField = ({
@@ -121,6 +124,16 @@ const EditProfileScreen = () => {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="small" color={theme.COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -142,19 +155,12 @@ const EditProfileScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image
-              source={{ uri: formData.profileImage }}
-              style={styles.profileImage}
-            />
-            <TouchableOpacity
-              style={styles.cameraButton}
-              onPress={() => setShowImagePicker(true)}
-            >
-              <Ionicons name="camera" size={20} color={theme.COLORS.white} />
-            </TouchableOpacity>
+            <ProfileAvatarPlaceholder size={120} style={styles.profileImage} />
           </View>
           <Text style={styles.userName}>{formData.fullName}</Text>
-          <Text style={styles.userStatus}>Member since 2024</Text>
+          <Text style={styles.userStatus}>
+            {formData.memberSince ? `Member since ${formData.memberSince}` : "Personal details"}
+          </Text>
         </View>
 
         <View style={styles.formCard}>
@@ -193,12 +199,12 @@ const EditProfileScreen = () => {
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
+            <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutButton}>
-            <Text style={styles.logoutButtonText}>Log Out</Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={() => router.back()}>
+            <Text style={styles.logoutButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -248,14 +254,6 @@ const EditProfileScreen = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
-      {/* Image Picker Modal */}
-      <ImagePickerModal
-        visible={showImagePicker}
-        onClose={() => setShowImagePicker(false)}
-        onSelectCamera={takePhoto}
-        onSelectGallery={pickImage}
-      />
     </SafeAreaView>
   );
 };
@@ -277,6 +275,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   profileSection: {
     alignItems: "center",
     marginTop: 10,
@@ -291,19 +294,6 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
-    borderColor: theme.COLORS.white,
-  },
-  cameraButton: {
-    position: "absolute",
-    bottom: 5,
-    right: 5,
-    backgroundColor: theme.COLORS.primary,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
     borderColor: theme.COLORS.white,
   },
   userName: {

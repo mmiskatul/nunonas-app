@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -15,12 +16,39 @@ import { Ionicons } from "@expo/vector-icons";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
+import { apiPost } from "../../lib/api";
+import { setSession } from "../../lib/auth-session";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert("Missing credentials", "Enter your email or phone and password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await apiPost("/api/v1/auth/login", {
+        email_or_phone: email.trim(),
+        password,
+      });
+      await setSession({
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+      });
+      router.replace("/(tabs)");
+    } catch (error) {
+      Alert.alert("Login failed", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,6 +59,7 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Header Image */}
           <View style={styles.imageContainer}>
@@ -84,8 +113,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <Button
-              title="Login"
-              onPress={() => router.push("/(tabs)")}
+              title={loading ? "Logging In..." : "Login"}
+              onPress={handleLogin}
+              loading={loading}
               style={styles.loginBtn}
             />
 

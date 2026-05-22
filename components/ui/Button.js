@@ -1,16 +1,28 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from "react-native";
 import theme from "../../constants/theme";
 
-const Button = ({ title, onPress, style, textStyle, icon }) => {
+const Button = ({ title, onPress, style, textStyle, icon, loading = false, disabled = false }) => {
+  const isDisabled = loading || disabled;
+
   return (
     <TouchableOpacity
-      style={[styles.button, theme.SHADOWS.primary, style]}
+      style={[styles.button, isDisabled && styles.buttonDisabled, theme.SHADOWS.primary, style]}
       onPress={onPress}
       activeOpacity={0.8}
+      disabled={isDisabled}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
-      {icon && icon}
+      <View style={styles.content}>
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={theme.COLORS.white}
+            style={styles.spinner}
+          />
+        ) : null}
+        <Text style={[styles.text, textStyle]}>{title}</Text>
+        {!loading && icon ? icon : null}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -23,6 +35,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spinner: {
+    marginRight: 10,
   },
   text: {
     color: theme.COLORS.white,

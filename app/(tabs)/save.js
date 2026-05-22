@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../constants/theme";
+import { listSaved, removeSaved } from "../../lib/customer-api";
+
 
 // Import Components
 import SavedCard from "../../components/tabs/save/SavedCard";
@@ -70,11 +74,42 @@ const SAVED_ITEMS = [
 
 export default function SaveScreen() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [savedItems, setSavedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchSaved = useCallback(async () => {
+    try {
+      const data = await listSaved();
+      const items = data?.items ?? data ?? [];
+      setSavedItems(items);
+    } catch (err) {
+      console.warn("Failed to load saved items:", err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSaved(); }, [fetchSaved]);
+
+  const handleRemoveSaved = useCallback(async (entityType, entityId) => {
+    try {
+      await removeSaved(entityType, entityId);
+      setSavedItems((prev) => prev.filter((item) => (item.id ?? item._id) !== entityId));
+    } catch (err) {
+      console.warn("Failed to remove saved item:", err.message);
+    }
+  }, []);
 
   const filteredItems =
     activeFilter === "All"
-      ? SAVED_ITEMS
-      : SAVED_ITEMS.filter((item) => activeFilter.includes(item.type));
+      ? savedItems
+      : savedItems.filter((item) => {
+          const type = (item.entity_type ?? item.type ?? "").toLowerCase();
+          return type.includes(activeFilter.toLowerCase());
+        });
+
 
   const renderFilterItem = ({ item }) => {
     const isActive = activeFilter === item;
@@ -137,7 +172,15 @@ export default function SaveScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchSaved(); }} />
+        }
       >
+        {loading && (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color={theme.COLORS.primary} />
+          </View>
+        )}
         {filteredItems.map((item) => (
           <SavedCard
             key={item.id}

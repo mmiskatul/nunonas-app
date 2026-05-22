@@ -3,10 +3,10 @@ import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../constants/theme";
 
-const ChatInput = ({ value, onChangeText, onSend }) => {
+const ChatInput = ({ value, onChangeText, onSend, disabled = false }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, disabled && styles.inputWrapperDisabled]}>
         <TextInput
           style={styles.input}
           placeholder="Tell me what you'd like to plan..."
@@ -14,13 +14,17 @@ const ChatInput = ({ value, onChangeText, onSend }) => {
           value={value}
           onChangeText={onChangeText}
           multiline
+          editable={!disabled}
+          returnKeyType="send"
+          onSubmitEditing={disabled ? undefined : onSend}
         />
         <TouchableOpacity
-          style={styles.sendBtn}
+          style={[styles.sendBtn, disabled && styles.sendBtnDisabled]}
           onPress={onSend}
           activeOpacity={0.8}
+          disabled={disabled}
         >
-          <View style={styles.sendIconBg}>
+          <View style={[styles.sendIconBg, disabled && styles.sendIconBgDisabled]}>
             <Ionicons name="paper-plane" size={20} color={theme.COLORS.white} />
           </View>
         </TouchableOpacity>
@@ -59,6 +63,9 @@ const styles = StyleSheet.create({
   sendBtn: {
     marginLeft: 12,
   },
+  sendBtnDisabled: {
+    opacity: 0.5,
+  },
   sendIconBg: {
     width: 36,
     height: 36,
@@ -66,6 +73,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
+  },
+  sendIconBgDisabled: {
+    backgroundColor: theme.COLORS.textSecondary,
+  },
+  inputWrapperDisabled: {
+    opacity: 0.7,
   },
 });
 

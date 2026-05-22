@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -13,18 +15,151 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
+import { apiPost } from "../../lib/api";
+import { setPendingSignup } from "../../lib/pending-signup";
 
 export default function SignupScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [enableLocation, setEnableLocation] = useState(false);
+  const [signupLocation, setSignupLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationStatus, setLocationStatus] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const getLocationStatusMessage = (errorMessage) => {
+    const message = String(errorMessage || "").toLowerCase();
+
+    if (message.includes("location services") || message.includes("current location is unavailable")) {
+      return "Location services are off. You can still sign up without location.";
+    }
+    if (message.includes("permission")) {
+      return "Location permission was not granted. You can still sign up without location.";
+    }
+
+    return "Couldn't get your location right now. You can still sign up without location.";
+  };
+
+  const handleLocationToggle = async (nextValue) => {
+    setEnableLocation(nextValue);
+
+    if (!nextValue) {
+      setLocationLoading(false);
+      setSignupLocation(null);
+      setLocationStatus("");
+      return;
+    }
+
+    try {
+      setLocationLoading(true);
+      setLocationStatus("");
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        setEnableLocation(false);
+        setSignupLocation(null);
+        setLocationStatus("Location services are off. You can still sign up without location.");
+        return;
+      }
+
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setEnableLocation(false);
+        setSignupLocation(null);
+        setLocationStatus("Location permission was not granted. You can still sign up without location.");
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setSignupLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        location_accuracy_meters: position.coords.accuracy ?? null,
+      });
+      setLocationStatus("Location captured for nearby recommendations.");
+    } catch (error) {
+      setEnableLocation(false);
+      setSignupLocation(null);
+      setLocationStatus(getLocationStatusMessage(error?.message));
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPhone = phone.trim();
+
+    if (!fullName.trim()) {
+      Alert.alert("Missing name", "Enter your full name.");
+      return;
+    }
+    if (!normalizedEmail) {
+      Alert.alert("Missing email", "Enter your email address.");
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert("Weak password", "Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert("Password mismatch", "Password and confirm password must match.");
+      return;
+    }
+    if (enableLocation && locationLoading) {
+      Alert.alert("Location in progress", "Wait for your location to finish loading, then submit.");
+      return;
+    }
+    if (enableLocation && !signupLocation) {
+      Alert.alert("Location missing", "Turn location on again to capture your current location.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await apiPost("/api/v1/auth/register", {
+        full_name: fullName.trim(),
+        email: normalizedEmail,
+        phone: normalizedPhone || null,
+        password,
+        location_enabled: enableLocation,
+        latitude: signupLocation?.latitude ?? null,
+        longitude: signupLocation?.longitude ?? null,
+        location_accuracy_meters: signupLocation?.location_accuracy_meters ?? null,
+      });
+      setPendingSignup({
+        fullName: fullName.trim(),
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        password,
+        locationEnabled: enableLocation,
+        latitude: signupLocation?.latitude ?? null,
+        longitude: signupLocation?.longitude ?? null,
+        locationAccuracyMeters: signupLocation?.location_accuracy_meters ?? null,
+      });
+      router.push({
+        pathname: "/auth/verify-email",
+        params: {
+          email: normalizedEmail,
+        },
+      });
+    } catch (error) {
+      Alert.alert("Registration failed", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,6 +170,7 @@ export default function SignupScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Header Image */}
           <View style={styles.imageContainer}>
@@ -64,13 +200,22 @@ export default function SignupScreen() {
             />
 
             <InputField
-              label="Email or Phone Number"
+              label="Email Address"
               placeholder="you@example.com"
               iconName="mail-outline"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+            />
+
+            <InputField
+              label="Phone Number"
+              placeholder="+8801712345678"
+              iconName="call-outline"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
             />
 
             <InputField
@@ -124,30 +269,47 @@ export default function SignupScreen() {
                 <View style={styles.locationTextContainer}>
                   <Text style={styles.locationTitle}>Enable location</Text>
                   <Text style={styles.locationSubtitle}>
-                    Get better recommendations
+                    {locationLoading
+                      ? "Finding your current location..."
+                      : enableLocation
+                        ? locationStatus || "Location captured for nearby recommendations"
+                        : "Get better recommendations"}
                   </Text>
+                  {!enableLocation && locationStatus ? (
+                    <Text style={styles.locationErrorText}>{locationStatus}</Text>
+                  ) : null}
                 </View>
               </View>
-              <Switch
-                value={enableLocation}
-                onValueChange={setEnableLocation}
-                trackColor={{
-                  false: theme.COLORS.border,
-                  true: theme.COLORS.primary,
-                }}
-                thumbColor={
-                  Platform.OS === "ios"
-                    ? theme.COLORS.white
-                    : enableLocation
+              <View style={styles.locationControl}>
+                {locationLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={theme.COLORS.primary}
+                    style={styles.locationSpinner}
+                  />
+                ) : null}
+                <Switch
+                  value={enableLocation}
+                  onValueChange={handleLocationToggle}
+                  trackColor={{
+                    false: theme.COLORS.border,
+                    true: theme.COLORS.primary,
+                  }}
+                  thumbColor={
+                    Platform.OS === "ios"
                       ? theme.COLORS.white
-                      : "#f4f3f4"
-                }
-              />
+                      : enableLocation
+                        ? theme.COLORS.white
+                        : "#f4f3f4"
+                  }
+                />
+              </View>
             </View>
 
             <Button
-              title="Create Account"
-              onPress={() => router.push("/(tabs)")}
+              title={loading ? "Creating Account..." : "Create Account"}
+              onPress={handleSignup}
+              loading={loading}
               style={styles.createBtn}
             />
 
@@ -252,6 +414,14 @@ const styles = StyleSheet.create({
   locationTextContainer: {
     marginLeft: 12,
   },
+  locationControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  locationSpinner: {
+    marginRight: 10,
+  },
   locationTitle: {
     fontSize: theme.TYPOGRAPHY.label.fontSize,
     fontWeight: theme.TYPOGRAPHY.label.fontWeight,
@@ -260,6 +430,11 @@ const styles = StyleSheet.create({
   locationSubtitle: {
     fontSize: 13,
     color: theme.COLORS.textSecondary,
+  },
+  locationErrorText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#b45309",
   },
   createBtn: {
     marginTop: 25,
