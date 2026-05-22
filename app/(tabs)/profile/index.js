@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   Text,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
+import { apiGetAuth } from "../../../lib/auth-api";
+import { clearSession } from "../../../lib/auth-session";
 
 // Import Components
 import ProfileMenuItem from "../../../components/tabs/profile/ProfileMenuItem";
@@ -39,6 +43,37 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [nearbyEvents, setNearbyEvents] = useState(false);
   const [bookingReminders, setBookingReminders] = useState(true);
+  const [profile, setProfile] = useState(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function loadProfile() {
+        try {
+          const data = await apiGetAuth("/api/v1/users/me");
+          if (active) {
+            setProfile(data);
+          }
+        } catch (error) {
+          if (active) {
+            Alert.alert("Profile unavailable", error.message);
+          }
+        }
+      }
+
+      loadProfile();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+
+  const handleLogout = async () => {
+    await clearSession();
+    router.replace("/auth/login");
+  };
 
   return (
     <View style={styles.container}>
@@ -48,14 +83,14 @@ export default function ProfileScreen() {
       >
         {/* Profile Header section */}
         <ProfileHeader
-          name="Sarah Mitchell"
-          email="sarah.mitchell@email.com"
-          imageUrl="https://i.pravatar.cc/300?img=32"
+          name={profile?.full_name || "Your Profile"}
+          email={profile?.email || profile?.phone || ""}
+          imageUrl={profile?.profile_image_url}
           onEditPress={() => router.push("/profile/edit")}
         />
 
         {/* Bonus Points Card section */}
-        <BonusPointsCard points="1,250" />
+        <BonusPointsCard points={String(profile?.points_balance ?? 0)} />
 
         {/* Menu Sections */}
         <View style={styles.menuContainer}>
@@ -81,11 +116,6 @@ export default function ProfileScreen() {
             icon="person-outline"
             title="Personal details"
             onPress={() => router.push("/profile/edit")}
-          />
-          <ProfileMenuItem
-            icon="settings-outline"
-            title="Settings"
-            onPress={() => {}}
           />
 
           {/* Help Center */}
@@ -121,7 +151,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.logoutBtn}
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={handleLogout}
           >
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
