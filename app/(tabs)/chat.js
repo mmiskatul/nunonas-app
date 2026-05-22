@@ -21,6 +21,35 @@ import {
   listAiMessages,
   sendAiMessage,
 } from "../../lib/customer-api";
+import { restoreSession } from "../../lib/auth-session";
+
+function normalizeSocketBase(baseUrl) {
+  if (!baseUrl) return "";
+  return baseUrl
+    .replace("http://", "ws://")
+    .replace("https://", "wss://")
+    .replace("://localhost", "://10.0.2.2")
+    .replace("://127.0.0.1", "://10.0.2.2");
+}
+
+function mapApiMessage(message) {
+  return {
+    id: message.id ?? message._id ?? String(Math.random()),
+    sender: message.role === "user" ? "user" : "ai",
+    text: message.content ?? message.message ?? "",
+    time: message.created_at
+      ? new Date(message.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Just now",
+  };
+}
+
+function isMissingSessionError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("ai session not found") || message.includes("404");
+}
 
 export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
@@ -29,6 +58,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
+  const socketRef = useRef(null);
 
   // Initialize a session on mount
   const initSession = useCallback(async () => {
@@ -58,19 +88,7 @@ export default function ChatScreen() {
         try {
           const msgData = await listAiMessages(sid);
           const msgs = msgData?.items ?? msgData ?? [];
-          setMessages(
-            msgs.map((m) => ({
-              id: m.id ?? m._id ?? String(Math.random()),
-              sender: m.role === "user" ? "user" : "ai",
-              text: m.content ?? m.message ?? "",
-              time: m.created_at
-                ? new Date(m.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "Just now",
-            }))
-          );
+          setMessages(msgs.map(mapApiMessage));
         } catch {
           // No messages yet — start fresh
           setMessages([
@@ -103,6 +121,60 @@ export default function ChatScreen() {
     initSession();
   }, [initSession]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function connectSocket() {
+      if (!sessionId) return;
+
+      try {
+        const session = await restoreSession();
+        const token = session?.accessToken;
+        const socketBase = normalizeSocketBase(process.env.EXPO_PUBLIC_API_BASE_URL || "");
+        if (!token || !socketBase) return;
+
+        const ws = new WebSocket(
+          `${socketBase}/api/v1/customer/ai-concierge/sessions/${sessionId}/ws?token=${encodeURIComponent(token)}`
+        );
+        socketRef.current = ws;
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (!active || payload?.type !== "message") return;
+            const assistantMessage = payload?.assistant_message;
+            if (assistantMessage) {
+              setMessages((prev) => [...prev, mapApiMessage(assistantMessage)]);
+            }
+            setSending(false);
+          } catch {
+            setSending(false);
+          }
+        };
+
+        ws.onerror = () => {
+          setSending(false);
+        };
+
+        ws.onclose = () => {
+          setSending(false);
+        };
+      } catch {
+        // Keep HTTP fallback behavior.
+      }
+    }
+
+    connectSocket();
+
+    return () => {
+      active = false;
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
+  }, [sessionId]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -114,6 +186,7 @@ export default function ChatScreen() {
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || sending) return;
+    let usingSocket = false;
 
     const userMsg = {
       id: Date.now().toString(),
@@ -127,10 +200,38 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
+      const socket = socketRef.current;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        usingSocket = true;
+        socket.send(JSON.stringify({ message: text, metadata: {} }));
+        return;
+      }
+
       if (sessionId) {
-        const reply = await sendAiMessage(sessionId, text);
+        let activeSessionId = sessionId;
+        let reply;
+        try {
+          reply = await sendAiMessage(activeSessionId, text);
+        } catch (error) {
+          if (!isMissingSessionError(error)) {
+            throw error;
+          }
+
+          const newSession = await createAiSession();
+          activeSessionId = newSession?.id ?? newSession?._id ?? null;
+          if (!activeSessionId) {
+            throw error;
+          }
+          setSessionId(activeSessionId);
+          reply = await sendAiMessage(activeSessionId, text);
+        }
+
         const aiText =
-          reply?.reply ?? reply?.message ?? reply?.content ?? "Got it! Let me look into that for you.";
+          reply?.assistant_message?.content ??
+          reply?.reply ??
+          reply?.message ??
+          reply?.content ??
+          "Got it! Let me look into that for you.";
         setMessages((prev) => [
           ...prev,
           {
@@ -153,7 +254,9 @@ export default function ChatScreen() {
         },
       ]);
     } finally {
-      setSending(false);
+      if (!usingSocket) {
+        setSending(false);
+      }
     }
   };
 
