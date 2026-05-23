@@ -10,94 +10,27 @@ import {
   TouchableWithoutFeedback,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Calendar } from "react-native-calendars";
+import * as ImagePicker from "expo-image-picker";
 import theme from "../../../constants/theme";
-import { apiGetAuth, apiPatchAuth } from "../../../lib/auth-api";
+import { getMe, updatePersonalDetails, uploadProfileImage } from "../../../lib/customer-api";
 import ProfileAvatarPlaceholder from "../../../components/tabs/profile/ProfileAvatarPlaceholder";
 
-const EditProfileScreen = () => {
-  const router = useRouter();
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phoneNumber: "",
-    dob: "",
-    memberSince: "",
-  });
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadProfile() {
-      try {
-        const profile = await apiGetAuth("/api/v1/users/me");
-        if (!active) {
-          return;
-        }
-
-        setFormData({
-          fullName: profile.full_name || "",
-          email: profile.email || "",
-          phoneNumber: profile.phone || "",
-          dob: profile.date_of_birth || "",
-          memberSince: profile.created_at ? new Date(profile.created_at).getFullYear().toString() : "",
-        });
-      } catch (error) {
-        if (active) {
-          Alert.alert("Profile unavailable", error.message);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadProfile();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await apiPatchAuth("/api/v1/users/me/personal-details", {
-        full_name: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase() || null,
-        phone: formData.phoneNumber.trim() || null,
-        date_of_birth: formData.dob || null,
-      });
-      router.back();
-    } catch (error) {
-      Alert.alert("Save failed", error.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const onDateSelect = (day) => {
-    setFormData({ ...formData, dob: day.dateString });
-    setShowCalendar(false);
-  };
-
-  const InputField = ({
-    label,
-    value,
-    onChangeText,
-    icon,
-    placeholder,
-    onPress,
-    editable = true,
-  }) => (
+function InputField({
+  label,
+  value,
+  onChangeText,
+  icon,
+  placeholder,
+  onPress,
+  editable = true,
+}) {
+  return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TouchableOpacity
@@ -123,6 +56,139 @@ const EditProfileScreen = () => {
       </TouchableOpacity>
     </View>
   );
+}
+
+const EditProfileScreen = () => {
+  const router = useRouter();
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    dob: "",
+    memberSince: "",
+    imageUrl: "",
+  });
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      try {
+        const profile = await getMe();
+        if (!active) {
+          return;
+        }
+
+        setFormData({
+          fullName: profile.full_name || "",
+          email: profile.email || "",
+          phoneNumber: profile.phone || "",
+          dob: profile.date_of_birth || "",
+          memberSince: profile.member_since || "",
+          imageUrl: profile.profile_image_url || "",
+        });
+      } catch (error) {
+        if (active) {
+          Alert.alert("Profile unavailable", error.message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    const fullName = formData.fullName.trim();
+    if (fullName.length < 2) {
+      Alert.alert("Full name required", "Please enter your full name.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      let imageUrl = formData.imageUrl;
+
+      if (selectedImage) {
+        setUploadingImage(true);
+        const upload = await uploadProfileImage(selectedImage);
+        imageUrl = upload?.profile_image_url ?? imageUrl;
+      }
+
+      const updated = await updatePersonalDetails({
+        full_name: fullName,
+        email: formData.email.trim().toLowerCase() || null,
+        phone: formData.phoneNumber.trim() || null,
+        date_of_birth: formData.dob || null,
+      });
+      setFormData((current) => ({
+        ...current,
+        fullName: updated.full_name || current.fullName,
+        email: updated.email || "",
+        phoneNumber: updated.phone || "",
+        dob: updated.date_of_birth || "",
+        memberSince: updated.member_since || current.memberSince,
+        imageUrl,
+      }));
+      setSelectedImage(null);
+      router.back();
+    } catch (error) {
+      Alert.alert("Save failed", error.message);
+    } finally {
+      setUploadingImage(false);
+      setSaving(false);
+    }
+  };
+
+  const handleSelectImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission required",
+          "Please allow photo library access to update your profile image."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setSelectedImage(asset);
+      setFormData((current) => ({
+        ...current,
+        imageUrl: asset.uri ?? current.imageUrl,
+      }));
+    } catch (error) {
+      Alert.alert("Image unavailable", error.message);
+    }
+  };
+
+  const onDateSelect = (day) => {
+    setFormData({ ...formData, dob: day.dateString });
+    setShowCalendar(false);
+  };
 
   if (loading) {
     return (
@@ -155,7 +221,14 @@ const EditProfileScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <ProfileAvatarPlaceholder size={120} style={styles.profileImage} />
+            {formData.imageUrl ? (
+              <Image source={{ uri: formData.imageUrl }} style={styles.profileImage} />
+            ) : (
+              <ProfileAvatarPlaceholder size={120} style={styles.profileImage} />
+            )}
+            <TouchableOpacity style={styles.editImageButton} onPress={handleSelectImage} activeOpacity={0.85}>
+              <Ionicons name="camera-outline" size={18} color={theme.COLORS.white} />
+            </TouchableOpacity>
           </View>
           <Text style={styles.userName}>{formData.fullName}</Text>
           <Text style={styles.userStatus}>
@@ -199,8 +272,17 @@ const EditProfileScreen = () => {
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
-            <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              (saving || uploadingImage) && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={saving || uploadingImage}
+          >
+            <Text style={styles.saveButtonText}>
+              {uploadingImage ? "Uploading image..." : saving ? "Saving..." : "Save Changes"}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutButton} onPress={() => router.back()}>
@@ -289,6 +371,19 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: 15,
   },
+  editImageButton: {
+    position: "absolute",
+    right: 6,
+    bottom: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: theme.COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: theme.COLORS.white,
+  },
   profileImage: {
     width: 120,
     height: 120,
@@ -361,6 +456,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
   },
   saveButtonText: {
     color: theme.COLORS.white,

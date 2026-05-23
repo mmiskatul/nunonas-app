@@ -11,8 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
-import { apiGetAuth } from "../../../lib/auth-api";
 import { clearSession } from "../../../lib/auth-session";
+import { getMe } from "../../../lib/customer-api";
 
 // Import Components
 import ProfileMenuItem from "../../../components/tabs/profile/ProfileMenuItem";
@@ -51,7 +51,7 @@ export default function ProfileScreen() {
 
       async function loadProfile() {
         try {
-          const data = await apiGetAuth("/api/v1/users/me");
+          const data = await getMe();
           if (active) {
             setProfile(data);
           }

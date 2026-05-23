@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, View, Text, Image, Dimensions } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
+import { buildStaticMapUrl } from "../../../../../lib/google-maps";
 
 const { width } = Dimensions.get("window");
 
@@ -18,7 +19,14 @@ const AMENITIES = [
   },
 ];
 
+const HOTEL_ADDRESS = "123 Park Avenue, Manhattan, Qatar, NY 10022";
+
 const HotelOverviewContent = () => {
+  const mapUrl = buildStaticMapUrl({
+    center: HOTEL_ADDRESS,
+    markerLabel: "G",
+  });
+
   return (
     <View style={styles.container}>
       {/* About Section */}
@@ -80,13 +88,15 @@ const HotelOverviewContent = () => {
         <Text style={styles.sectionTitle}>Location</Text>
         <View style={styles.mapContainer}>
           <Image
-            source={require("../../../../../assets/images/discover-experience.png")}
+            source={
+              mapUrl
+                ? { uri: mapUrl }
+                : require("../../../../../assets/images/discover-experience.png")
+            }
             style={styles.mapImage}
           />
         </View>
-        <Text style={styles.address}>
-          123 Park Avenue, Manhattan, Qatar, NY 10022
-        </Text>
+        <Text style={styles.address}>{HOTEL_ADDRESS}</Text>
       </View>
     </View>
   );

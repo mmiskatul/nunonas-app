@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,12 +15,21 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
 import * as Location from "expo-location";
+import * as WebBrowser from "expo-web-browser";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
-import { apiPost } from "../../lib/api";
+import { register as registerUser, socialLogin } from "../../lib/customer-api";
+import { setSession } from "../../lib/auth-session";
 import { setPendingSignup } from "../../lib/pending-signup";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || undefined;
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined;
 
 export default function SignupScreen() {
   const [fullName, setFullName] = useState("");
@@ -35,6 +44,98 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [googleRequest, googleResponse, promptGoogleAsync] = Google.useAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    responseType: "id_token",
+    scopes: [
+      "openid",
+      "profile",
+      "email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ],
+    selectAccount: true,
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type !== "success") {
+      if (googleResponse?.type === "error") {
+        Alert.alert(
+          "Google sign-up failed",
+          googleResponse.error?.message || "Google rejected the sign-in request."
+        );
+      }
+      return;
+    }
+
+    const idToken =
+      googleResponse.authentication?.idToken ||
+      googleResponse.params?.id_token;
+
+    if (!idToken) {
+      Alert.alert("Google sign-up failed", "Google did not return an ID token.");
+      return;
+    }
+
+    let active = true;
+
+    async function finishGoogleSignup() {
+      try {
+        setLoading(true);
+        const data = await socialLogin({
+          provider: "google",
+          id_token: idToken,
+        });
+        if (!active) {
+          return;
+        }
+        await setSession({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+        });
+        router.replace("/(tabs)");
+      } catch (error) {
+        if (active) {
+          Alert.alert("Google sign-up failed", error.message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    finishGoogleSignup();
+
+    return () => {
+      active = false;
+    };
+  }, [googleResponse, router]);
+
+  const handleSocialPress = (provider) => {
+    Alert.alert(
+      `${provider} sign-up unavailable`,
+      "Apple sign-in is not configured yet in the backend. Use the form flow or Google sign-in for now."
+    );
+  };
+
+  const handleGooglePress = async () => {
+    if (!GOOGLE_WEB_CLIENT_ID && !GOOGLE_ANDROID_CLIENT_ID && !GOOGLE_IOS_CLIENT_ID) {
+      Alert.alert(
+        "Google sign-up unavailable",
+        "Set the Google OAuth client IDs in the app env file before using Google sign-in."
+      );
+      return;
+    }
+
+    try {
+      await promptGoogleAsync();
+    } catch (error) {
+      Alert.alert("Google sign-up failed", error.message);
+    }
+  };
 
   const getLocationStatusMessage = (errorMessage) => {
     const message = String(errorMessage || "").toLowerCase();
@@ -128,7 +229,7 @@ export default function SignupScreen() {
 
     try {
       setLoading(true);
-      await apiPost("/api/v1/auth/register", {
+      await registerUser({
         full_name: fullName.trim(),
         email: normalizedEmail,
         phone: normalizedPhone || null,
@@ -320,7 +421,11 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.socialArea}>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity
+                style={styles.socialBtn}
+                onPress={handleGooglePress}
+                disabled={!googleRequest || loading}
+              >
                 <Ionicons
                   name="logo-google"
                   size={24}
@@ -329,7 +434,10 @@ export default function SignupScreen() {
                 />
                 <Text style={styles.socialBtnText}>Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity
+                style={styles.socialBtn}
+                onPress={() => handleSocialPress("Apple")}
+              >
                 <Ionicons
                   name="logo-apple"
                   size={24}

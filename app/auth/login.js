@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -13,11 +13,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
-import { apiPost } from "../../lib/api";
+import { login as loginUser, socialLogin } from "../../lib/customer-api";
 import { setSession } from "../../lib/auth-session";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || undefined;
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -25,6 +33,98 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [googleRequest, googleResponse, promptGoogleAsync] = Google.useAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    responseType: "id_token",
+    scopes: [
+      "openid",
+      "profile",
+      "email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ],
+    selectAccount: true,
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type !== "success") {
+      if (googleResponse?.type === "error") {
+        Alert.alert(
+          "Google sign-in failed",
+          googleResponse.error?.message || "Google rejected the sign-in request."
+        );
+      }
+      return;
+    }
+
+    const idToken =
+      googleResponse.authentication?.idToken ||
+      googleResponse.params?.id_token;
+
+    if (!idToken) {
+      Alert.alert("Google sign-in failed", "Google did not return an ID token.");
+      return;
+    }
+
+    let active = true;
+
+    async function finishGoogleLogin() {
+      try {
+        setLoading(true);
+        const data = await socialLogin({
+          provider: "google",
+          id_token: idToken,
+        });
+        if (!active) {
+          return;
+        }
+        await setSession({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+        });
+        router.replace("/(tabs)");
+      } catch (error) {
+        if (active) {
+          Alert.alert("Google sign-in failed", error.message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    finishGoogleLogin();
+
+    return () => {
+      active = false;
+    };
+  }, [googleResponse, router]);
+
+  const handleSocialPress = (provider) => {
+    Alert.alert(
+      `${provider} sign-in unavailable`,
+      "Apple sign-in is not configured yet in the backend. Use email, phone, or Google login for now."
+    );
+  };
+
+  const handleGooglePress = async () => {
+    if (!GOOGLE_WEB_CLIENT_ID && !GOOGLE_ANDROID_CLIENT_ID && !GOOGLE_IOS_CLIENT_ID) {
+      Alert.alert(
+        "Google sign-in unavailable",
+        "Set the Google OAuth client IDs in the app env file before using Google sign-in."
+      );
+      return;
+    }
+
+    try {
+      await promptGoogleAsync();
+    } catch (error) {
+      Alert.alert("Google sign-in failed", error.message);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -34,7 +134,7 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      const data = await apiPost("/api/v1/auth/login", {
+      const data = await loginUser({
         email_or_phone: email.trim(),
         password,
       });
@@ -86,7 +186,6 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
-              keyboardType="email-address"
             />
 
             <InputField
@@ -126,14 +225,21 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.socialArea}>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity
+                style={styles.socialBtn}
+                onPress={handleGooglePress}
+                disabled={!googleRequest || loading}
+              >
                 <Ionicons
                   name="logo-google"
                   size={24}
                   color={theme.COLORS.textPrimary}
                 />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialBtn}>
+              <TouchableOpacity
+                style={styles.socialBtn}
+                onPress={() => handleSocialPress("Apple")}
+              >
                 <Ionicons
                   name="logo-apple"
                   size={24}

@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
-import { apiPost } from "../../lib/api";
+import { register as registerUser, verifyEmail as verifyEmailUser } from "../../lib/customer-api";
 import { setSession } from "../../lib/auth-session";
 import { clearPendingSignup, getPendingSignup } from "../../lib/pending-signup";
 
@@ -39,7 +39,7 @@ export default function VerifyEmailScreen() {
 
     try {
       setLoading(true);
-      const data = await apiPost("/api/v1/auth/verify-email", { email, otp: code.trim() });
+      const data = await verifyEmailUser({ email, otp: code.trim() });
       await setSession({
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
@@ -61,7 +61,7 @@ export default function VerifyEmailScreen() {
 
     try {
       setResending(true);
-      await apiPost("/api/v1/auth/register", {
+      await registerUser({
         full_name: pendingSignup.fullName,
         email,
         phone: pendingSignup.phone || null,
