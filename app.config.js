@@ -2,8 +2,8 @@ const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 export default {
   expo: {
-    name: "my-app",
-    slug: "my-app",
+    name: "Activity Planner",
+    slug: "activity-planner",
     scheme: "nuno-app",
     version: "1.0.0",
     orientation: "portrait",
@@ -27,7 +27,7 @@ export default {
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.anonymous.myapp",
+      package: "com.nuno.activityplanner",
       permissions: [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -54,7 +54,7 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "ce72b2c5-a702-4243-833c-a04f3c808c01",
+        projectId: "315819ed-4fd0-470a-a393-a3703e796337",
       },
     },
   },
