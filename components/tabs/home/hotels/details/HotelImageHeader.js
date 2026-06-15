@@ -17,10 +17,11 @@ const ASPECT_RATIO = 1.3;
 
 const HotelImageHeader = ({ image }) => {
   const router = useRouter();
+  const imageSource = typeof image === "string" ? { uri: image } : image;
 
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} />
+      <Image source={imageSource} style={styles.image} />
       <View style={styles.overlay} />
 
       <SafeAreaView style={styles.headerControls} edges={["top"]}>

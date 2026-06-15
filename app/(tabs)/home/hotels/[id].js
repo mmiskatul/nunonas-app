@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   StatusBar,
   Text,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
@@ -18,36 +19,56 @@ import HotelOverviewContent from "../../../../components/tabs/home/hotels/detail
 import HotelRoomsContent from "../../../../components/tabs/home/hotels/details/HotelRoomsContent";
 import HotelGalleryContent from "../../../../components/tabs/home/hotels/details/HotelGalleryContent";
 import HotelReviewsContent from "../../../../components/tabs/home/hotels/details/HotelReviewsContent";
-
-const HOTELS_DATA = {
-  1: {
-    id: 1,
-    title: "Grand Plaza Hotel",
-    rating: "4.8",
-    reviews: "1,247",
-    price: "189",
-    image: require("../../../../assets/images/hotel/hotel.jpg"),
-  },
-};
+import { getHotel } from "../../../../lib/customer-api";
 
 const HotelDetailsScreen = () => {
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState("Overview");
+  const [hotel, setHotel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const hotel = HOTELS_DATA[id] || HOTELS_DATA["1"];
+  useEffect(() => {
+    async function fetchHotel() {
+      try {
+        const data = await getHotel(id);
+        setHotel(data);
+      } catch (err) {
+        console.error("Failed to fetch hotel details:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (id) fetchHotel();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#1e3a8a" />
+      </View>
+    );
+  }
+
+  if (!hotel) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text style={{ fontWeight: "700", color: "#64748b" }}>Hotel not found.</Text>
+      </View>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "Overview":
-        return <HotelOverviewContent />;
+        return <HotelOverviewContent hotel={hotel} />;
       case "Rooms":
-        return <HotelRoomsContent />;
+        return <HotelRoomsContent hotelId={hotel.id} />;
       case "Gallery":
-        return <HotelGalleryContent />;
+        return <HotelGalleryContent hotelId={hotel.id} />;
       case "Reviews":
-        return <HotelReviewsContent />;
+        return <HotelReviewsContent hotelId={hotel.id} />;
       default:
-        return <HotelOverviewContent />;
+        return <HotelOverviewContent hotel={hotel} />;
     }
   };
 

@@ -4,10 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
 
 const HotelDetailsInfo = ({ hotel }) => {
+  const isAvailable = hotel.status === "Available";
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={styles.title}>{hotel.title}</Text>
           <View style={styles.locationRow}>
             <View style={styles.ratingBox}>
@@ -22,7 +23,9 @@ const HotelDetailsInfo = ({ hotel }) => {
                 size={14}
                 color={theme.COLORS.textSecondary}
               />
-              <Text style={styles.locationText}>Downtown, Midtown</Text>
+              <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                {hotel.location || "Qatar"}
+              </Text>
             </View>
           </View>
         </View>
@@ -33,8 +36,14 @@ const HotelDetailsInfo = ({ hotel }) => {
       </View>
 
       <View style={styles.statusRow}>
-        <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-        <Text style={styles.statusText}>Available Now</Text>
+        <Ionicons 
+          name={isAvailable ? "checkmark-circle" : "alert-circle"} 
+          size={16} 
+          color={isAvailable ? "#22c55e" : "#f59e0b"} 
+        />
+        <Text style={[styles.statusText, { color: isAvailable ? "#22c55e" : "#f59e0b" }]}>
+          {isAvailable ? "Available Now" : (hotel.status || "Limited")}
+        </Text>
       </View>
     </View>
   );

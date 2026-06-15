@@ -195,9 +195,7 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
               rightElement={
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={22}
@@ -207,7 +205,11 @@ export default function LoginScreen() {
               }
             />
 
-            <TouchableOpacity style={styles.forgotBtn}>
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotBtn}
+              onPress={() => router.push("/auth/forgot-password")}
+            >
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
 

@@ -1,47 +1,73 @@
-import React from "react";
-import { StyleSheet, View, Text, Image } from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
+import { getHotelReviews } from "../../../../../lib/customer-api";
 
-const REVIEWS = [
-  {
-    id: 1,
-    user: "John Smith",
-    date: "Feb 10, 2024",
-    rating: 5,
-    comment:
-      "Absolutely loved the city views and the room service was top-notch! Highly recommended.",
-  },
-  {
-    id: 2,
-    user: "Sarah Wilson",
-    date: "Jan 25, 2024",
-    rating: 4,
-    comment:
-      "Great stay, breakfast was delicious. The gym could be a bit bigger but overall a 4.5/5 experience.",
-  },
-];
+const HotelReviewsContent = ({ hotelId }) => {
+  const [reviewsData, setReviewsData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const HotelReviewsContent = () => {
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const data = await getHotelReviews(hotelId);
+        setReviewsData(data);
+      } catch (err) {
+        console.error("Failed to fetch hotel reviews:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (hotelId) fetchReviews();
+  }, [hotelId]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center", paddingVertical: 40 }]}>
+        <ActivityIndicator size="small" color="#1e3a8a" />
+      </View>
+    );
+  }
+
+  const averageRating = reviewsData?.average_rating || "4.5";
+  const totalReviews = reviewsData?.total_reviews || 0;
+  const reviewsList = reviewsData?.items || [];
+
+  if (reviewsList.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center", paddingVertical: 40 }]}>
+        <Text style={{ fontWeight: "700", color: "#64748b" }}>No reviews yet for this hotel.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.summaryBox}>
-        <Text style={styles.bigRating}>4.8</Text>
+        <Text style={styles.bigRating}>{averageRating}</Text>
         <View style={styles.stars}>
-          {[1, 2, 3, 4].map((i) => (
-            <Ionicons key={i} name="star" size={20} color="#facc15" />
-          ))}
-          <Ionicons name="star-half" size={20} color="#facc15" />
+          {Array.from({ length: 5 }).map((_, i) => {
+            const starValue = i + 1;
+            const avgNum = parseFloat(averageRating);
+            if (avgNum >= starValue) {
+              return <Ionicons key={i} name="star" size={20} color="#facc15" />;
+            } else if (avgNum >= starValue - 0.5) {
+              return <Ionicons key={i} name="star-half" size={20} color="#facc15" />;
+            } else {
+              return <Ionicons key={i} name="star-outline" size={20} color="#94a3b8" />;
+            }
+          })}
         </View>
-        <Text style={styles.totalReviews}>Based on 1,247 reviews</Text>
+        <Text style={styles.totalReviews}>Based on {totalReviews} reviews</Text>
       </View>
 
       <View style={styles.list}>
-        {REVIEWS.map((review) => (
+        {reviewsList.map((review) => (
           <View key={review.id} style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{review.user[0]}</Text>
+                <Text style={styles.avatarText}>{(review.user || "A")[0]}</Text>
               </View>
               <View>
                 <Text style={styles.userName}>{review.user}</Text>

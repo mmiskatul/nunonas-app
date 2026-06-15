@@ -32,6 +32,8 @@ const HotelCard = ({ hotel }) => {
     }
   };
 
+  const imageSource = typeof hotel.image === "string" ? { uri: hotel.image } : hotel.image;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -39,7 +41,7 @@ const HotelCard = ({ hotel }) => {
       onPress={() => router.push(`/home/hotels/${hotel.id}`)}
     >
       <View style={styles.imageContainer}>
-        <Image source={hotel.image} style={styles.image} />
+        <Image source={imageSource} style={styles.image} />
         {hotel.badge && (
           <View style={[styles.badge, { backgroundColor: "#06b6d4" }]}>
             <Text style={styles.badgeText}>{hotel.badge}</Text>
