@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -6,106 +6,124 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
+import { listHotelRooms } from "../../../../../lib/customer-api";
 
-const ROOMS = [
-  {
-    id: 1,
-    title: "Deluxe King Room",
-    bed: "King Bed",
-    guests: "Max 2 guests",
-    price: "189",
-    totalPrice: "378",
-    nights: "2 nights",
-    image: require("../../../../../assets/images/room/images2.webp"),
-  },
-  {
-    id: 2,
-    title: "Superior Twin Suite",
-    bed: "2 Twin Beds",
-    guests: "Max 3 guests",
-    price: "249",
-    totalPrice: "498",
-    nights: "2 nights",
-    image: require("../../../../../assets/images/room/images3.webp"),
-  },
-];
-
-const HotelRoomsContent = () => {
+const HotelRoomsContent = ({ hotelId }) => {
   const router = useRouter();
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRooms() {
+      try {
+        const data = await listHotelRooms(hotelId);
+        setRooms(data || []);
+      } catch (err) {
+        console.error("Failed to fetch rooms from API:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (hotelId) fetchRooms();
+  }, [hotelId]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center", paddingVertical: 40 }]}>
+        <ActivityIndicator size="small" color="#1e3a8a" />
+      </View>
+    );
+  }
+
+  if (rooms.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center", paddingVertical: 40 }]}>
+        <Text style={{ fontWeight: "700", color: "#64748b" }}>No rooms available at this time.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {ROOMS.map((room) => (
-        <View key={room.id} style={styles.roomCard}>
-          <View style={styles.cardHeader}>
-            <Image source={room.image} style={styles.roomImage} />
-            <View style={styles.headerRight}>
-              <Text style={styles.roomTitle}>{room.title}</Text>
-              <Text style={styles.bedText}>{room.bed}</Text>
+      {rooms.map((room) => {
+        const imageSource = typeof room.image === "string" ? { uri: room.image } : room.image;
+        return (
+          <View key={room.id} style={styles.roomCard}>
+            <View style={styles.cardHeader}>
+              <Image source={imageSource} style={styles.roomImage} />
+              <View style={styles.headerRight}>
+                <Text style={styles.roomTitle}>{room.title}</Text>
+                <Text style={styles.bedText}>{room.bed}</Text>
 
-              <View style={styles.occupancyRow}>
-                <Ionicons name="people" size={16} color="#94a3b8" />
-                <Ionicons
-                  name="people"
-                  size={16}
-                  color="#94a3b8"
-                  style={{ marginLeft: -4 }}
-                />
-                <Text style={styles.occupancyText}>{room.guests}</Text>
+                <View style={styles.occupancyRow}>
+                  <Ionicons name="people" size={16} color="#94a3b8" />
+                  <Ionicons
+                    name="people"
+                    size={16}
+                    color="#94a3b8"
+                    style={{ marginLeft: -4 }}
+                  />
+                  <Text style={styles.occupancyText}>{room.guests}</Text>
+                </View>
+
+                <View style={styles.amenityIcons}>
+                  <Ionicons name="wifi" size={16} color="#1e3a8a" />
+                  <MaterialCommunityIcons
+                    name="snowflake"
+                    size={16}
+                    color="#1e3a8a"
+                  />
+                  <MaterialCommunityIcons
+                    name="bathtub-outline"
+                    size={16}
+                    color="#1e3a8a"
+                  />
+                  <MaterialCommunityIcons
+                    name="television"
+                    size={16}
+                    color="#1e3a8a"
+                  />
+                </View>
               </View>
+            </View>
 
-              <View style={styles.amenityIcons}>
-                <Ionicons name="wifi" size={16} color="#1e3a8a" />
-                <MaterialCommunityIcons
-                  name="snowflake"
-                  size={16}
-                  color="#1e3a8a"
-                />
-                <MaterialCommunityIcons
-                  name="bathtub-outline"
-                  size={16}
-                  color="#1e3a8a"
-                />
-                <MaterialCommunityIcons
-                  name="television"
-                  size={16}
-                  color="#1e3a8a"
-                />
+            <View style={styles.badgeRow}>
+              <View style={styles.cancellationBadge}>
+                <Text style={styles.cancellationText}>Free Cancellation</Text>
               </View>
             </View>
-          </View>
 
-          <View style={styles.badgeRow}>
-            <View style={styles.cancellationBadge}>
-              <Text style={styles.cancellationText}>Free Cancellation</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.viewDetailsRow}>
-            <Text style={styles.viewDetailsText}>View details</Text>
-            <Ionicons name="chevron-down" size={16} color="#1e3a8a" />
-          </TouchableOpacity>
-
-          <View style={styles.cardFooter}>
-            <View>
-              <Text style={styles.perNightLabel}>Per night</Text>
-              <Text style={styles.priceText}>${room.price}</Text>
-              <Text style={styles.totalText}>
-                Total: ${room.totalPrice} ({room.nights})
-              </Text>
-            </View>
             <TouchableOpacity
-              style={styles.bookBtn}
+              style={styles.viewDetailsRow}
               onPress={() => router.push(`/home/hotels/room/${room.id}`)}
             >
-              <Text style={styles.bookBtnText}>Book Room</Text>
+              <Text style={styles.viewDetailsText}>View details</Text>
+              <Ionicons name="chevron-down" size={16} color="#1e3a8a" />
             </TouchableOpacity>
+
+            <View style={styles.cardFooter}>
+              <View>
+                <Text style={styles.perNightLabel}>Per night</Text>
+                <Text style={styles.priceText}>${room.price}</Text>
+                <Text style={styles.totalText}>
+                  Total: ${room.totalPrice} ({room.nights})
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.bookBtn}
+                onPress={() => router.push(`/home/hotels/room/${room.id}`)}
+              >
+                <Text style={styles.bookBtnText}>Book Room</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 };

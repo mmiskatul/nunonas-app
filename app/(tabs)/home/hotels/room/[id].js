@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -8,11 +8,13 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import theme from "../../../../../constants/theme";
+import { getHotelRoom } from "../../../../../lib/customer-api";
 
 const { width } = Dimensions.get("window");
 
@@ -43,39 +45,42 @@ const RoomDetailsScreen = () => {
     price: true,
     policies: true,
   });
+  const [roomData, setRoomData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const toggleSection = (key) => {
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const roomData = {
-    title: "Deluxe King Room",
-    status: "Available",
-    size: "45 m²",
-    guests: "2 Guests",
-    bed: "King Bed",
-    view: "City View",
-    images: [
-      require("../../../../../assets/images/room/images2.webp"),
-      require("../../../../../assets/images/room/images3.webp"),
-      require("../../../../../assets/images/room/images4.jpeg"),
-      require("../../../../../assets/images/room/images.jpg"),
-      require("../../../../../assets/images/room/images1.avif"),
-    ],
-    amenities: [
-      { name: "Free WiFi", icon: "wifi" },
-      { name: "Air Conditioning", icon: "snow" },
-      { name: "Smart TV", icon: "tv-outline" },
-      { name: "Coffee Maker", icon: "cafe-outline" },
-      { name: "Bathtub", icon: "water-outline" },
-      { name: "Balcony", icon: "business-outline" },
-    ],
-    price: {
-      rate: "298",
-      taxes: "32",
-      total: "330",
-    },
-  };
+  useEffect(() => {
+    async function fetchRoom() {
+      try {
+        const data = await getHotelRoom(id);
+        setRoomData(data);
+      } catch (err) {
+        console.error("Failed to fetch room details:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (id) fetchRoom();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#1e3a8a" />
+      </View>
+    );
+  }
+
+  if (!roomData) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text style={{ fontWeight: "700", color: "#64748b" }}>Room details not found.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -95,7 +100,7 @@ const RoomDetailsScreen = () => {
         {/* Main Image */}
         <View style={styles.imageContainer}>
           <Image
-            source={roomData.images[activeImage]}
+            source={typeof roomData.images[activeImage] === "string" ? { uri: roomData.images[activeImage] } : roomData.images[activeImage]}
             style={styles.mainImage}
           />
           <View style={styles.imageCounter}>
@@ -107,18 +112,21 @@ const RoomDetailsScreen = () => {
 
         {/* Thumbnails */}
         <View style={styles.thumbnailRow}>
-          {roomData.images.map((img, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setActiveImage(index)}
-              style={[
-                styles.thumbnailWrap,
-                activeImage === index && styles.activeThumbnail,
-              ]}
-            >
-              <Image source={img} style={styles.thumbnail} />
-            </TouchableOpacity>
-          ))}
+          {roomData.images.map((img, index) => {
+            const imgSource = typeof img === "string" ? { uri: img } : img;
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setActiveImage(index)}
+                style={[
+                  styles.thumbnailWrap,
+                  activeImage === index && styles.activeThumbnail,
+                ]}
+              >
+                <Image source={imgSource} style={styles.thumbnail} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.content}>

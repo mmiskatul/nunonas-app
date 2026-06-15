@@ -19,11 +19,10 @@ const AMENITIES = [
   },
 ];
 
-const HOTEL_ADDRESS = "123 Park Avenue, Manhattan, Qatar, NY 10022";
-
-const HotelOverviewContent = () => {
+const HotelOverviewContent = ({ hotel }) => {
+  const address = hotel?.address || hotel?.location || "Manhattan, Doha, Qatar";
   const mapUrl = buildStaticMapUrl({
-    center: HOTEL_ADDRESS,
+    center: address,
     markerLabel: "G",
   });
 
@@ -33,11 +32,8 @@ const HotelOverviewContent = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.aboutText}>
-          Experience luxury at The Grand Meridian, where timeless elegance meets
-          modern comfort. Located in the heart of Manhattan, our hotel offers
-          stunning city views and world-class service...
+          {hotel?.about || "Experience luxury at our hotel, where comfort meets elegancy. Located in a prime area, we offer world-class services and custom amenities."}
         </Text>
-        <Text style={styles.readMore}>Read more</Text>
       </View>
 
       {/* Amenities Section */}
@@ -96,7 +92,7 @@ const HotelOverviewContent = () => {
             style={styles.mapImage}
           />
         </View>
-        <Text style={styles.address}>{HOTEL_ADDRESS}</Text>
+        <Text style={styles.address}>{address}</Text>
       </View>
     </View>
   );
