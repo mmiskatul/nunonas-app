@@ -16,9 +16,10 @@ import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import InputField from "../../components/ui/InputField";
 import { resetPassword } from "../../lib/customer-api";
+import { clearPendingResetToken, getPendingResetToken } from "../../lib/pending-reset";
 
 export default function ResetPasswordScreen() {
-  const { email, otp } = useLocalSearchParams();
+  const { email } = useLocalSearchParams();
   const router = useRouter();
 
   const [newPassword, setNewPassword] = useState("");
@@ -56,13 +57,20 @@ export default function ResetPasswordScreen() {
       return;
     }
 
+    const resetToken = getPendingResetToken();
+    if (!resetToken) {
+      Alert.alert("Verification Required", "Verify your reset code again before setting a new password.");
+      router.replace("/auth/forgot-password");
+      return;
+    }
+
     try {
       setLoading(true);
       await resetPassword({
-        email,
-        otp,
+        reset_token: resetToken,
         new_password: newPassword,
       });
+      clearPendingResetToken();
 
       Alert.alert(
         "Password Reset! 🎉",

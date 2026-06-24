@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import theme from "../../constants/theme";
 import Button from "../../components/ui/Button";
 import { forgotPassword, verifyOtp } from "../../lib/customer-api";
+import { setPendingResetToken } from "../../lib/pending-reset";
 
 const OTP_LENGTH = 6;
 
@@ -74,10 +75,15 @@ export default function VerifyResetOtpScreen() {
 
     try {
       setLoading(true);
-      await verifyOtp(email, code);
+      const result = await verifyOtp(email, code);
+      const resetToken = result?.reset_token;
+      if (!resetToken) {
+        throw new Error("Reset token was not returned.");
+      }
+      setPendingResetToken(resetToken);
       router.push({
         pathname: "/auth/reset-password",
-        params: { email, otp: code },
+        params: { email },
       });
     } catch (error) {
       Alert.alert("Invalid Code", error.message || "The code is incorrect or expired.");
@@ -93,6 +99,7 @@ export default function VerifyResetOtpScreen() {
     try {
       setResendLoading(true);
       await forgotPassword(email);
+      setPendingResetToken(null);
       setOtp(Array(OTP_LENGTH).fill(""));
       setCountdown(60);
       setCanResend(false);
