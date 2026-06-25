@@ -21,16 +21,8 @@ import {
   listAiMessages,
   sendAiMessage,
 } from "../../lib/customer-api";
+import { SOCKET_BASE_URL } from "../../lib/api";
 import { restoreSession } from "../../lib/auth-session";
-
-function normalizeSocketBase(baseUrl) {
-  if (!baseUrl) return "";
-  return baseUrl
-    .replace("http://", "ws://")
-    .replace("https://", "wss://")
-    .replace("://localhost", "://10.0.2.2")
-    .replace("://127.0.0.1", "://10.0.2.2");
-}
 
 function mapApiMessage(message) {
   return {
@@ -130,7 +122,7 @@ export default function ChatScreen() {
       try {
         const session = await restoreSession();
         const token = session?.accessToken;
-        const socketBase = normalizeSocketBase(process.env.EXPO_PUBLIC_API_BASE_URL || "");
+        const socketBase = SOCKET_BASE_URL;
         if (!token || !socketBase) return;
 
         const ws = new WebSocket(
