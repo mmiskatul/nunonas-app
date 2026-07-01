@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -23,6 +24,11 @@ export default function MapScreen() {
   const [region, setRegion] = useState(null);
   const [markerCoords, setMarkerCoords] = useState(null);
   const [addressText, setAddressText] = useState("Loading address...");
+  const [animationComplete, setAnimationComplete] = useState(false);
+
+  // Animation values
+  const transitionProgress = useRef(new Animated.Value(0)).current;
+  const cloudOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     async function initMap() {
@@ -61,11 +67,31 @@ export default function MapScreen() {
         setAddressText("Doha Qatar");
       } finally {
         setLoading(false);
+        // Start the transition animations
+        startTransitionAnimation();
       }
     }
 
     initMap();
   }, []);
+
+  const startTransitionAnimation = () => {
+    // 1. Expand card to full screen size (1.2 seconds)
+    Animated.timing(transitionProgress, {
+      toValue: 1,
+      duration: 1200,
+      useNativeDriver: false,
+    }).start(() => {
+      // 2. Dissolve cloud overlay (0.8 seconds)
+      Animated.timing(cloudOpacity, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start(() => {
+        setAnimationComplete(true);
+      });
+    });
+  };
 
   const updateLocation = async (coords) => {
     setMarkerCoords(coords);
@@ -87,6 +113,32 @@ export default function MapScreen() {
     updateLocation(e.nativeEvent.coordinate);
   };
 
+  // Interpolations for the card-to-fullscreen scaling
+  const mapWidth = transitionProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [width - 48, width],
+  });
+
+  const mapHeight = transitionProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [200, height],
+  });
+
+  const mapRadius = transitionProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [24, 0],
+  });
+
+  const mapTop = transitionProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [(height - 200) / 2 - 20, 0],
+  });
+
+  const mapLeft = transitionProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [24, 0],
+  });
+
   return (
     <View style={styles.container}>
       {loading ? (
@@ -96,27 +148,52 @@ export default function MapScreen() {
         </View>
       ) : (
         <>
-          <MapView
-            provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-            style={styles.map}
-            initialRegion={region}
-            onPress={handleMapPress}
-            showsUserLocation={true}
-            showsMyLocationButton={true}
+          {/* Animated Map Container */}
+          <Animated.View
+            style={[
+              styles.animatedMapContainer,
+              {
+                width: mapWidth,
+                height: mapHeight,
+                borderRadius: mapRadius,
+                top: mapTop,
+                left: mapLeft,
+              },
+            ]}
           >
-            {markerCoords && (
-              <Marker
-                coordinate={markerCoords}
-                draggable
-                onDragEnd={handleMarkerDragEnd}
-                title="Selected Location"
-                description={addressText}
-                pinColor="red"
-              />
-            )}
-          </MapView>
+            <MapView
+              provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+              style={StyleSheet.absoluteFillObject}
+              initialRegion={region}
+              onPress={handleMapPress}
+              showsUserLocation={true}
+              showsMyLocationButton={true}
+            >
+              {markerCoords && (
+                <Marker
+                  coordinate={markerCoords}
+                  draggable
+                  onDragEnd={handleMarkerDragEnd}
+                  title="Selected Location"
+                  description={addressText}
+                  pinColor="red"
+                />
+              )}
+            </MapView>
 
-          {/* Top Bar / Back Button */}
+            {/* Cloud Dissolve Overlay (0.8s fade out after expansion) */}
+            {!animationComplete && (
+              <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
+                <View style={styles.cloudContent}>
+                  <Ionicons name="cloud" size={80} color="#3b82f6" style={{ opacity: 0.85 }} />
+                  <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 16 }} />
+                  <Text style={styles.cloudText}>Entering Live Map...</Text>
+                </View>
+              </Animated.View>
+            )}
+          </Animated.View>
+
+          {/* Top Bar / Back Button - Render after transition */}
           <View style={styles.topBar}>
             <TouchableOpacity
               style={styles.backButton}
@@ -143,7 +220,6 @@ export default function MapScreen() {
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => {
-                // Navigate back
                 router.back();
               }}
             >
@@ -172,9 +248,26 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textSecondary,
     fontWeight: "500",
   },
-  map: {
-    width: width,
-    height: height,
+  animatedMapContainer: {
+    position: "absolute",
+    overflow: "hidden",
+  },
+  cloudOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  cloudContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cloudText: {
+    marginTop: 12,
+    fontSize: 15,
+    fontWeight: "600",
+    color: theme.COLORS.textSecondary,
   },
   topBar: {
     position: "absolute",
