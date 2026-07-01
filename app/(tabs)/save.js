@@ -118,10 +118,14 @@ export default function SaveScreen() {
     }
   }, []);
 
+  const normalizedSavedItems = Array.isArray(normalizeSavedItems(savedItems))
+    ? normalizeSavedItems(savedItems)
+    : [];
+
   const filteredItems =
     activeFilter === "All"
-      ? normalizeSavedItems(savedItems)
-      : normalizeSavedItems(savedItems).filter((item) => {
+      ? normalizedSavedItems
+      : normalizedSavedItems.filter((item) => {
           const type = (item.entity_type ?? item.type ?? "").toLowerCase();
           return type.includes(activeFilter.toLowerCase());
         });
@@ -197,7 +201,8 @@ export default function SaveScreen() {
             <ActivityIndicator size="large" color={theme.COLORS.primary} />
           </View>
         )}
-        {filteredItems.map((item, index) => (
+        {Array.isArray(filteredItems) &&
+          filteredItems.map((item, index) => (
           <SavedCard
             key={item.id ?? item._id ?? `${item.entity_type ?? item.type ?? "saved"}-${index}`}
             item={item}
@@ -206,7 +211,7 @@ export default function SaveScreen() {
           />
         ))}
 
-        {filteredItems.length === 0 && (
+        {(!Array.isArray(filteredItems) || filteredItems.length === 0) && (
           <View style={styles.emptyState}>
             <Ionicons
               name="heart-dislike-outline"
