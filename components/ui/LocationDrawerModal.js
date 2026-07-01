@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  PanResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -24,6 +25,24 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
   const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.5310 });
   const [address, setAddress] = useState(currentLocation || "Doha, Qatar");
   const [loading, setLoading] = useState(true);
+
+  // PanResponder to detect swipe gestures on the grabber bar
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy < -40) {
+          // Swipe Up: Open live map
+          onClose();
+          router.push("/map");
+        } else if (gestureState.dy > 40) {
+          // Swipe Down: Close modal
+          onClose();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     if (visible) {
@@ -66,8 +85,8 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
     >
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          {/* Grabber bar / Drag indicator */}
-          <View style={styles.grabberContainer}>
+          {/* Grabber bar / Drag indicator with Gesture Handlers */}
+          <View style={styles.grabberContainer} {...panResponder.panHandlers}>
             <View style={styles.grabber} />
           </View>
 
@@ -176,6 +195,7 @@ const styles = StyleSheet.create({
   grabberContainer: {
     alignItems: "center",
     paddingVertical: 12,
+    width: "100%",
   },
   grabber: {
     width: 48,
@@ -285,6 +305,14 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
+  },
+  markerFixed: {
+    left: "50%",
+    marginLeft: -16,
+    marginTop: -32,
+    position: "absolute",
+    top: "50%",
+    zIndex: 10,
   },
 });
 
