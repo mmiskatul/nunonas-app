@@ -20,59 +20,59 @@ const { width, height } = Dimensions.get("window");
 
 export default function MapScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [region, setRegion] = useState(null);
-  const [markerCoords, setMarkerCoords] = useState(null);
-  const [addressText, setAddressText] = useState("Loading address...");
+  
+  // Set default region & marker coordinates immediately (Doha Qatar) to prevent initial blank load
+  const [region, setRegion] = useState({
+    latitude: 25.2854,
+    longitude: 51.5310,
+    latitudeDelta: 0.015,
+    longitudeDelta: 0.0121,
+  });
+  const [markerCoords, setMarkerCoords] = useState({
+    latitude: 25.2854,
+    longitude: 51.5310,
+  });
+  const [addressText, setAddressText] = useState("Doha Qatar");
   const [animationComplete, setAnimationComplete] = useState(false);
 
   // Animation values
   const transitionProgress = useRef(new Animated.Value(0)).current;
-  const cloudOpacity = useRef(new Animated.Value(0)).current; // Starts invisible during card expansion
+  const cloudOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    async function initMap() {
-      try {
-        let latitude = 25.2854; // Default Doha
-        let longitude = 51.5310;
+    // Start the animations immediately on mount
+    startTransitionAnimation();
 
-        // Try getting current location first
+    // Fetch user location silently in the background
+    async function initLocation() {
+      try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
           const position = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
           });
-          latitude = position.coords.latitude;
-          longitude = position.coords.longitude;
-        }
-
-        const initialRegion = {
-          latitude,
-          longitude,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.0121,
-        };
-        setRegion(initialRegion);
-        setMarkerCoords({ latitude, longitude });
-
-        // Fetch location name
-        const address = await reverseGeocode(latitude, longitude);
-        if (address) {
-          setAddressText(address);
-        } else {
-          setAddressText("Current Location");
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          setMarkerCoords({ latitude: lat, longitude: lng });
+          setRegion({
+            latitude: lat,
+            longitude: lng,
+            latitudeDelta: 0.015,
+            longitudeDelta: 0.0121,
+          });
+          
+          const address = await reverseGeocode(lat, lng);
+          if (address) {
+            setAddressText(address);
+          }
         }
       } catch (error) {
-        console.error("Error initializing map: ", error);
-        setAddressText("Doha Qatar");
-      } finally {
-        setLoading(false);
-        // Start the sequential transition animations
-        startTransitionAnimation();
+        console.error("Error fetching location: ", error);
       }
     }
 
-    initMap();
+    initLocation();
   }, []);
 
   const startTransitionAnimation = () => {
@@ -148,97 +148,88 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.COLORS.primary} />
-          <Text style={styles.loadingText}>Loading Map...</Text>
-        </View>
-      ) : (
-        <>
-          {/* Animated Map Container */}
-          <Animated.View
-            style={[
-              styles.animatedMapContainer,
-              {
-                width: mapWidth,
-                height: mapHeight,
-                borderRadius: mapRadius,
-                top: mapTop,
-                left: mapLeft,
-              },
-            ]}
-          >
-            <MapView
-              provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-              style={StyleSheet.absoluteFillObject}
-              initialRegion={region}
-              onPress={handleMapPress}
-              showsUserLocation={true}
-              showsMyLocationButton={true}
-            >
-              {markerCoords && (
-                <Marker
-                  coordinate={markerCoords}
-                  draggable
-                  onDragEnd={handleMarkerDragEnd}
-                  title="Selected Location"
-                  description={addressText}
-                  pinColor="red"
-                />
-              )}
-            </MapView>
+      {/* Animated Map Container */}
+      <Animated.View
+        style={[
+          styles.animatedMapContainer,
+          {
+            width: mapWidth,
+            height: mapHeight,
+            borderRadius: mapRadius,
+            top: mapTop,
+            left: mapLeft,
+          },
+        ]}
+      >
+        <MapView
+          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+          style={StyleSheet.absoluteFillObject}
+          region={region}
+          onPress={handleMapPress}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+        >
+          {markerCoords && (
+            <Marker
+              coordinate={markerCoords}
+              draggable
+              onDragEnd={handleMarkerDragEnd}
+              title="Selected Location"
+              description={addressText}
+              pinColor="red"
+            />
+          )}
+        </MapView>
 
-            {/* Cloud Sky Overlay (Shown after expansion, then clears out) */}
-            {!animationComplete && (
-              <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
-                <View style={styles.cloudContent}>
-                  {/* Styled clouds visual representation */}
-                  <View style={styles.cloudRow}>
-                    <Ionicons name="cloud" size={100} color="#ffffff" style={styles.cloudIconShadow} />
-                    <Ionicons name="cloud" size={80} color="#f8fafc" style={[styles.cloudIconShadow, { marginLeft: -30, marginTop: 20 }]} />
-                  </View>
-                  <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 24 }} />
-                  <Text style={styles.cloudText}>Clearing sky...</Text>
-                </View>
-              </Animated.View>
-            )}
-          </Animated.View>
-
-          {/* Top Bar / Back Button - Render after transition */}
-          <View style={styles.topBar}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color={theme.COLORS.textPrimary} />
-            </TouchableOpacity>
-            <Text style={styles.topBarTitle}>Live Map</Text>
-            <View style={{ width: 44 }} />
-          </View>
-
-          {/* Bottom Card for Location Confirmation */}
-          <View style={styles.bottomCard}>
-            <View style={styles.locationInfo}>
-              <Ionicons name="location" size={24} color={theme.COLORS.primary} />
-              <View style={styles.textContainer}>
-                <Text style={styles.locationTitle}>Selected Location</Text>
-                <Text style={styles.locationSubtitle} numberOfLines={2}>
-                  {addressText}
-                </Text>
+        {/* Cloud Sky Overlay (Shown after expansion, then clears out) */}
+        {!animationComplete && (
+          <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
+            <View style={styles.cloudContent}>
+              {/* Styled clouds visual representation */}
+              <View style={styles.cloudRow}>
+                <Ionicons name="cloud" size={100} color="#ffffff" style={styles.cloudIconShadow} />
+                <Ionicons name="cloud" size={80} color="#f8fafc" style={[styles.cloudIconShadow, { marginLeft: -30, marginTop: 20 }]} />
               </View>
+              <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 24 }} />
+              <Text style={styles.cloudText}>Clearing sky...</Text>
             </View>
+          </Animated.View>
+        )}
+      </Animated.View>
 
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={() => {
-                router.back();
-              }}
-            >
-              <Text style={styles.confirmButtonText}>Confirm Location</Text>
-            </TouchableOpacity>
+      {/* Top Bar / Back Button */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.COLORS.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>Live Map</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      {/* Bottom Card for Location Confirmation */}
+      <View style={styles.bottomCard}>
+        <View style={styles.locationInfo}>
+          <Ionicons name="location" size={24} color={theme.COLORS.primary} />
+          <View style={styles.textContainer}>
+            <Text style={styles.locationTitle}>Selected Location</Text>
+            <Text style={styles.locationSubtitle} numberOfLines={2}>
+              {addressText}
+            </Text>
           </View>
-        </>
-      )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.confirmButton}
+          onPress={() => {
+            router.back();
+          }}
+        >
+          <Text style={styles.confirmButtonText}>Confirm Location</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
