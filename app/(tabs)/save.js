@@ -72,6 +72,22 @@ const SAVED_ITEMS = [
   },
 ];
 
+function normalizeSavedItems(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.items)) {
+    return payload.items;
+  }
+
+  if (Array.isArray(payload?.saved_items)) {
+    return payload.saved_items;
+  }
+
+  return [];
+}
+
 export default function SaveScreen() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [savedItems, setSavedItems] = useState([]);
@@ -81,10 +97,10 @@ export default function SaveScreen() {
   const fetchSaved = useCallback(async () => {
     try {
       const data = await listSaved();
-      const items = data?.items ?? data ?? [];
-      setSavedItems(items);
+      setSavedItems(normalizeSavedItems(data));
     } catch (err) {
       console.warn("Failed to load saved items:", err.message);
+      setSavedItems([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -104,8 +120,8 @@ export default function SaveScreen() {
 
   const filteredItems =
     activeFilter === "All"
-      ? savedItems
-      : savedItems.filter((item) => {
+      ? normalizeSavedItems(savedItems)
+      : normalizeSavedItems(savedItems).filter((item) => {
           const type = (item.entity_type ?? item.type ?? "").toLowerCase();
           return type.includes(activeFilter.toLowerCase());
         });
@@ -181,9 +197,9 @@ export default function SaveScreen() {
             <ActivityIndicator size="large" color={theme.COLORS.primary} />
           </View>
         )}
-        {filteredItems.map((item) => (
+        {filteredItems.map((item, index) => (
           <SavedCard
-            key={item.id}
+            key={item.id ?? item._id ?? `${item.entity_type ?? item.type ?? "saved"}-${index}`}
             item={item}
             onDetails={() => {}}
             onAction={() => {}}

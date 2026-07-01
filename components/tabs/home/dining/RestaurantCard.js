@@ -5,13 +5,46 @@ import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import Button from "../../../ui/Button";
 
+function getImageSource(restaurant) {
+  if (restaurant?.image?.uri || restaurant?.image?.width) {
+    return restaurant.image;
+  }
+  if (restaurant?.cover_image_url || restaurant?.image_url) {
+    return { uri: restaurant.cover_image_url ?? restaurant.image_url };
+  }
+  return null;
+}
+
+function getDistanceText(restaurant) {
+  const rawDistance = restaurant?.distance ?? restaurant?.distance_km;
+  if (typeof rawDistance === "number") {
+    return `${rawDistance.toFixed(1)} km away`;
+  }
+  if (rawDistance) {
+    return String(rawDistance);
+  }
+  return "";
+}
+
 const RestaurantCard = ({ restaurant }) => {
   const router = useRouter();
+  const title = restaurant?.title ?? restaurant?.name ?? "Restaurant";
+  const reviews = restaurant?.reviews ?? restaurant?.reviews_count ?? 0;
+  const cuisine = restaurant?.cuisine ?? restaurant?.category ?? "Dining";
+  const type = restaurant?.type ?? "";
+  const location =
+    restaurant?.location ?? restaurant?.address ?? restaurant?.city ?? "Location unavailable";
+  const imageSource = getImageSource(restaurant);
+  const distanceText = getDistanceText(restaurant);
 
   return (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
-        <Image source={restaurant.image} style={styles.image} />
+        {imageSource ? (
+          <Image source={imageSource} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]} />
+        )}
         {restaurant.badge && (
           <View
             style={[
@@ -24,22 +57,23 @@ const RestaurantCard = ({ restaurant }) => {
         )}
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.title}>{restaurant.title}</Text>
+        <Text style={styles.title}>{title}</Text>
         <TouchableOpacity
           style={styles.ratingRow}
           onPress={() => {
             router.push({
               pathname: `/home/reviews/${restaurant.id}`,
-              params: { title: `${restaurant.title} Reviews` },
+              params: { title: `${title} Reviews` },
             });
           }}
         >
           <Ionicons name="star" size={16} color="#f59e0b" />
-          <Text style={styles.ratingText}>{restaurant.rating}</Text>
-          <Text style={styles.reviewText}>({restaurant.reviews})</Text>
+          <Text style={styles.ratingText}>{restaurant.rating ?? restaurant.avg_rating ?? "4.5"}</Text>
+          <Text style={styles.reviewText}>({reviews})</Text>
           <Text style={styles.dot}>•</Text>
           <Text style={styles.infoText}>
-            {restaurant.cuisine} • {restaurant.type}
+            {cuisine}
+            {type ? ` • ${type}` : ""}
           </Text>
         </TouchableOpacity>
         <View style={styles.locationRow}>
@@ -49,7 +83,7 @@ const RestaurantCard = ({ restaurant }) => {
             color={theme.COLORS.textSecondary}
           />
           <Text style={styles.locationText}>
-            {restaurant.distance} • {restaurant.location}
+            {[distanceText, location].filter(Boolean).join(" • ")}
           </Text>
         </View>
         <Button
@@ -81,6 +115,9 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  imagePlaceholder: {
+    backgroundColor: theme.COLORS.surface,
   },
   badge: {
     position: "absolute",
@@ -137,6 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     marginLeft: 4,
+    flex: 1,
   },
   bookBtn: {
     height: 52,
