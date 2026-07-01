@@ -28,7 +28,7 @@ export default function MapScreen() {
 
   // Animation values
   const transitionProgress = useRef(new Animated.Value(0)).current;
-  const cloudOpacity = useRef(new Animated.Value(1)).current;
+  const cloudOpacity = useRef(new Animated.Value(0)).current; // Starts invisible during card expansion
 
   useEffect(() => {
     async function initMap() {
@@ -67,7 +67,7 @@ export default function MapScreen() {
         setAddressText("Doha Qatar");
       } finally {
         setLoading(false);
-        // Start the transition animations
+        // Start the sequential transition animations
         startTransitionAnimation();
       }
     }
@@ -76,19 +76,26 @@ export default function MapScreen() {
   }, []);
 
   const startTransitionAnimation = () => {
-    // 1. Expand card to full screen size (1.2 seconds)
+    // 1. Expand map card to full screen size first (1000ms)
     Animated.timing(transitionProgress, {
       toValue: 1,
-      duration: 1200,
+      duration: 1000,
       useNativeDriver: false,
     }).start(() => {
-      // 2. Dissolve cloud overlay (0.8 seconds)
+      // 2. Show white sky clouds overlay (300ms fade-in)
       Animated.timing(cloudOpacity, {
-        toValue: 0,
-        duration: 800,
+        toValue: 1,
+        duration: 300,
         useNativeDriver: true,
       }).start(() => {
-        setAnimationComplete(true);
+        // 3. Clear/part the clouds to reveal map (700ms fade-out)
+        Animated.timing(cloudOpacity, {
+          toValue: 0,
+          duration: 700,
+          useNativeDriver: true,
+        }).start(() => {
+          setAnimationComplete(true);
+        });
       });
     });
   };
@@ -181,13 +188,17 @@ export default function MapScreen() {
               )}
             </MapView>
 
-            {/* Cloud Dissolve Overlay (0.8s fade out after expansion) */}
+            {/* Cloud Sky Overlay (Shown after expansion, then clears out) */}
             {!animationComplete && (
               <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
                 <View style={styles.cloudContent}>
-                  <Ionicons name="cloud" size={80} color="#3b82f6" style={{ opacity: 0.85 }} />
-                  <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 16 }} />
-                  <Text style={styles.cloudText}>Entering Live Map...</Text>
+                  {/* Styled clouds visual representation */}
+                  <View style={styles.cloudRow}>
+                    <Ionicons name="cloud" size={100} color="#ffffff" style={styles.cloudIconShadow} />
+                    <Ionicons name="cloud" size={80} color="#f8fafc" style={[styles.cloudIconShadow, { marginLeft: -30, marginTop: 20 }]} />
+                  </View>
+                  <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 24 }} />
+                  <Text style={styles.cloudText}>Clearing sky...</Text>
                 </View>
               </Animated.View>
             )}
@@ -254,7 +265,7 @@ const styles = StyleSheet.create({
   },
   cloudOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    backgroundColor: "#ffffff", // Pure white sky backdrop
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
@@ -263,11 +274,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  cloudRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cloudIconShadow: {
+    shadowColor: "#cbd5e1",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
   cloudText: {
     marginTop: 12,
-    fontSize: 15,
-    fontWeight: "600",
-    color: theme.COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: "700",
+    color: theme.COLORS.primary,
+    letterSpacing: 0.5,
   },
   topBar: {
     position: "absolute",
