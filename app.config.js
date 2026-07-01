@@ -47,7 +47,7 @@ export default {
         "expo-location",
         {
           locationWhenInUsePermission:
-            "Allow Nuno to use your location during signup to personalize nearby recommendations.",
+            "Allow Activity Planner to use your location during signup to personalize nearby recommendations.",
         },
       ],
     ],
