@@ -21,6 +21,7 @@ export default function MapScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState(null);
+  const [markerCoords, setMarkerCoords] = useState(null);
   const [addressText, setAddressText] = useState("Loading address...");
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function MapScreen() {
           longitudeDelta: 0.0121,
         };
         setRegion(initialRegion);
+        setMarkerCoords({ latitude, longitude });
 
         // Fetch location name
         const address = await reverseGeocode(latitude, longitude);
@@ -65,15 +67,24 @@ export default function MapScreen() {
     initMap();
   }, []);
 
-  const handleRegionChangeComplete = async (newRegion) => {
+  const updateLocation = async (coords) => {
+    setMarkerCoords(coords);
     try {
-      const address = await reverseGeocode(newRegion.latitude, newRegion.longitude);
+      const address = await reverseGeocode(coords.latitude, coords.longitude);
       if (address) {
         setAddressText(address);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error reverse geocoding on update: ", e);
     }
+  };
+
+  const handleMapPress = (e) => {
+    updateLocation(e.nativeEvent.coordinate);
+  };
+
+  const handleMarkerDragEnd = (e) => {
+    updateLocation(e.nativeEvent.coordinate);
   };
 
   return (
@@ -89,18 +100,18 @@ export default function MapScreen() {
             provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
             style={styles.map}
             initialRegion={region}
-            onRegionChangeComplete={handleRegionChangeComplete}
+            onPress={handleMapPress}
             showsUserLocation={true}
             showsMyLocationButton={true}
           >
-            {region && (
+            {markerCoords && (
               <Marker
-                coordinate={{
-                  latitude: region.latitude,
-                  longitude: region.longitude,
-                }}
-                title="Your Location"
+                coordinate={markerCoords}
+                draggable
+                onDragEnd={handleMarkerDragEnd}
+                title="Selected Location"
                 description={addressText}
+                pinColor="red"
               />
             )}
           </MapView>
@@ -132,6 +143,7 @@ export default function MapScreen() {
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => {
+                // Navigate back
                 router.back();
               }}
             >
