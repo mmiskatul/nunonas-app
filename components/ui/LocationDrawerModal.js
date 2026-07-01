@@ -57,6 +57,24 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
     }
   }, [visible]);
 
+  const handleRegionChangeComplete = async (newRegion) => {
+    try {
+      setGpsCoords({
+        latitude: newRegion.latitude,
+        longitude: newRegion.longitude,
+      });
+      const addr = await reverseGeocode(newRegion.latitude, newRegion.longitude);
+      if (addr) {
+        setAddress(addr);
+        if (onSelectLocation) {
+          onSelectLocation(addr);
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -99,10 +117,11 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                           latitudeDelta: 0.015,
                           longitudeDelta: 0.0121,
                         }}
-                        scrollEnabled={false}
-                        zoomEnabled={false}
-                        pitchEnabled={false}
-                        rotateEnabled={false}
+                        scrollEnabled={true}
+                        zoomEnabled={true}
+                        pitchEnabled={true}
+                        rotateEnabled={true}
+                        onRegionChangeComplete={handleRegionChangeComplete}
                       >
                         <Marker
                           coordinate={{
