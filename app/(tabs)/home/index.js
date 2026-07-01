@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import theme from "../../../constants/theme";
 
 // Import Home Components
@@ -16,16 +17,52 @@ import PlanForMeBanner from "../../../components/tabs/home/PlanForMeBanner";
 import QuickAccess from "../../../components/tabs/home/QuickAccess";
 import TrendingNow from "../../../components/tabs/home/TrendingNow";
 import FeaturedExperiences from "../../../components/tabs/home/FeaturedExperiences";
+import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
+import { reverseGeocode } from "../../../lib/google-maps";
 
 export default function HomeScreen() {
+  const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
+  const [locationText, setLocationText] = useState("Doha Qatar");
+
+  useEffect(() => {
+    async function getUserLocation() {
+      try {
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
+        if (!servicesEnabled) return;
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const address = await reverseGeocode(
+          position.coords.latitude,
+          position.coords.longitude
+        );
+        if (address) {
+          setLocationText(address);
+        }
+      } catch (error) {
+        console.warn("Could not retrieve current location: ", error);
+      }
+    }
+
+    getUserLocation();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.locationContainer}>
-          <TouchableOpacity style={styles.locationSelector}>
+          <TouchableOpacity 
+            style={styles.locationSelector}
+            onPress={() => setIsLocationModalVisible(true)}
+          >
             <Ionicons name="location" size={20} color={theme.COLORS.primary} />
-            <Text style={styles.locationText}>Doha Qatar</Text>
+            <Text style={styles.locationText} numberOfLines={1}>{locationText}</Text>
             <Ionicons
               name="chevron-down"
               size={16}
@@ -46,7 +83,7 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Welcome Text */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Good Morning, Nuno!</Text>
+          <Text style={styles.welcomeTitle}>Good Morning, Planner!</Text>
           <Text style={styles.welcomeSubtitle}>
             What would you like to discover today?
           </Text>
@@ -58,6 +95,14 @@ export default function HomeScreen() {
         <TrendingNow />
         <FeaturedExperiences />
       </ScrollView>
+
+      {/* Location Selection Modal Component */}
+      <LocationDrawerModal
+        visible={isLocationModalVisible}
+        onClose={() => setIsLocationModalVisible(false)}
+        onSelectLocation={setLocationText}
+        currentLocation={locationText}
+      />
     </SafeAreaView>
   );
 }
