@@ -64,98 +64,94 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              {/* Grabber bar / Drag indicator */}
-              <View style={styles.grabberContainer}>
-                <View style={styles.grabber} />
+      <View style={styles.overlay}>
+        <View style={styles.modalContainer}>
+          {/* Grabber bar / Drag indicator */}
+          <View style={styles.grabberContainer}>
+            <View style={styles.grabber} />
+          </View>
+
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Ionicons name="close" size={24} color={theme.COLORS.textPrimary} />
+          </TouchableOpacity>
+
+          <View style={styles.content}>
+            <Text style={styles.title}>Location Details</Text>
+
+            {/* Custom React Native Card Component */}
+            <View style={styles.card}>
+              {/* Map Preview section */}
+              <View style={styles.mapPreviewContainer}>
+                {loading ? (
+                  <View style={styles.mapPlaceholder}>
+                    <ActivityIndicator size="small" color={theme.COLORS.primary} />
+                  </View>
+                ) : (
+                  <MapView
+                    provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+                    style={styles.staticMap}
+                    initialRegion={{
+                      latitude: gpsCoords.latitude,
+                      longitude: gpsCoords.longitude,
+                      latitudeDelta: 0.015,
+                      longitudeDelta: 0.0121,
+                    }}
+                    scrollEnabled={true}
+                    zoomEnabled={true}
+                    pitchEnabled={true}
+                    rotateEnabled={true}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: gpsCoords.latitude,
+                        longitude: gpsCoords.longitude,
+                      }}
+                      pinColor="red"
+                    />
+                  </MapView>
+                )}
+
+                {/* Open Live Map Button (Overlaid on Map Preview) */}
+                <TouchableOpacity
+                  style={styles.openMapBtn}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    onClose();
+                    router.push("/map");
+                  }}
+                >
+                  <Ionicons name="map" size={18} color={theme.COLORS.white} />
+                  <Text style={styles.openMapBtnText}>Open Live Map</Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Close Button */}
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                <Ionicons name="close" size={24} color={theme.COLORS.textPrimary} />
-              </TouchableOpacity>
-
-              <View style={styles.content}>
-                <Text style={styles.title}>Location Details</Text>
-
-                {/* Custom React Native Card Component */}
-                <View style={styles.card}>
-                  {/* Map Preview section */}
-                  <View style={styles.mapPreviewContainer}>
-                    {loading ? (
-                      <View style={styles.mapPlaceholder}>
-                        <ActivityIndicator size="small" color={theme.COLORS.primary} />
-                      </View>
-                    ) : (
-                      <MapView
-                        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                        style={styles.staticMap}
-                        initialRegion={{
-                          latitude: gpsCoords.latitude,
-                          longitude: gpsCoords.longitude,
-                          latitudeDelta: 0.015,
-                          longitudeDelta: 0.0121,
-                        }}
-                        scrollEnabled={true}
-                        zoomEnabled={true}
-                        pitchEnabled={true}
-                        rotateEnabled={true}
-                      >
-                        <Marker
-                          coordinate={{
-                            latitude: gpsCoords.latitude,
-                            longitude: gpsCoords.longitude,
-                          }}
-                          pinColor="red"
-                        />
-                      </MapView>
-                    )}
-
-                    {/* Open Live Map Button (Overlaid on Map Preview) */}
-                    <TouchableOpacity
-                      style={styles.openMapBtn}
-                      activeOpacity={0.9}
-                      onPress={() => {
-                        onClose();
-                        router.push("/map");
-                      }}
-                    >
-                      <Ionicons name="map" size={18} color={theme.COLORS.white} />
-                      <Text style={styles.openMapBtnText}>Open Live Map</Text>
-                    </TouchableOpacity>
+              {/* Card Details Footer */}
+              <View style={styles.cardFooter}>
+                <View style={styles.locationInfo}>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={18} color={theme.COLORS.primary} />
+                    <Text style={styles.locationLabel}>Active Location</Text>
                   </View>
-
-                  {/* Card Details Footer */}
-                  <View style={styles.cardFooter}>
-                    <View style={styles.locationInfo}>
-                      <View style={styles.locationRow}>
-                        <Ionicons name="location" size={18} color={theme.COLORS.primary} />
-                        <Text style={styles.locationLabel}>Active Location</Text>
-                      </View>
-                      <Text style={styles.locationText} numberOfLines={1}>
-                        {address}
-                      </Text>
-                    </View>
-                    
-                    <TouchableOpacity 
-                      style={styles.refreshBtn}
-                      onPress={() => {
-                        onClose();
-                        router.push("/map");
-                      }}
-                    >
-                      <Ionicons name="navigate-outline" size={18} color={theme.COLORS.primary} />
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={styles.locationText} numberOfLines={1}>
+                    {address}
+                  </Text>
                 </View>
+                
+                <TouchableOpacity 
+                  style={styles.refreshBtn}
+                  onPress={() => {
+                    onClose();
+                    router.push("/map");
+                  }}
+                >
+                  <Ionicons name="navigate-outline" size={18} color={theme.COLORS.primary} />
+                </TouchableOpacity>
               </View>
             </View>
-          </TouchableWithoutFeedback>
+          </View>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };
