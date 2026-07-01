@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import * as Location from "expo-location";
 import theme from "../../constants/theme";
+import { reverseGeocode } from "../../lib/google-maps";
 
 // Import Components
 import CategoryCard from "../../components/tabs/search/CategoryCard";
@@ -57,8 +60,38 @@ const INITIAL_RECENT_SEARCHES = [
 ];
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState(INITIAL_RECENT_SEARCHES);
+  const [currentLocation, setCurrentLocation] = useState("Downtown, San Francisco");
+
+  useEffect(() => {
+    async function getUserLocation() {
+      try {
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
+        if (!servicesEnabled) return;
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const address = await reverseGeocode(
+          position.coords.latitude,
+          position.coords.longitude
+        );
+        if (address) {
+          setCurrentLocation(address);
+        }
+      } catch (error) {
+        console.warn("Could not retrieve current location in search: ", error);
+      }
+    }
+
+    getUserLocation();
+  }, []);
 
   const handleRemoveSearch = (index) => {
     const newSearches = [...recentSearches];
@@ -95,7 +128,11 @@ export default function SearchScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Current Location Card */}
-        <TouchableOpacity style={styles.locationCard} activeOpacity={0.9}>
+        <TouchableOpacity 
+          style={styles.locationCard} 
+          activeOpacity={0.8}
+          onPress={() => router.push("/map")}
+        >
           <View style={styles.locationInfo}>
             <View style={styles.locationRow}>
               <Ionicons
@@ -105,7 +142,7 @@ export default function SearchScreen() {
               />
               <Text style={styles.locationLabel}>Current Location</Text>
             </View>
-            <Text style={styles.locationText}>Downtown, San Francisco</Text>
+            <Text style={styles.locationText} numberOfLines={1}>{currentLocation}</Text>
           </View>
           <View style={styles.arrowContainer}>
             <Ionicons
