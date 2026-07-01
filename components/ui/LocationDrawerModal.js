@@ -109,7 +109,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                             latitude: gpsCoords.latitude,
                             longitude: gpsCoords.longitude,
                           }}
-                          pinColor={theme.COLORS.primary}
+                          pinColor="red"
                         />
                       </MapView>
                     )}
