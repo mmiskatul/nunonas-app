@@ -57,24 +57,6 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
     }
   }, [visible]);
 
-  const handleRegionChangeComplete = async (newRegion) => {
-    try {
-      setGpsCoords({
-        latitude: newRegion.latitude,
-        longitude: newRegion.longitude,
-      });
-      const addr = await reverseGeocode(newRegion.latitude, newRegion.longitude);
-      if (addr) {
-        setAddress(addr);
-        if (onSelectLocation) {
-          onSelectLocation(addr);
-        }
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-  };
-
   return (
     <Modal
       visible={visible}
@@ -111,7 +93,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                       <MapView
                         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
                         style={styles.staticMap}
-                        region={{
+                        initialRegion={{
                           latitude: gpsCoords.latitude,
                           longitude: gpsCoords.longitude,
                           latitudeDelta: 0.015,
@@ -121,15 +103,15 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                         zoomEnabled={true}
                         pitchEnabled={true}
                         rotateEnabled={true}
-                        onRegionChangeComplete={handleRegionChangeComplete}
-                      />
-                    )}
-
-                    {/* Fixed Pin in Center of Map */}
-                    {!loading && (
-                      <View style={styles.markerFixed} pointerEvents="none">
-                        <Ionicons name="location" size={32} color={theme.COLORS.primary} />
-                      </View>
+                      >
+                        <Marker
+                          coordinate={{
+                            latitude: gpsCoords.latitude,
+                            longitude: gpsCoords.longitude,
+                          }}
+                          pinColor={theme.COLORS.primary}
+                        />
+                      </MapView>
                     )}
 
                     {/* Open Live Map Button (Overlaid on Map Preview) */}
@@ -307,14 +289,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
-  },
-  markerFixed: {
-    left: "50%",
-    marginLeft: -16,
-    marginTop: -32,
-    position: "absolute",
-    top: "50%",
-    zIndex: 10,
   },
 });
 
