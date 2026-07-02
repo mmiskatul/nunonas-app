@@ -42,7 +42,7 @@ export default function VerifyEmailScreen() {
       const data = await verifyEmailUser({ email, otp: code.trim() });
       await setSession({
         accessToken: data.access_token,
-        refreshToken: data.refresh_token,
+        refreshToken: data.refresh_token ?? data.session_token,
       });
       clearPendingSignup();
       router.replace("/(tabs)");

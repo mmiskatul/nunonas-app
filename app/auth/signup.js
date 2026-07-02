@@ -93,7 +93,7 @@ export default function SignupScreen() {
         }
         await setSession({
           accessToken: data.access_token,
-          refreshToken: data.refresh_token,
+          refreshToken: data.refresh_token ?? data.session_token,
         });
         router.replace("/(tabs)");
       } catch (error) {
