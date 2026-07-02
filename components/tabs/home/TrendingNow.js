@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
-import { listRestaurants } from "../../../lib/customer-api";
+import { getHomeFeed, listRestaurants } from "../../../lib/customer-api";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -76,9 +76,21 @@ const TrendingNow = () => {
   const fetchTrending = useCallback(async () => {
     try {
       const data = await listRestaurants({ limit: 6, top_rated: true });
-      setItems(normalizeTrendingItems(data));
+      const nextItems = normalizeTrendingItems(data);
+      if (nextItems.length) {
+        setItems(nextItems);
+        return;
+      }
+
+      const homeFeed = await getHomeFeed();
+      setItems(normalizeTrendingItems(homeFeed?.trending_now));
     } catch {
-      setItems([]);
+      try {
+        const homeFeed = await getHomeFeed();
+        setItems(normalizeTrendingItems(homeFeed?.trending_now));
+      } catch {
+        setItems([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -96,8 +108,6 @@ const TrendingNow = () => {
     );
   }
 
-  if (!items.length) return null;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -107,79 +117,89 @@ const TrendingNow = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {items.map((item, index) => {
-          const itemId = item.id ?? item._id ?? `trending-${index}`;
-          const title = item.name ?? item.title ?? "Trending Place";
+      {items.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {items.map((item, index) => {
+            const itemId = item.id ?? item._id ?? `trending-${index}`;
+            const title = item.name ?? item.title ?? "Trending Place";
 
-          return (
-            <TouchableOpacity
-              key={itemId}
-              style={styles.card}
-              onPress={() => router.push(`/home/dining/${itemId}`)}
-              activeOpacity={0.9}
-            >
-              {item.cover_image_url || item.image_url ? (
-                <Image
-                  source={{ uri: item.cover_image_url ?? item.image_url }}
-                  style={styles.image}
-                />
-              ) : (
-                <View style={[styles.image, styles.imagePlaceholder]}>
-                  <Ionicons name="restaurant" size={42} color={theme.COLORS.border} />
-                </View>
-              )}
-
-              <View style={styles.cardContent}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.title} numberOfLines={1}>
-                    {title}
-                  </Text>
-
-                  {item.avg_rating != null && (
-                    <TouchableOpacity
-                      style={styles.ratingBox}
-                      onPress={() =>
-                        router.push({
-                          pathname: `/home/reviews/${itemId}`,
-                          params: { title: `${title} Reviews` },
-                        })
-                      }
-                    >
-                      <Ionicons name="star" size={18} color="#f59e0b" />
-                      <Text style={styles.ratingText}>
-                        {Number(item.avg_rating).toFixed(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <View style={styles.locationRow}>
-                  <Ionicons name="location" size={18} color="#9ca3af" />
-                  <Text style={styles.distance}>{getDistanceLabel(item)}</Text>
-                </View>
-
-                {!!getLocationLabel(item) && (
-                  <Text style={styles.locationText} numberOfLines={1}>
-                    {getLocationLabel(item)}
-                  </Text>
+            return (
+              <TouchableOpacity
+                key={itemId}
+                style={styles.card}
+                onPress={() => router.push(`/home/dining/${itemId}`)}
+                activeOpacity={0.9}
+              >
+                {item.cover_image_url || item.image_url ? (
+                  <Image
+                    source={{ uri: item.cover_image_url ?? item.image_url }}
+                    style={styles.image}
+                  />
+                ) : (
+                  <View style={[styles.image, styles.imagePlaceholder]}>
+                    <Ionicons name="restaurant" size={42} color={theme.COLORS.border} />
+                  </View>
                 )}
 
-                <Button
-                  title="Book Now"
-                  onPress={() => router.push(`/home/dining/${itemId}`)}
-                  style={styles.bookBtn}
-                  textStyle={styles.bookBtnText}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                <View style={styles.cardContent}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title} numberOfLines={1}>
+                      {title}
+                    </Text>
+
+                    {item.avg_rating != null && (
+                      <TouchableOpacity
+                        style={styles.ratingBox}
+                        onPress={() =>
+                          router.push({
+                            pathname: `/home/reviews/${itemId}`,
+                            params: { title: `${title} Reviews` },
+                          })
+                        }
+                      >
+                        <Ionicons name="star" size={18} color="#f59e0b" />
+                        <Text style={styles.ratingText}>
+                          {Number(item.avg_rating).toFixed(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={18} color="#9ca3af" />
+                    <Text style={styles.distance}>{getDistanceLabel(item)}</Text>
+                  </View>
+
+                  {!!getLocationLabel(item) && (
+                    <Text style={styles.locationText} numberOfLines={1}>
+                      {getLocationLabel(item)}
+                    </Text>
+                  )}
+
+                  <Button
+                    title="Book Now"
+                    onPress={() => router.push(`/home/dining/${itemId}`)}
+                    style={styles.bookBtn}
+                    textStyle={styles.bookBtnText}
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <View style={styles.emptyState}>
+          <Ionicons name="restaurant-outline" size={28} color={theme.COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>Trending places are loading soon</Text>
+          <Text style={styles.emptyText}>
+            Check the full dining list while we prepare recommendations.
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -214,6 +234,30 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingLeft: 20,
     paddingRight: 20,
+  },
+  emptyState: {
+    marginHorizontal: 20,
+    minHeight: 120,
+    borderRadius: 24,
+    backgroundColor: theme.COLORS.surface,
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+    textAlign: "center",
+  },
+  emptyText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: theme.COLORS.textSecondary,
+    textAlign: "center",
   },
   card: {
     width: 320,
