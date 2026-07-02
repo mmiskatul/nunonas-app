@@ -13,6 +13,7 @@ import * as Location from "expo-location";
 import theme from "../../../constants/theme";
 
 // Import Home Components
+import ExploreNearbyBanner from "../../../components/tabs/home/ExploreNearbyBanner";
 import PlanForMeBanner from "../../../components/tabs/home/PlanForMeBanner";
 import QuickAccess from "../../../components/tabs/home/QuickAccess";
 import TrendingNow from "../../../components/tabs/home/TrendingNow";
@@ -76,20 +77,20 @@ export default function HomeScreen() {
             size={24}
             color={theme.COLORS.textPrimary}
           />
-          <View style={styles.notificationDot} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Welcome Text */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Good Morning, Planner!</Text>
+          <Text style={styles.welcomeTitle}>Good Morning, Nuno!</Text>
           <Text style={styles.welcomeSubtitle}>
             What would you like to discover today?
           </Text>
         </View>
 
         {/* Components */}
+        <ExploreNearbyBanner />
         <PlanForMeBanner />
         <QuickAccess />
         <TrendingNow />

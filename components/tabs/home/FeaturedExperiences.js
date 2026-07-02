@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 
@@ -12,6 +13,7 @@ const FEATURED_DATA = [
     rating: "4.6",
     image: require("../../../assets/images/book-easily.png"),
     btnText: "Book Stay",
+    route: "/home/hotels",
   },
   {
     id: 2,
@@ -20,17 +22,25 @@ const FEATURED_DATA = [
     rating: "4.9",
     image: require("../../../assets/images/discover-experience.png"),
     btnText: "Get Tickets",
+    route: "/home/events",
   },
 ];
 
 const FeaturedExperiences = () => {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Featured Experiences</Text>
 
       <View style={styles.list}>
         {FEATURED_DATA.map((item) => (
-          <View key={item.id} style={styles.card}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => item.route && router.push(item.route)}
+          >
             <Image source={item.image} style={styles.image} />
             <View style={styles.cardContent}>
               <Text style={styles.title}>{item.title}</Text>
@@ -52,12 +62,12 @@ const FeaturedExperiences = () => {
               </View>
               <Button
                 title={item.btnText}
-                onPress={() => {}}
+                onPress={() => item.route && router.push(item.route)}
                 style={styles.actionBtn}
                 textStyle={styles.actionBtnText}
               />
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </View>

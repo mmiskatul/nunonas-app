@@ -18,6 +18,84 @@ import { reverseGeocode } from "../lib/google-maps";
 
 const { width, height } = Dimensions.get("window");
 
+const CLOUDS_CONFIG = [
+  // Top-Left Sector (Moves Up and Left)
+  { id: 1, size: 220, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "5%", left: "-10%" },
+  { id: 2, size: 250, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "10%", left: "10%" },
+  { id: 3, size: 200, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "25%", left: "-5%" },
+  { id: 4, size: 240, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "20%", left: "15%" },
+  { id: 5, size: 210, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "35%", left: "0%" },
+
+  // Top-Right Sector (Moves Up and Right)
+  { id: 6, size: 260, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "5%", left: "50%" },
+  { id: 7, size: 230, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "12%", left: "70%" },
+  { id: 8, size: 200, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "28%", left: "60%" },
+  { id: 9, size: 250, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "20%", left: "80%" },
+  { id: 10, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "32%", left: "75%" },
+
+  // Bottom-Left Sector (Moves Down and Left)
+  { id: 11, size: 240, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "55%", left: "-10%" },
+  { id: 12, size: 210, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "60%", left: "10%" },
+  { id: 13, size: 250, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "75%", left: "-5%" },
+  { id: 14, size: 200, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "70%", left: "15%" },
+  { id: 15, size: 230, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "85%", left: "0%" },
+
+  // Bottom-Right Sector (Moves Down and Right)
+  { id: 16, size: 250, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "55%", left: "50%" },
+  { id: 17, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "62%", left: "70%" },
+  { id: 18, size: 260, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "78%", left: "60%" },
+  { id: 19, size: 210, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "70%", left: "80%" },
+  { id: 20, size: 240, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "85%", left: "75%" },
+
+  // Middle-Left Sector (Moves Left)
+  { id: 21, size: 260, xStart: 0, yStart: 0, xEnd: -width, yEnd: 0, top: "40%", left: "-15%" },
+  { id: 22, size: 230, xStart: 0, yStart: 0, xEnd: -width, yEnd: 0, top: "45%", left: "10%" },
+  { id: 23, size: 250, xStart: 0, yStart: 0, xEnd: -width, yEnd: 0, top: "30%", left: "5%" },
+  { id: 24, size: 220, xStart: 0, yStart: 0, xEnd: -width, yEnd: 0, top: "50%", left: "8%" },
+
+  // Middle-Right Sector (Moves Right)
+  { id: 25, size: 250, xStart: 0, yStart: 0, xEnd: width, yEnd: 0, top: "40%", left: "75%" },
+  { id: 26, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: 0, top: "45%", left: "60%" },
+  { id: 27, size: 260, xStart: 0, yStart: 0, xEnd: width, yEnd: 0, top: "65%", left: "65%" },
+  { id: 28, size: 230, xStart: 0, yStart: 0, xEnd: width, yEnd: 0, top: "50%", left: "62%" },
+
+  // Middle-Center Area (Moves Outwards to all sides - heavily covering the center)
+  { id: 29, size: 270, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height/2, top: "35%", left: "25%" },
+  { id: 30, size: 280, xStart: 0, yStart: 0, xEnd: width, yEnd: -height/2, top: "30%", left: "45%" },
+  { id: 31, size: 260, xStart: 0, yStart: 0, xEnd: -width, yEnd: height/2, top: "45%", left: "20%" },
+  { id: 32, size: 290, xStart: 0, yStart: 0, xEnd: width, yEnd: height/2, top: "40%", left: "40%" },
+  { id: 33, size: 280, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height/4, top: "25%", left: "30%" },
+  { id: 34, size: 270, xStart: 0, yStart: 0, xEnd: width, yEnd: -height/4, top: "28%", left: "48%" },
+  { id: 35, size: 290, xStart: 0, yStart: 0, xEnd: -width, yEnd: height/4, top: "48%", left: "32%" },
+  { id: 36, size: 280, xStart: 0, yStart: 0, xEnd: width, yEnd: height/4, top: "50%", left: "45%" },
+
+  // Additional Filler clouds to guarantee 100% density across the screen edges
+  { id: 37, size: 200, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "0%", left: "20%" },
+  { id: 38, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "0%", left: "40%" },
+  { id: 39, size: 210, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "90%", left: "20%" },
+  { id: 40, size: 230, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "90%", left: "50%" },
+  { id: 41, size: 250, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height/3, top: "15%", left: "-15%" },
+  { id: 42, size: 240, xStart: 0, yStart: 0, xEnd: width, yEnd: -height/3, top: "15%", left: "85%" },
+  { id: 43, size: 230, xStart: 0, yStart: 0, xEnd: -width, yEnd: height/3, top: "80%", left: "-15%" },
+  { id: 44, size: 260, xStart: 0, yStart: 0, xEnd: width, yEnd: height/3, top: "80%", left: "85%" },
+  { id: 45, size: 210, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height/2, top: "8%", left: "28%" },
+  { id: 46, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: -height/2, top: "8%", left: "55%" },
+  { id: 47, size: 230, xStart: 0, yStart: 0, xEnd: -width, yEnd: height/2, top: "88%", left: "30%" },
+  { id: 48, size: 240, xStart: 0, yStart: 0, xEnd: width, yEnd: height/2, top: "88%", left: "58%" },
+  { id: 49, size: 250, xStart: 0, yStart: 0, xEnd: -width, yEnd: 0, top: "45%", left: "-8%" },
+  { id: 50, size: 240, xStart: 0, yStart: 0, xEnd: width, yEnd: 0, top: "45%", left: "78%" },
+  { id: 51, size: 220, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height, top: "2%", left: "5%" },
+  { id: 52, size: 230, xStart: 0, yStart: 0, xEnd: width, yEnd: -height, top: "2%", left: "75%" },
+  { id: 53, size: 210, xStart: 0, yStart: 0, xEnd: -width, yEnd: height, top: "95%", left: "5%" },
+  { id: 54, size: 220, xStart: 0, yStart: 0, xEnd: width, yEnd: height, top: "95%", left: "75%" },
+  { id: 55, size: 260, xStart: 0, yStart: 0, xEnd: -width, yEnd: -height/4, top: "12%", left: "-5%" },
+  { id: 56, size: 250, xStart: 0, yStart: 0, xEnd: width, yEnd: -height/4, top: "12%", left: "80%" },
+  { id: 57, size: 270, xStart: 0, yStart: 0, xEnd: -width, yEnd: height/4, top: "82%", left: "-5%" },
+  { id: 58, size: 260, xStart: 0, yStart: 0, xEnd: width, yEnd: height/4, top: "82%", left: "80%" },
+  { id: 59, size: 280, xStart: 0, yStart: 0, xEnd: -width/2, yEnd: -height, top: "10%", left: "38%" },
+  { id: 60, size: 290, xStart: 0, yStart: 0, xEnd: width/2, yEnd: height, top: "85%", left: "42%" },
+];
+
 export default function MapScreen() {
   const router = useRouter();
   
@@ -38,6 +116,7 @@ export default function MapScreen() {
   // Animation values
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
+  const cloudAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Start the animations immediately on mount
@@ -76,28 +155,26 @@ export default function MapScreen() {
   }, []);
 
   const startTransitionAnimation = () => {
-    // 1. Expand map card to full screen size first (1000ms)
-    Animated.timing(transitionProgress, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start(() => {
-      // 2. Show white sky clouds overlay (300ms fade-in)
-      Animated.timing(cloudOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        // 3. Clear/part the clouds to reveal map (700ms fade-out)
+    cloudOpacity.setValue(1);
+    cloudAnim.setValue(1);
+
+    // Animate clouds parting from middle to all sides slowly (2500ms)
+    setTimeout(() => {
+      Animated.parallel([
         Animated.timing(cloudOpacity, {
           toValue: 0,
-          duration: 700,
+          duration: 2500,
           useNativeDriver: true,
-        }).start(() => {
-          setAnimationComplete(true);
-        });
+        }),
+        Animated.timing(cloudAnim, {
+          toValue: 2,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setAnimationComplete(true);
       });
-    });
+    }, 400);
   };
 
   const updateLocation = async (coords) => {
@@ -120,47 +197,10 @@ export default function MapScreen() {
     updateLocation(e.nativeEvent.coordinate);
   };
 
-  // Interpolations for the card-to-fullscreen scaling
-  const mapWidth = transitionProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [width - 48, width],
-  });
-
-  const mapHeight = transitionProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [200, height],
-  });
-
-  const mapRadius = transitionProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [24, 0],
-  });
-
-  const mapTop = transitionProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [(height - 200) / 2 - 20, 0],
-  });
-
-  const mapLeft = transitionProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [24, 0],
-  });
-
   return (
     <View style={styles.container}>
-      {/* Animated Map Container */}
-      <Animated.View
-        style={[
-          styles.animatedMapContainer,
-          {
-            width: mapWidth,
-            height: mapHeight,
-            borderRadius: mapRadius,
-            top: mapTop,
-            left: mapLeft,
-          },
-        ]}
-      >
+      {/* Live Map View Rendered Full Screen Immediately */}
+      <View style={StyleSheet.absoluteFillObject}>
         <MapView
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
           style={StyleSheet.absoluteFillObject}
@@ -184,18 +224,38 @@ export default function MapScreen() {
         {/* Cloud Sky Overlay (Shown after expansion, then clears out) */}
         {!animationComplete && (
           <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
-            <View style={styles.cloudContent}>
-              {/* Styled clouds visual representation */}
-              <View style={styles.cloudRow}>
-                <Ionicons name="cloud" size={100} color="#ffffff" style={styles.cloudIconShadow} />
-                <Ionicons name="cloud" size={80} color="#f8fafc" style={[styles.cloudIconShadow, { marginLeft: -30, marginTop: 20 }]} />
-              </View>
-              <ActivityIndicator size="small" color={theme.COLORS.primary} style={{ marginTop: 24 }} />
-              <Text style={styles.cloudText}>Clearing sky...</Text>
-            </View>
+            {/* Render 40 animated clouds coming from different sides */}
+            {CLOUDS_CONFIG.map((cloud) => {
+              const translateX = cloudAnim.interpolate({
+                inputRange: [0, 1, 2],
+                outputRange: [cloud.xStart, 0, cloud.xEnd],
+              });
+              const translateY = cloudAnim.interpolate({
+                inputRange: [0, 1, 2],
+                outputRange: [cloud.yStart, 0, cloud.yEnd],
+              });
+
+              return (
+                <Animated.View
+                  key={cloud.id}
+                  style={[
+                    styles.cloudWrapper,
+                    {
+                      top: cloud.top,
+                      left: cloud.left,
+                      transform: [{ translateX }, { translateY }],
+                    },
+                  ]}
+                >
+                  <Ionicons name="cloud" size={cloud.size} color="#ffffff" style={styles.cloudIconShadow} />
+                </Animated.View>
+              );
+            })}
+
+            <ActivityIndicator size="large" color="#ffffff" style={styles.spinnerOverCloud} />
           </Animated.View>
         )}
-      </Animated.View>
+      </View>
 
       {/* Top Bar / Back Button */}
       <View style={styles.topBar}>
@@ -256,31 +316,26 @@ const styles = StyleSheet.create({
   },
   cloudOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#ffffff", // Pure white sky backdrop
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "transparent", // Transparent background
     zIndex: 999,
   },
-  cloudContent: {
-    alignItems: "center",
-    justifyContent: "center",
+  cloudWrapper: {
+    position: "absolute",
+    opacity: 0.7, // Semi-transparent clouds
   },
-  cloudRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  spinnerOverCloud: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    marginLeft: -18,
+    marginTop: -18,
+    zIndex: 100,
   },
   cloudIconShadow: {
-    shadowColor: "#cbd5e1",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  cloudText: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: "700",
-    color: theme.COLORS.primary,
-    letterSpacing: 0.5,
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
   },
   topBar: {
     position: "absolute",
