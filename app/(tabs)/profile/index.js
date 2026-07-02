@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
-import { clearSession } from "../../../lib/auth-session";
+import { logoutSession } from "../../../lib/auth-session";
 import { getMe } from "../../../lib/customer-api";
 
 // Import Components
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
   );
 
   const handleLogout = async () => {
-    await clearSession();
+    await logoutSession();
     router.replace("/auth/login");
   };
 
