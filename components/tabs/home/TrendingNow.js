@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
-import { getHomeFeed, listRestaurants } from "../../../lib/customer-api";
+import { getHomeFeed } from "../../../lib/customer-api";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -68,6 +68,19 @@ function getDistanceLabel(item) {
   return normalized;
 }
 
+function getDetailRoute(item) {
+  if (item?.detail_route) {
+    return item.detail_route;
+  }
+
+  const itemId = item?.id ?? item?._id;
+  const type = String(item?.entity_type ?? item?.category ?? "").toLowerCase();
+  if (type === "hotel") return `/home/hotels/${itemId}`;
+  if (type === "spa") return `/home/spa/${itemId}`;
+  if (type === "event") return `/home/events/${itemId}`;
+  return `/home/dining/${itemId}`;
+}
+
 const TrendingNow = () => {
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -75,22 +88,10 @@ const TrendingNow = () => {
 
   const fetchTrending = useCallback(async () => {
     try {
-      const data = await listRestaurants({ limit: 6, top_rated: true });
-      const nextItems = normalizeTrendingItems(data);
-      if (nextItems.length) {
-        setItems(nextItems);
-        return;
-      }
-
       const homeFeed = await getHomeFeed();
       setItems(normalizeTrendingItems(homeFeed?.trending_now));
     } catch {
-      try {
-        const homeFeed = await getHomeFeed();
-        setItems(normalizeTrendingItems(homeFeed?.trending_now));
-      } catch {
-        setItems([]);
-      }
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -126,12 +127,13 @@ const TrendingNow = () => {
           {items.map((item, index) => {
             const itemId = item.id ?? item._id ?? `trending-${index}`;
             const title = item.name ?? item.title ?? "Trending Place";
+            const detailRoute = getDetailRoute(item);
 
             return (
               <TouchableOpacity
                 key={itemId}
                 style={styles.card}
-                onPress={() => router.push(`/home/dining/${itemId}`)}
+                onPress={() => router.push(detailRoute)}
                 activeOpacity={0.9}
               >
                 {item.cover_image_url || item.image_url ? (
@@ -182,7 +184,7 @@ const TrendingNow = () => {
 
                   <Button
                     title="Book Now"
-                    onPress={() => router.push(`/home/dining/${itemId}`)}
+                    onPress={() => router.push(detailRoute)}
                     style={styles.bookBtn}
                     textStyle={styles.bookBtnText}
                   />
