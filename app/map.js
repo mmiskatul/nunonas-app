@@ -10,6 +10,8 @@ import {
   Animated,
   Image,
   Linking,
+  Alert,
+  ScrollView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
@@ -22,6 +24,7 @@ import {
 } from "../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
+import { bookEventTickets, getEvent } from "../lib/customer-api";
 
 const { width, height } = Dimensions.get("window");
 
@@ -88,56 +91,94 @@ const CLOUDS_CONFIG = [
   { id: 60, size: 290, xStart: 0, yStart: 0, xEnd: width / 2, yEnd: height, top: "85%", left: "42%" },
 ];
 
-function OfferMarker({ offer, onPress, active }) {
-  return (
-    <Marker
-      coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
-      onPress={() => onPress(offer)}
-    >
-      <View style={styles.offerMarkerWrap}>
-        <View style={[styles.offerMarkerRing, active && styles.offerMarkerRingActive]}>
-          {offer.imageUrl ? (
-            <Image source={{ uri: offer.imageUrl }} style={styles.offerMarkerImage} />
-          ) : (
-            <View style={[styles.offerMarkerImage, styles.offerMarkerFallback]}>
-              <Ionicons name="business" size={18} color={theme.COLORS.white} />
-            </View>
-          )}
-        </View>
-        <View style={styles.offerMarkerChip}>
-          <Text style={styles.offerMarkerChipText} numberOfLines={1}>
-            {offer.offerText}
-          </Text>
-        </View>
-      </View>
-    </Marker>
-  );
+function formatEventDate(value) {
+  if (!value) return "Date TBA";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatEventTime(startTime, endTime) {
+  if (!startTime) return "Time TBA";
+  const start = String(startTime).slice(0, 5);
+  const end = endTime ? String(endTime).slice(0, 5) : "";
+  return end ? `${start} - ${end}` : start;
+}
+
+function getDistanceText(distanceKm) {
+  if (typeof distanceKm !== "number") return "Nearby";
+  return `${distanceKm.toFixed(1)} km`;
+}
+
+function normalizeEventDetails(item = {}) {
+  const distanceValue =
+    typeof item.distance_km === "number" ? item.distance_km : Number(item.distance_km);
+
+  return {
+    id: item.id,
+    title: item.title ?? "Untitled Event",
+    date: formatEventDate(item.event_date),
+    time: formatEventTime(item.start_time, item.end_time),
+    location: item.location ?? item.venue ?? "Venue available",
+    venue: item.venue ?? item.location ?? "Venue available",
+    address: item.address ?? item.location ?? item.venue ?? "Address available",
+    tag: item.offer_text ?? item.event_type ?? "Live Event",
+    eventType: item.event_type ?? "Event",
+    imageUrl: item.banner_image_url ?? item.cover_image_url ?? "",
+    description: item.description ?? "",
+    capacity: item.capacity ?? null,
+    ticketPrice: item.ticket_price != null ? `${item.ticket_price}` : null,
+    distance: getDistanceText(distanceValue),
+    distanceKm: Number.isFinite(distanceValue) ? distanceValue : null,
+    rating: item.rating ?? null,
+    reviewsCount: item.reviews_count ?? null,
+    latitude: item.latitude != null ? Number(item.latitude) : null,
+    longitude: item.longitude != null ? Number(item.longitude) : null,
+    bookingMode: item.booking_mode ?? item.bookingMode ?? "simple",
+    canBookOnMap: Boolean(item.can_book_on_map ?? item.canBookOnMap),
+    currentBookingStatus: item.current_booking_status ?? item.currentBookingStatus ?? "",
+    currentBookingCode: item.current_booking_code ?? item.currentBookingCode ?? "",
+    isSoldOut: Boolean(item.is_sold_out ?? item.isSoldOut),
+    remainingCapacity:
+      item.remaining_capacity != null
+        ? Number(item.remaining_capacity)
+        : item.remainingCapacity != null
+          ? Number(item.remainingCapacity)
+          : null,
+    detailRoute: item.detail_route ?? item.detailRoute ?? (item.id ? `/home/events/${item.id}` : null),
+  };
 }
 
 export default function MapScreen() {
   const router = useRouter();
-  const { offerId } = useLocalSearchParams();
+  const { offerId, eventId } = useLocalSearchParams();
   const mapRef = useRef(null);
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
 
-  const [region, setRegion] = useState({
-    latitude: 25.2854,
-    longitude: 51.531,
-    latitudeDelta: 0.03,
-    longitudeDelta: 0.03,
-  });
   const [markerCoords, setMarkerCoords] = useState({
     latitude: 25.2854,
     longitude: 51.531,
   });
   const [addressText, setAddressText] = useState("Doha Qatar");
   const [animationComplete, setAnimationComplete] = useState(false);
-  const [nearbyOffers, setNearbyOffers] = useState([]);
+  const [nearbyEvents, setNearbyEvents] = useState([]);
   const [offersLoading, setOffersLoading] = useState(true);
-  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEventDetails, setSelectedEventDetails] = useState(null);
+  const [selectedEventLoading, setSelectedEventLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState(null);
+  const [ticketQuantity, setTicketQuantity] = useState(1);
+  const [bookingState, setBookingState] = useState({
+    loading: false,
+    code: "",
+    status: "",
+  });
 
   useEffect(() => {
     startTransitionAnimation();
@@ -150,12 +191,15 @@ export default function MapScreen() {
         }
 
         setMarkerCoords({ latitude: coords.latitude, longitude: coords.longitude });
-        setRegion({
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          latitudeDelta: 0.03,
-          longitudeDelta: 0.03,
-        });
+        mapRef.current?.animateToRegion(
+          {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: 0.03,
+            longitudeDelta: 0.03,
+          },
+          500
+        );
 
         const address = await reverseGeocode(coords.latitude, coords.longitude);
         if (address) {
@@ -171,14 +215,15 @@ export default function MapScreen() {
     async function loadOffers() {
       try {
         setOffersLoading(true);
-        const items = await listNearbyOffers(16);
-        setNearbyOffers(items);
-        const initialOffer =
-          items.find((item) => String(item.id) === String(offerId ?? "")) ?? items[0] ?? null;
-        setSelectedOffer(initialOffer);
+        const items = await listNearbyOffers(50);
+        setNearbyEvents(items);
+        const selectedId = eventId ?? offerId;
+        const initialEvent =
+          items.find((item) => String(item.id) === String(selectedId ?? "")) ?? items[0] ?? null;
+        setSelectedEvent(initialEvent);
       } catch (error) {
         console.error("Error loading offers for map: ", error);
-        setNearbyOffers([]);
+        setNearbyEvents([]);
       } finally {
         setOffersLoading(false);
       }
@@ -186,20 +231,80 @@ export default function MapScreen() {
 
     initLocation();
     loadOffers();
-  }, [offerId]);
+  }, [eventId, offerId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSelectedEventDetails() {
+      if (!selectedEvent?.id) {
+        setSelectedEventDetails(null);
+        setBookingState({ loading: false, code: "", status: "" });
+        return;
+      }
+
+      try {
+        setSelectedEventLoading(true);
+        setTicketQuantity(1);
+        setSelectedEventDetails(normalizeEventDetails(selectedEvent));
+        setBookingState({
+          loading: false,
+          code: selectedEvent.currentBookingCode ?? "",
+          status: selectedEvent.currentBookingStatus ?? "",
+        });
+        const eventPayload = await getEvent(selectedEvent.id);
+        if (cancelled) {
+          return;
+        }
+
+        const normalized = normalizeEventDetails({
+          ...selectedEvent,
+          ...eventPayload,
+        });
+
+        setSelectedEventDetails(normalized);
+        setBookingState({
+          loading: false,
+          code: normalized.currentBookingCode ?? "",
+          status: normalized.currentBookingStatus ?? "",
+        });
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error loading selected event details:", error);
+          setSelectedEventDetails(normalizeEventDetails(selectedEvent));
+          setBookingState({
+            loading: false,
+            code: selectedEvent.currentBookingCode ?? "",
+            status: selectedEvent.currentBookingStatus ?? "",
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setSelectedEventLoading(false);
+        }
+      }
+    }
+
+    loadSelectedEventDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedEvent]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadRoute() {
-      if (!selectedOffer) {
+      const targetEvent = selectedEventDetails ?? selectedEvent;
+      if (!targetEvent?.latitude || !targetEvent?.longitude) {
         setRouteInfo(null);
         return;
       }
 
       const route = await getDrivingRoute(markerCoords, {
-        latitude: selectedOffer.latitude,
-        longitude: selectedOffer.longitude,
+        latitude: targetEvent.latitude,
+        longitude: targetEvent.longitude,
       });
 
       if (!cancelled) {
@@ -212,24 +317,25 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [markerCoords.latitude, markerCoords.longitude, selectedOffer]);
+  }, [markerCoords.latitude, markerCoords.longitude, selectedEvent, selectedEventDetails]);
 
   useEffect(() => {
-    if (!selectedOffer || !mapRef.current) {
+    const targetEvent = selectedEventDetails ?? selectedEvent;
+    if (!targetEvent?.latitude || !targetEvent?.longitude || !mapRef.current) {
       return;
     }
 
     mapRef.current.fitToCoordinates(
       [
         markerCoords,
-        { latitude: selectedOffer.latitude, longitude: selectedOffer.longitude },
+        { latitude: targetEvent.latitude, longitude: targetEvent.longitude },
       ],
       {
         edgePadding: { top: 140, right: 80, bottom: 240, left: 80 },
         animated: true,
       }
     );
-  }, [markerCoords, selectedOffer]);
+  }, [markerCoords, selectedEvent, selectedEventDetails]);
 
   const startTransitionAnimation = () => {
     cloudOpacity.setValue(1);
@@ -259,42 +365,15 @@ export default function MapScreen() {
     }, 400);
   };
 
-  const updateLocation = async (coords) => {
-    setMarkerCoords(coords);
-    setRegion((current) => ({
-      ...current,
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-    }));
-    setSelectedOffer(null);
-    setRouteInfo(null);
-
-    try {
-      const address = await reverseGeocode(coords.latitude, coords.longitude);
-      if (address) {
-        setAddressText(address);
-      }
-    } catch (e) {
-      console.error("Error reverse geocoding on update: ", e);
-    }
-  };
-
-  const handleMapPress = (e) => {
-    updateLocation(e.nativeEvent.coordinate);
-  };
-
-  const handleMarkerDragEnd = (e) => {
-    updateLocation(e.nativeEvent.coordinate);
-  };
-
   const openDirections = async () => {
-    if (!selectedOffer) {
+    const targetEvent = selectedEventDetails ?? selectedEvent;
+    if (!targetEvent?.latitude || !targetEvent?.longitude) {
       return;
     }
 
     const url = buildDirectionsUrl(markerCoords, {
-      latitude: selectedOffer.latitude,
-      longitude: selectedOffer.longitude,
+      latitude: targetEvent.latitude,
+      longitude: targetEvent.longitude,
     });
 
     if (!url) {
@@ -308,6 +387,90 @@ export default function MapScreen() {
     }
   };
 
+  const openEventDetails = () => {
+    const detailRoute = selectedEventDetails?.detailRoute ?? selectedEvent?.detailRoute;
+    const eventDetailsId = selectedEventDetails?.id ?? selectedEvent?.id;
+    if (detailRoute) {
+      router.push(detailRoute);
+      return;
+    }
+    if (eventDetailsId) {
+      router.push(`/home/events/${eventDetailsId}`);
+    }
+  };
+
+  const handleBookNow = async () => {
+    const targetEvent = selectedEventDetails ?? selectedEvent;
+    const eventDetailsId = targetEvent?.id;
+    if (!eventDetailsId || bookingState.loading) {
+      return;
+    }
+    if (!targetEvent?.canBookOnMap || targetEvent?.bookingMode !== "simple") {
+      openEventDetails();
+      return;
+    }
+    if (targetEvent?.isSoldOut) {
+      return;
+    }
+    if (bookingState.code) {
+      openEventDetails();
+      return;
+    }
+
+    try {
+      setBookingState((current) => ({ ...current, loading: true }));
+      const response = await bookEventTickets(eventDetailsId, {
+        quantity: ticketQuantity,
+        auto_confirm: true,
+      });
+      const bookingCode = response?.booking_code ?? response?.bookingCode ?? "";
+      const bookingStatus = response?.status ?? "confirmed";
+      setBookingState({
+        loading: false,
+        code: bookingCode,
+        status: bookingStatus,
+      });
+      setSelectedEventDetails((current) =>
+        current
+          ? {
+              ...current,
+              currentBookingCode: bookingCode,
+              currentBookingStatus: bookingStatus,
+            }
+          : current
+      );
+      Alert.alert(
+        "Ticket booked",
+        bookingCode
+          ? `Your booking reference is ${bookingCode}.`
+          : "Your event ticket has been booked."
+      );
+    } catch (error) {
+      setBookingState((current) => ({ ...current, loading: false }));
+      Alert.alert("Booking failed", error?.message || "Could not book tickets right now.");
+    }
+  };
+  const cardEvent = selectedEventDetails ?? selectedEvent;
+  const resolvedBookingStatus = bookingState.status || cardEvent?.currentBookingStatus || "";
+  const resolvedBookingCode = bookingState.code || cardEvent?.currentBookingCode || "";
+  const resolvedBookingStatusText = resolvedBookingCode
+    ? `${resolvedBookingStatus || "confirmed"} - ${resolvedBookingCode}`
+    : resolvedBookingStatus
+      ? resolvedBookingStatus
+      : "Not booked yet";
+  const canShowInlineBooking =
+    cardEvent?.bookingMode === "simple" &&
+    cardEvent?.canBookOnMap &&
+    !cardEvent?.isSoldOut &&
+    !resolvedBookingCode;
+  const primaryActionLabel = resolvedBookingCode
+    ? "View Booking"
+    : cardEvent?.isSoldOut
+      ? "Sold Out"
+      : canShowInlineBooking
+        ? "Book Now"
+        : "Open Details";
+
   return (
     <View style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
@@ -315,9 +478,12 @@ export default function MapScreen() {
           ref={mapRef}
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
           style={StyleSheet.absoluteFillObject}
-          region={region}
-          onRegionChangeComplete={setRegion}
-          onPress={handleMapPress}
+          initialRegion={{
+            latitude: markerCoords.latitude,
+            longitude: markerCoords.longitude,
+            latitudeDelta: 0.03,
+            longitudeDelta: 0.03,
+          }}
           showsUserLocation={true}
           showsMyLocationButton={true}
         >
@@ -331,24 +497,26 @@ export default function MapScreen() {
             />
           ) : null}
 
-          {markerCoords ? (
+          {nearbyEvents.map((offer) => (
             <Marker
-              coordinate={markerCoords}
-              draggable
-              onDragEnd={handleMarkerDragEnd}
-              title="Your location"
-              description={addressText}
-              pinColor="#2563eb"
-            />
-          ) : null}
-
-          {nearbyOffers.map((offer) => (
-            <OfferMarker
-              key={offer.id}
-              offer={offer}
-              active={selectedOffer?.id === offer.id}
-              onPress={setSelectedOffer}
-            />
+              key={String(offer.id)}
+              coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
+              title={offer.title}
+              description={offer.locationLabel}
+              onPress={() => setSelectedEvent(offer)}
+              tracksViewChanges={false}
+            >
+              <View style={styles.eventMarkerWrap}>
+                <View style={styles.eventMarkerLabel}>
+                  <Text style={styles.eventMarkerLabelText} numberOfLines={1}>
+                    {offer.title}
+                  </Text>
+                </View>
+                <View style={styles.eventMarkerPin}>
+                  <View style={styles.eventMarkerPinInner} />
+                </View>
+              </View>
+            </Marker>
           ))}
         </MapView>
 
@@ -390,33 +558,43 @@ export default function MapScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Nearby Offers Map</Text>
+        <Text style={styles.topBarTitle}>Nearby Events Map</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.bottomCard}>
-        {selectedOffer ? (
-          <>
-            <View style={styles.offerHeader}>
-              {selectedOffer.imageUrl ? (
-                <Image source={{ uri: selectedOffer.imageUrl }} style={styles.bottomOfferImage} />
-              ) : (
-                <View style={[styles.bottomOfferImage, styles.offerMarkerFallback]}>
-                  <Ionicons name="business" size={22} color={theme.COLORS.white} />
-                </View>
-              )}
-
-              <View style={styles.textContainer}>
-                <Text style={styles.offerTitle} numberOfLines={1}>
-                  {selectedOffer.title}
-                </Text>
-                <Text style={styles.offerSubtitle} numberOfLines={1}>
-                  {selectedOffer.offerText}
-                </Text>
-                <Text style={styles.locationSubtitle} numberOfLines={2}>
-                  {selectedOffer.locationLabel}
-                </Text>
+        {offersLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="small" color="#2563eb" />
+            <Text style={styles.loadingText}>Loading nearby events...</Text>
+          </View>
+        ) : cardEvent ? (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.cardScrollContent}>
+            {selectedEventLoading ? (
+              <View style={styles.inlineLoadingRow}>
+                <ActivityIndicator size="small" color="#2563eb" />
+                <Text style={styles.loadingText}>Loading event details...</Text>
               </View>
+            ) : null}
+
+            {cardEvent.imageUrl ? (
+              <Image source={{ uri: cardEvent.imageUrl }} style={styles.heroImage} />
+            ) : (
+              <View style={styles.heroImageFallback}>
+                <Ionicons name="calendar" size={28} color={theme.COLORS.white} />
+              </View>
+            )}
+
+            <View style={styles.headerTextBlock}>
+              <Text style={styles.offerTitle} numberOfLines={2}>
+                {cardEvent.title}
+              </Text>
+              <Text style={styles.offerSubtitle} numberOfLines={1}>
+                {cardEvent.tag ?? cardEvent.offerText ?? "Active event"}
+              </Text>
+              <Text style={styles.locationSubtitle} numberOfLines={2}>
+                {cardEvent.address ?? cardEvent.locationLabel ?? cardEvent.location}
+              </Text>
             </View>
 
             <View style={styles.metricsRow}>
@@ -424,26 +602,115 @@ export default function MapScreen() {
                 <Ionicons name="trail-sign-outline" size={15} color={theme.COLORS.primary} />
                 <Text style={styles.metricText}>
                   {routeInfo?.distanceText ??
-                    (typeof selectedOffer.distanceKm === "number"
-                      ? `${selectedOffer.distanceKm.toFixed(1)} km`
-                      : "Nearby")}
+                    (typeof cardEvent.distanceKm === "number"
+                      ? `${cardEvent.distanceKm.toFixed(1)} km`
+                      : cardEvent.distance ?? "Nearby")}
                 </Text>
               </View>
               <View style={styles.metricPill}>
                 <Ionicons name="time-outline" size={15} color={theme.COLORS.primary} />
-                <Text style={styles.metricText}>{routeInfo?.durationText ?? "Route preview"}</Text>
+                <Text style={styles.metricText}>{routeInfo?.durationText ?? cardEvent.time ?? "Route preview"}</Text>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.directionsButton} onPress={openDirections}>
-              <Ionicons name="navigate" size={18} color={theme.COLORS.white} />
-              <Text style={styles.directionsButtonText}>Open Driving Directions</Text>
-            </TouchableOpacity>
+            <View style={styles.infoGrid}>
+              <View style={styles.infoTile}>
+                <Text style={styles.infoLabel}>Date</Text>
+                <Text style={styles.infoValue}>{cardEvent.date ?? "Date TBA"}</Text>
+              </View>
+              <View style={styles.infoTile}>
+                <Text style={styles.infoLabel}>Booking</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>
+                  {resolvedBookingStatusText}
+                </Text>
+              </View>
+              <View style={styles.infoTile}>
+                <Text style={styles.infoLabel}>Venue</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>
+                  {cardEvent.venue ?? "Venue available"}
+                </Text>
+              </View>
+              <View style={styles.infoTile}>
+                <Text style={styles.infoLabel}>Ticket</Text>
+                <Text style={styles.infoValue}>
+                  {cardEvent.ticketPrice != null ? cardEvent.ticketPrice : "Check details"}
+                </Text>
+              </View>
+            </View>
 
-            <TouchableOpacity style={styles.confirmButton} onPress={() => router.back()}>
-              <Text style={styles.confirmButtonText}>Confirm Location</Text>
-            </TouchableOpacity>
-          </>
+            {cardEvent.description ? (
+              <Text style={styles.descriptionText} numberOfLines={3}>
+                {cardEvent.description}
+              </Text>
+            ) : null}
+
+            <View style={styles.bookingRow}>
+              {canShowInlineBooking ? (
+                <View style={styles.quantityCard}>
+                  <Text style={styles.quantityLabel}>Tickets</Text>
+                  <View style={styles.quantityControls}>
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => setTicketQuantity((current) => Math.max(1, current - 1))}
+                      disabled={bookingState.loading}
+                    >
+                      <Ionicons name="remove" size={16} color={theme.COLORS.textPrimary} />
+                    </TouchableOpacity>
+                    <Text style={styles.quantityValue}>{ticketQuantity}</Text>
+                    <TouchableOpacity
+                      style={styles.stepperButton}
+                      onPress={() => setTicketQuantity((current) => Math.min(20, current + 1))}
+                      disabled={bookingState.loading}
+                    >
+                      <Ionicons name="add" size={16} color={theme.COLORS.textPrimary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                style={[
+                  styles.bookNowButton,
+                  resolvedBookingCode ? styles.bookedButton : null,
+                  cardEvent?.isSoldOut && !resolvedBookingCode ? styles.disabledButton : null,
+                ]}
+                onPress={handleBookNow}
+                disabled={bookingState.loading || (cardEvent?.isSoldOut && !resolvedBookingCode)}
+              >
+                {bookingState.loading ? (
+                  <ActivityIndicator size="small" color={theme.COLORS.white} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={
+                        resolvedBookingCode
+                          ? "receipt-outline"
+                          : cardEvent?.isSoldOut
+                            ? "ban-outline"
+                            : canShowInlineBooking
+                              ? "ticket-outline"
+                              : "open-outline"
+                      }
+                      size={18}
+                      color={theme.COLORS.white}
+                    />
+                    <Text style={styles.bookNowButtonText}>{primaryActionLabel}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.actionsRow}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={openEventDetails}>
+                <Ionicons name="information-circle-outline" size={18} color="#1d4ed8" />
+                <Text style={styles.secondaryButtonText}>View Details</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.directionsButton} onPress={openDirections}>
+                <Ionicons name="navigate" size={18} color={theme.COLORS.white} />
+                <Text style={styles.directionsButtonText}>Directions</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         ) : (
           <>
             <View style={styles.locationInfo}>
@@ -454,16 +721,10 @@ export default function MapScreen() {
                   {addressText}
                 </Text>
                 <Text style={styles.locationHint}>
-                  Tap any offer marker to see the real road distance and directions.
+                  Tap any event pin to see its name, road distance, and directions.
                 </Text>
               </View>
             </View>
-
-            <TouchableOpacity style={styles.confirmButton} onPress={() => router.back()}>
-              <Text style={styles.confirmButtonText}>
-                {offersLoading ? "Loading offers..." : "Confirm Location"}
-              </Text>
-            </TouchableOpacity>
           </>
         )}
       </View>
@@ -527,51 +788,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
   },
-  offerMarkerWrap: {
+  loadingState: {
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 90,
-  },
-  offerMarkerRing: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    padding: 3,
-    backgroundColor: theme.COLORS.white,
-    borderWidth: 2,
-    borderColor: theme.COLORS.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  offerMarkerRingActive: {
-    borderColor: theme.COLORS.primary,
-    transform: [{ scale: 1.06 }],
-  },
-  offerMarkerImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 26,
-    backgroundColor: "#cbd5e1",
-  },
-  offerMarkerFallback: {
     justifyContent: "center",
+    gap: 10,
+    minHeight: 72,
+  },
+  loadingText: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  inlineLoadingRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.COLORS.primary,
-  },
-  offerMarkerChip: {
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(15, 23, 42, 0.86)",
-    maxWidth: width * 0.44,
-  },
-  offerMarkerChipText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "700",
+    gap: 8,
+    marginBottom: 12,
   },
   bottomCard: {
     position: "absolute",
@@ -580,8 +813,12 @@ const styles = StyleSheet.create({
     right: 20,
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,
-    padding: 20,
+    padding: 16,
+    maxHeight: height * 0.5,
     ...theme.SHADOWS.primary,
+  },
+  cardScrollContent: {
+    paddingBottom: 4,
   },
   locationInfo: {
     flexDirection: "row",
@@ -594,6 +831,60 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 14,
     marginBottom: 16,
+  },
+  heroImage: {
+    width: "100%",
+    height: 144,
+    borderRadius: 18,
+    backgroundColor: "#dbeafe",
+    marginBottom: 14,
+  },
+  heroImageFallback: {
+    width: "100%",
+    height: 144,
+    borderRadius: 18,
+    backgroundColor: "#2563eb",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  headerTextBlock: {
+    marginBottom: 14,
+  },
+  eventMarkerWrap: {
+    alignItems: "center",
+  },
+  eventMarkerLabel: {
+    maxWidth: 150,
+    backgroundColor: "#1d4ed8",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.92)",
+  },
+  eventMarkerLabelText: {
+    color: theme.COLORS.white,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  eventMarkerPin: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#2563eb",
+    borderWidth: 3,
+    borderColor: theme.COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+    ...theme.SHADOWS.card,
+  },
+  eventMarkerPinInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.COLORS.white,
   },
   bottomOfferImage: {
     width: 62,
@@ -634,10 +925,41 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 18,
   },
+  infoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 14,
+  },
+  infoTile: {
+    width: "48%",
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  infoLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.COLORS.textSecondary,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.COLORS.textPrimary,
+  },
+  descriptionText: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: theme.COLORS.textSecondary,
+    marginBottom: 14,
+  },
   metricsRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   metricPill: {
     flex: 1,
@@ -655,7 +977,89 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  bookingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  quantityCard: {
+    width: 110,
+    borderRadius: 14,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  quantityLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.COLORS.textSecondary,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  quantityControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  stepperButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.white,
+  },
+  quantityValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+  },
+  bookNowButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: theme.COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    ...theme.SHADOWS.primary,
+  },
+  bookedButton: {
+    backgroundColor: "#16a34a",
+  },
+  disabledButton: {
+    backgroundColor: "#94a3b8",
+  },
+  bookNowButtonText: {
+    color: theme.COLORS.white,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  secondaryButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    backgroundColor: "#eff6ff",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  secondaryButtonText: {
+    color: "#1d4ed8",
+    fontSize: 14,
+    fontWeight: "700",
+  },
   directionsButton: {
+    flex: 1,
     backgroundColor: "#2563eb",
     height: 52,
     borderRadius: 16,
@@ -663,7 +1067,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
-    marginBottom: 10,
     ...theme.SHADOWS.primary,
   },
   directionsButtonText: {
@@ -671,17 +1074,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  confirmButton: {
-    backgroundColor: theme.COLORS.primary,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    ...theme.SHADOWS.primary,
-  },
-  confirmButtonText: {
-    color: theme.COLORS.white,
-    fontSize: 16,
-    fontWeight: "700",
-  },
 });
+
