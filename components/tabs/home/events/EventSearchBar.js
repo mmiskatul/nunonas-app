@@ -3,7 +3,7 @@ import { View, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const EventSearchBar = () => {
+const EventSearchBar = ({ value, onChangeText }) => {
   return (
     <View style={styles.container}>
       <View style={styles.searchSection}>
@@ -15,8 +15,10 @@ const EventSearchBar = () => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Search Events..."
+          placeholder="Search events..."
           placeholderTextColor={theme.COLORS.textSecondary}
+          value={value}
+          onChangeText={onChangeText}
         />
       </View>
     </View>

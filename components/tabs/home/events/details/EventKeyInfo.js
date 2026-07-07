@@ -16,6 +16,14 @@ const InfoItem = ({ icon, title, subtitle, IconComponent = Ionicons }) => (
 );
 
 const EventKeyInfo = ({ event }) => {
+  const locationSubtitle = [event?.venue, event?.distance ? `${event.distance} away` : ""]
+    .filter(Boolean)
+    .join(" - ");
+  const attendanceTitle =
+    typeof event?.capacity === "number" ? `${event.capacity} capacity` : "Event access";
+  const attendanceSubtitle =
+    event?.ticketPrice != null ? `Tickets from ${event.ticketPrice}` : "Check event details";
+
   return (
     <View style={styles.container}>
       <InfoItem
@@ -27,14 +35,14 @@ const EventKeyInfo = ({ event }) => {
       <InfoItem
         icon="location-outline"
         title={event?.location || "Doha Convention Center"}
-        subtitle="Downtown • 2.3 km away"
+        subtitle={locationSubtitle || "Venue available"}
       />
 
       <InfoItem
         icon="account-group-outline"
         IconComponent={MaterialCommunityIcons}
-        title="1,247 attending"
-        subtitle="Join the crowd"
+        title={attendanceTitle}
+        subtitle={attendanceSubtitle}
       />
     </View>
   );

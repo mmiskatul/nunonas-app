@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Linking,
   View,
   Text,
   StyleSheet,
@@ -7,58 +8,185 @@ import {
   ActivityIndicator,
   Platform,
   Dimensions,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../../constants/theme";
-import { reverseGeocode } from "../../../lib/google-maps";
+import {
+  buildDirectionsUrl,
+  getDrivingRoute,
+  reverseGeocode,
+} from "../../../lib/google-maps";
+import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
+import { listNearbyOffers } from "../../../lib/nearby-offers";
 
 const { width } = Dimensions.get("window");
 
+function getDistanceLabel(offer, routeInfo) {
+  if (routeInfo?.distanceText) {
+    return routeInfo.distanceText;
+  }
+
+  if (typeof offer?.distanceKm === "number") {
+    return `${offer.distanceKm.toFixed(1)} km nearby`;
+  }
+
+  return "Nearby";
+}
+
+function getCardLabel(item) {
+  return item?.entityType === "event" || item?.category === "event"
+    ? "Selected Event"
+    : "Selected Offer";
+}
+
+function OfferMarker({ offer, onPress, active }) {
+  return (
+    <Marker
+      coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
+      onPress={onPress}
+    >
+      <View style={styles.markerWrap}>
+        <View style={[styles.markerImageRing, active && styles.markerImageRingActive]}>
+          {offer.imageUrl ? (
+            <Image source={{ uri: offer.imageUrl }} style={styles.markerImage} />
+          ) : (
+            <View style={[styles.markerImage, styles.markerFallback]}>
+              <Ionicons name="business" size={18} color={theme.COLORS.white} />
+            </View>
+          )}
+        </View>
+        <View style={styles.markerOfferChip}>
+          <Text style={styles.markerOfferText} numberOfLines={1}>
+            {offer.offerText}
+          </Text>
+        </View>
+      </View>
+    </Marker>
+  );
+}
+
 const ExploreNearbyBanner = () => {
   const router = useRouter();
-  const [showMap, setShowMap] = useState(false); // Toggle state: false = default image-like card, true = expanded map card
-  const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.5310 });
+  const [showMap, setShowMap] = useState(false);
+  const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.531 });
   const [address, setAddress] = useState("Doha, Qatar");
   const [loading, setLoading] = useState(true);
+  const [offersLoading, setOffersLoading] = useState(true);
+  const [offers, setOffers] = useState([]);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
 
   useEffect(() => {
     async function getCoords() {
       try {
         setLoading(true);
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const position = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setGpsCoords({ latitude: lat, longitude: lng });
-          
-          const addr = await reverseGeocode(lat, lng);
-          if (addr) {
-            setAddress(addr);
-          }
+        const coords = await getCurrentCoords();
+        if (!coords) {
+          return;
+        }
+
+        setGpsCoords({ latitude: coords.latitude, longitude: coords.longitude });
+
+        const addr = await reverseGeocode(coords.latitude, coords.longitude);
+        if (addr) {
+          setAddress(addr);
         }
       } catch (e) {
-        console.warn("Error fetching coords for map card: ", e);
+        if (!isExpectedLocationError(e)) {
+          console.warn("Error fetching coords for map card: ", e);
+        }
       } finally {
         setLoading(false);
       }
     }
+
+    async function getOffers() {
+      try {
+        setOffersLoading(true);
+        const items = await listNearbyOffers(8);
+        setOffers(items);
+        setSelectedOffer(items[0] ?? null);
+      } catch (error) {
+        console.warn("Error loading nearby offers: ", error);
+        setOffers([]);
+        setSelectedOffer(null);
+      } finally {
+        setOffersLoading(false);
+      }
+    }
+
     getCoords();
+    getOffers();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRoute() {
+      if (!selectedOffer) {
+        setRouteInfo(null);
+        return;
+      }
+
+      const route = await getDrivingRoute(gpsCoords, {
+        latitude: selectedOffer.latitude,
+        longitude: selectedOffer.longitude,
+      });
+
+      if (!cancelled) {
+        setRouteInfo(route);
+      }
+    }
+
+    loadRoute();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gpsCoords.latitude, gpsCoords.longitude, selectedOffer]);
+
+  const openMap = () => {
+    const params = selectedOffer?.id ? { offerId: selectedOffer.id } : undefined;
+    router.push(params ? { pathname: "/map", params } : "/map");
+  };
+
+  const openDirections = async () => {
+    if (!selectedOffer) {
+      openMap();
+      return;
+    }
+
+    const url = buildDirectionsUrl(gpsCoords, {
+      latitude: selectedOffer.latitude,
+      longitude: selectedOffer.longitude,
+    });
+
+    if (!url) {
+      openMap();
+      return;
+    }
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      router.push({
+        pathname: "/map",
+        params: { offerId: selectedOffer.id },
+      });
+    }
+  };
+
+  const markerOffers = offers.slice(0, 6);
+
   if (showMap) {
-    // STATE 2: Expanded Live Map Card (with address footer)
     return (
       <View style={styles.container}>
         <View style={styles.mapCard}>
-          {/* Map Preview section */}
           <View style={styles.mapPreviewContainer}>
-            {loading ? (
+            {loading || offersLoading ? (
               <View style={styles.mapPlaceholder}>
                 <ActivityIndicator size="small" color={theme.COLORS.primary} />
               </View>
@@ -69,25 +197,26 @@ const ExploreNearbyBanner = () => {
                 initialRegion={{
                   latitude: gpsCoords.latitude,
                   longitude: gpsCoords.longitude,
-                  latitudeDelta: 0.015,
-                  longitudeDelta: 0.0121,
+                  latitudeDelta: 0.03,
+                  longitudeDelta: 0.03,
                 }}
                 scrollEnabled={true}
                 zoomEnabled={true}
                 pitchEnabled={true}
                 rotateEnabled={true}
               >
-                <Marker
-                  coordinate={{
-                    latitude: gpsCoords.latitude,
-                    longitude: gpsCoords.longitude,
-                  }}
-                  pinColor="red"
-                />
+                <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
+                {markerOffers.map((offer) => (
+                  <OfferMarker
+                    key={offer.id}
+                    offer={offer}
+                    active={selectedOffer?.id === offer.id}
+                    onPress={() => setSelectedOffer(offer)}
+                  />
+                ))}
               </MapView>
             )}
 
-            {/* Toggle Button at the top right of the whole card */}
             <TouchableOpacity
               style={styles.topRightToggleBtn}
               onPress={() => setShowMap(false)}
@@ -96,37 +225,33 @@ const ExploreNearbyBanner = () => {
               <Ionicons name="chevron-up" size={20} color="#1e3a8a" />
             </TouchableOpacity>
 
-            {/* Open Live Map Button */}
-            <TouchableOpacity
-              style={styles.openMapBtn}
-              activeOpacity={0.9}
-              onPress={() => {
-                router.push("/map");
-              }}
-            >
+            <TouchableOpacity style={styles.openMapBtn} activeOpacity={0.9} onPress={openMap}>
               <Ionicons name="map" size={16} color={theme.COLORS.white} />
-              <Text style={styles.openMapBtnText}>Open Live Map</Text>
+              <Text style={styles.openMapBtnText}>Open Full Map</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Card Details Footer */}
           <View style={styles.cardFooter}>
             <View style={styles.locationInfo}>
               <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color={theme.COLORS.primary} />
-                <Text style={styles.locationLabel}>Active Location</Text>
+                <Ionicons name="pricetag" size={16} color={theme.COLORS.primary} />
+                <Text style={styles.locationLabel}>{getCardLabel(selectedOffer)}</Text>
               </View>
               <Text style={styles.locationText} numberOfLines={1}>
-                {address}
+                {selectedOffer?.title ?? address}
+              </Text>
+              {!!selectedOffer?.offerText && (
+                <Text style={styles.offerCaption} numberOfLines={1}>
+                  {selectedOffer.offerText}
+                </Text>
+              )}
+              <Text style={styles.distanceCaption} numberOfLines={1}>
+                {getDistanceLabel(selectedOffer, routeInfo)}
+                {routeInfo?.durationText ? ` - ${routeInfo.durationText}` : ""}
               </Text>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.refreshBtn}
-              onPress={() => {
-                router.push("/map");
-              }}
-            >
+
+            <TouchableOpacity style={styles.refreshBtn} onPress={openDirections}>
               <Ionicons name="navigate-outline" size={18} color={theme.COLORS.primary} />
             </TouchableOpacity>
           </View>
@@ -135,12 +260,10 @@ const ExploreNearbyBanner = () => {
     );
   }
 
-  // STATE 1: Default Image Card Layout (Map background + white card overlaid)
   return (
     <View style={styles.container}>
       <View style={styles.bannerCard}>
-        {/* Functional Live Map Background */}
-        {loading ? (
+        {loading || offersLoading ? (
           <View style={styles.mapPlaceholder}>
             <ActivityIndicator size="small" color={theme.COLORS.primary} />
           </View>
@@ -151,45 +274,26 @@ const ExploreNearbyBanner = () => {
             initialRegion={{
               latitude: gpsCoords.latitude,
               longitude: gpsCoords.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.0121,
+              latitudeDelta: 0.03,
+              longitudeDelta: 0.03,
             }}
             scrollEnabled={true}
             zoomEnabled={true}
             pitchEnabled={false}
             rotateEnabled={false}
           >
-            {/* Martini/Cocktail Icon Marker (Functional/Interactable) */}
-            <Marker
-              coordinate={{
-                latitude: gpsCoords.latitude + 0.003,
-                longitude: gpsCoords.longitude - 0.003,
-              }}
-              title="Nearby Lounge"
-              description="Happy hour deals nearby"
-            >
-              <View style={[styles.badge, { position: "relative" }]}>
-                <Ionicons name="wine" size={16} color="#ffffff" />
-              </View>
-            </Marker>
-
-            {/* Bed/Hotel Icon Marker (Functional/Interactable) */}
-            <Marker
-              coordinate={{
-                latitude: gpsCoords.latitude + 0.002,
-                longitude: gpsCoords.longitude + 0.004,
-              }}
-              title="Grand Plaza Hotel"
-              description="Exclusive stay promotions"
-            >
-              <View style={[styles.badge, styles.badgeBed, { position: "relative" }]}>
-                <Ionicons name="bed" size={15} color="#ffffff" />
-              </View>
-            </Marker>
+            <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
+            {markerOffers.map((offer) => (
+              <OfferMarker
+                key={offer.id}
+                offer={offer}
+                active={selectedOffer?.id === offer.id}
+                onPress={() => setSelectedOffer(offer)}
+              />
+            ))}
           </MapView>
         )}
 
-        {/* Toggle Button at the top right of the whole card */}
         <TouchableOpacity
           style={styles.topRightToggleBtn}
           onPress={() => setShowMap(true)}
@@ -198,23 +302,51 @@ const ExploreNearbyBanner = () => {
           <Ionicons name="chevron-down" size={20} color="#1e3a8a" />
         </TouchableOpacity>
 
-        {/* Foreground Card Overlaid on top of Map */}
         <View style={styles.overlaidCard}>
           <Text style={styles.title}>Explore Nearby Offers</Text>
-          <Text style={styles.sparkles}>✨</Text>
-          
+          <Text style={styles.sparkles}>Nearby on the road, not just by pin</Text>
+
           <Text style={styles.description}>
-            Discover happy hours, events, hotels, and exclusive promotions around you.
+            Tap any hotel or provider marker to preview the live offer and driving distance.
           </Text>
 
-          <TouchableOpacity
-            style={styles.button}
-            activeOpacity={0.8}
-            onPress={() => router.push("/map")}
-          >
-            <Ionicons name="map-outline" size={16} color="#ffffff" style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Open Live Map</Text>
-          </TouchableOpacity>
+          {selectedOffer ? (
+            <View style={styles.selectedOfferCard}>
+              <View style={styles.selectedOfferHeader}>
+                {selectedOffer.imageUrl ? (
+                  <Image source={{ uri: selectedOffer.imageUrl }} style={styles.selectedOfferImage} />
+                ) : (
+                  <View style={[styles.selectedOfferImage, styles.markerFallback]}>
+                    <Ionicons name="business" size={18} color={theme.COLORS.white} />
+                  </View>
+                )}
+                <View style={styles.selectedOfferTextWrap}>
+                  <Text style={styles.selectedOfferTitle} numberOfLines={1}>
+                    {selectedOffer.title}
+                  </Text>
+                  <Text style={styles.selectedOfferSubtitle} numberOfLines={1}>
+                    {selectedOffer.offerText}
+                  </Text>
+                  <Text style={styles.selectedOfferMeta} numberOfLines={1}>
+                    {getDistanceLabel(selectedOffer, routeInfo)}
+                    {routeInfo?.durationText ? ` - ${routeInfo.durationText}` : ""}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={openDirections}>
+              <Ionicons name="navigate-outline" size={16} color={theme.COLORS.primary} />
+              <Text style={styles.secondaryButtonText}>Directions</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} activeOpacity={0.85} onPress={openMap}>
+              <Ionicons name="map-outline" size={16} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Open Live Map</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -236,21 +368,51 @@ const styles = StyleSheet.create({
     borderColor: theme.COLORS.border,
     ...theme.SHADOWS.card,
   },
-  badge: {
-    justifyContent: "center",
+  markerWrap: {
     alignItems: "center",
-    backgroundColor: "#2e489a", // Deep Blue
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    minWidth: 84,
+  },
+  markerImageRing: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: theme.COLORS.white,
+    padding: 3,
+    borderWidth: 2,
+    borderColor: theme.COLORS.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  badgeBed: {
-    backgroundColor: "#4c8ccb", // Light Blue
+  markerImageRingActive: {
+    borderColor: theme.COLORS.primary,
+    transform: [{ scale: 1.05 }],
+  },
+  markerImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 24,
+    backgroundColor: "#cbd5e1",
+  },
+  markerFallback: {
+    alignItems: "center",
+    backgroundColor: theme.COLORS.primary,
+    justifyContent: "center",
+  },
+  markerOfferChip: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    maxWidth: width * 0.42,
+  },
+  markerOfferText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "700",
   },
   topRightToggleBtn: {
     position: "absolute",
@@ -267,7 +429,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
-    zIndex: 100, // Make sure it sits above map/markers
+    zIndex: 100,
   },
   overlaidCard: {
     position: "absolute",
@@ -293,9 +455,10 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   sparkles: {
-    fontSize: 16,
+    fontSize: 12,
     marginVertical: 4,
-    color: "#f59e0b",
+    color: "#2563eb",
+    fontWeight: "700",
   },
   description: {
     fontSize: 13,
@@ -305,14 +468,74 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingHorizontal: 6,
   },
+  selectedOfferCard: {
+    width: "100%",
+    backgroundColor: "#f8fafc",
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  selectedOfferHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  selectedOfferImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#cbd5e1",
+  },
+  selectedOfferTextWrap: {
+    flex: 1,
+  },
+  selectedOfferTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+  },
+  selectedOfferSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.COLORS.primary,
+  },
+  selectedOfferMeta: {
+    marginTop: 4,
+    fontSize: 12,
+    color: theme.COLORS.textSecondary,
+  },
+  actionRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 10,
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: "row",
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff6ff",
+    gap: 6,
+  },
+  secondaryButtonText: {
+    color: theme.COLORS.primary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   button: {
+    flex: 1.35,
     flexDirection: "row",
     backgroundColor: "#4285f4",
     height: 44,
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     shadowColor: "#4285f4",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -327,7 +550,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  // Map Card styles
   mapCard: {
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,
@@ -398,6 +620,15 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textPrimary,
     fontSize: 15,
     fontWeight: "700",
+  },
+  offerCaption: {
+    color: theme.COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  distanceCaption: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
   },
   refreshBtn: {
     alignItems: "center",

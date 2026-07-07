@@ -13,10 +13,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../constants/theme";
 import { reverseGeocode } from "../../lib/google-maps";
+import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
 
 const { width, height } = Dimensions.get("window");
 
@@ -49,25 +49,24 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
       async function getCoords() {
         try {
           setLoading(true);
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status === "granted") {
-            const position = await Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Balanced,
-            });
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            setGpsCoords({ latitude: lat, longitude: lng });
-            
-            const addr = await reverseGeocode(lat, lng);
-            if (addr) {
-              setAddress(addr);
-              if (onSelectLocation) {
-                onSelectLocation(addr);
-              }
+          const coords = await getCurrentCoords();
+          if (!coords) {
+            return;
+          }
+
+          setGpsCoords({ latitude: coords.latitude, longitude: coords.longitude });
+
+          const addr = await reverseGeocode(coords.latitude, coords.longitude);
+          if (addr) {
+            setAddress(addr);
+            if (onSelectLocation) {
+              onSelectLocation(addr);
             }
           }
         } catch (e) {
-          console.warn(e);
+          if (!isExpectedLocationError(e)) {
+            console.warn(e);
+          }
         } finally {
           setLoading(false);
         }

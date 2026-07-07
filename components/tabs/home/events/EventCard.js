@@ -6,13 +6,17 @@ import theme from "../../../../constants/theme";
 
 const EventCard = ({ event }) => {
   const router = useRouter();
+  const imageSource = event?.image
+    ? event.image
+    : event?.imageUrl
+      ? { uri: event.imageUrl }
+      : require("../../../../assets/images/events.webp");
 
   return (
     <View style={styles.container}>
-      {/* Image and Tag */}
       <View style={styles.imageContainer}>
-        <Image source={event.image} style={styles.image} resizeMode="cover" />
-        {event.tag && (
+        <Image source={imageSource} style={styles.image} resizeMode="cover" />
+        {event.tag ? (
           <View
             style={[
               styles.tag,
@@ -21,10 +25,9 @@ const EventCard = ({ event }) => {
           >
             <Text style={styles.tagText}>{event.tag}</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <Text style={styles.title}>{event.title}</Text>
 
@@ -35,7 +38,7 @@ const EventCard = ({ event }) => {
             color={theme.COLORS.textSecondary}
           />
           <Text style={styles.infoText}>
-            {event.date} • {event.time}
+            {[event.date, event.time].filter(Boolean).join(" - ")}
           </Text>
         </View>
 
@@ -46,7 +49,9 @@ const EventCard = ({ event }) => {
             color={theme.COLORS.textSecondary}
           />
           <Text style={styles.infoText}>
-            {event.location} . {event.distance} away
+            {[event.location, event.distance ? `${event.distance} away` : ""]
+              .filter(Boolean)
+              .join(" - ")}
           </Text>
         </View>
 
@@ -117,6 +122,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     fontWeight: "500",
+    flex: 1,
   },
   button: {
     backgroundColor: theme.COLORS.primary,

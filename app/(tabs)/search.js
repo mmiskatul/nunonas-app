@@ -10,9 +10,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as Location from "expo-location";
 import theme from "../../constants/theme";
 import { reverseGeocode } from "../../lib/google-maps";
+import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
 
 // Import Components
 import CategoryCard from "../../components/tabs/search/CategoryCard";
@@ -68,25 +68,20 @@ export default function SearchScreen() {
   useEffect(() => {
     async function getUserLocation() {
       try {
-        const servicesEnabled = await Location.hasServicesEnabledAsync();
-        if (!servicesEnabled) return;
-
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") return;
-
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+        const coords = await getCurrentCoords();
+        if (!coords) return;
 
         const address = await reverseGeocode(
-          position.coords.latitude,
-          position.coords.longitude
+          coords.latitude,
+          coords.longitude
         );
         if (address) {
           setCurrentLocation(address);
         }
       } catch (error) {
-        console.warn("Could not retrieve current location in search: ", error);
+        if (!isExpectedLocationError(error)) {
+          console.warn("Could not retrieve current location in search: ", error);
+        }
       }
     }
 

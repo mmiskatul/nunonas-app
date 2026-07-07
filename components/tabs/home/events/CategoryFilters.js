@@ -1,26 +1,26 @@
-import React, { useState } from "react";
+import React from "react";
 import { ScrollView, Text, TouchableOpacity, StyleSheet } from "react-native";
 import theme from "../../../../constants/theme";
 
-const CATEGORIES = ["All", "Music", "Nightlife", "Comedy", "Family", "Art"];
-
-const CategoryFilters = () => {
-  const [activeCategory, setActiveCategory] = useState("All");
-
+const CategoryFilters = ({
+  categories = ["All"],
+  activeCategory = "All",
+  onSelectCategory,
+}) => {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {CATEGORIES.map((category) => (
+      {categories.map((category) => (
         <TouchableOpacity
           key={category}
           style={[
             styles.filterItem,
             activeCategory === category && styles.activeFilterItem,
           ]}
-          onPress={() => setActiveCategory(category)}
+          onPress={() => onSelectCategory?.(category)}
         >
           <Text
             style={[

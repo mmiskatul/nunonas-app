@@ -1,16 +1,41 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
-import { buildStaticMapUrl } from "../../../../../lib/google-maps";
+import {
+  buildDirectionsUrl,
+  buildPlaceUrl,
+  buildStaticMapUrl,
+} from "../../../../../lib/google-maps";
 
-const EventLocationMap = ({ venueName, address }) => {
+const EventLocationMap = ({ venueName, address, coordinates, origin }) => {
   const resolvedVenueName = venueName || "Skyline Arena";
   const resolvedAddress = address || "123 Downtown Boulevard, City Center";
   const mapUrl = buildStaticMapUrl({
-    center: resolvedAddress,
+    center:
+      coordinates?.latitude != null && coordinates?.longitude != null
+        ? `${coordinates.latitude},${coordinates.longitude}`
+        : resolvedAddress,
     markerLabel: resolvedVenueName,
   });
+
+  const handleDirections = async () => {
+    const url = origin && coordinates
+      ? buildDirectionsUrl(origin, coordinates)
+      : coordinates
+        ? buildPlaceUrl(coordinates)
+        : null;
+
+    if (!url) {
+      return;
+    }
+
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.warn("Could not open event directions:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -33,7 +58,7 @@ const EventLocationMap = ({ venueName, address }) => {
         <Text style={styles.address}>{resolvedAddress}</Text>
       </View>
 
-      <TouchableOpacity style={styles.directionsBtn} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.directionsBtn} activeOpacity={0.8} onPress={handleDirections}>
         <Ionicons name="navigate" size={20} color={theme.COLORS.textPrimary} />
         <Text style={styles.directionsText}>Get Directions</Text>
       </TouchableOpacity>

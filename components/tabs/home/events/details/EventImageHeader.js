@@ -12,17 +12,16 @@ import theme from "../../../../../constants/theme";
 
 const EventImageHeader = ({ event }) => {
   const router = useRouter();
+  const imageSource = event?.image
+    ? event.image
+    : event?.imageUrl
+      ? { uri: event.imageUrl }
+      : require("../../../../../assets/images/events.webp");
 
   return (
-    <ImageBackground
-      source={
-        event?.image || require("../../../../../assets/images/events.webp")
-      }
-      style={styles.container}
-    >
+    <ImageBackground source={imageSource} style={styles.container}>
       <View style={styles.overlay} />
 
-      {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.iconButton}
@@ -36,12 +35,13 @@ const EventImageHeader = ({ event }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Info */}
       <View style={styles.bottomInfo}>
         <Text style={styles.title}>
           {event?.title || "Electronic Music Festival 2026"}
         </Text>
-        <Text style={styles.tagline}>{event?.tag || "Trending Tonight"}</Text>
+        <Text style={styles.tagline}>
+          {event?.tag || event?.eventType || "Live Event"}
+        </Text>
       </View>
     </ImageBackground>
   );

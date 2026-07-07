@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import theme from "../../../constants/theme";
 
 // Import Home Components
@@ -20,6 +19,7 @@ import TrendingNow from "../../../components/tabs/home/TrendingNow";
 import FeaturedExperiences from "../../../components/tabs/home/FeaturedExperiences";
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
+import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
@@ -28,25 +28,20 @@ export default function HomeScreen() {
   useEffect(() => {
     async function getUserLocation() {
       try {
-        const servicesEnabled = await Location.hasServicesEnabledAsync();
-        if (!servicesEnabled) return;
-
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") return;
-
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+        const coords = await getCurrentCoords();
+        if (!coords) return;
 
         const address = await reverseGeocode(
-          position.coords.latitude,
-          position.coords.longitude
+          coords.latitude,
+          coords.longitude
         );
         if (address) {
           setLocationText(address);
         }
       } catch (error) {
-        console.warn("Could not retrieve current location: ", error);
+        if (!isExpectedLocationError(error)) {
+          console.warn("Could not retrieve current location: ", error);
+        }
       }
     }
 

@@ -3,26 +3,29 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import theme from "../../../../../constants/theme";
 
 const EventAbout = ({ description, artists }) => {
+  const artistList = Array.isArray(artists) ? artists.filter(Boolean) : [];
+  const items = artistList.length
+    ? artistList
+    : ["Live entertainment", "Food and drinks", "Venue access"];
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>About This Event</Text>
       <Text style={styles.description}>
         {description ||
-          "Experience the ultimate electronic music festival featuring world-class DJs and immersive light shows. This year's lineup includes top artists from around the globe."}
+          "Experience a live event near you with venue details, timings, and directions from the app."}
       </Text>
 
       <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-        Featured Artists
+        Event Highlights
       </Text>
       <View style={styles.artistRow}>
-        {(artists || ["Calvin Harris", "Armin van Buuren", "Deadmau5"]).map(
-          (artist, index) => (
-            <Text key={index} style={styles.artistName}>
-              {artist}
-              {index < 2 ? "   " : ""}
-            </Text>
-          ),
-        )}
+        {items.map((artist, index) => (
+          <Text key={index} style={styles.artistName}>
+            {artist}
+            {index < items.length - 1 ? "   " : ""}
+          </Text>
+        ))}
       </View>
 
       <TouchableOpacity>

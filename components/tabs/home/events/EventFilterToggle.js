@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const EventFilterToggle = ({ eventCount = 48 }) => {
-  const [activeTab, setActiveTab] = useState("List");
-
+const EventFilterToggle = ({
+  eventCount = 0,
+  activeTab = "List",
+  onChangeTab,
+}) => {
   return (
     <View style={styles.container}>
       <View style={styles.toggleContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "List" && styles.activeTab]}
-          onPress={() => setActiveTab("List")}
+          onPress={() => onChangeTab?.("List")}
         >
           <Ionicons
             name="list"
@@ -34,7 +36,7 @@ const EventFilterToggle = ({ eventCount = 48 }) => {
 
         <TouchableOpacity
           style={[styles.tab, activeTab === "Map" && styles.activeTab]}
-          onPress={() => setActiveTab("Map")}
+          onPress={() => onChangeTab?.("Map")}
         >
           <MaterialCommunityIcons
             name="map-outline"
