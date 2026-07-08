@@ -1,4 +1,5 @@
 const { getDefaultConfig } = require("expo/metro-config");
+const path = require("path");
 
 module.exports = (() => {
   const config = getDefaultConfig(__dirname);
@@ -13,6 +14,20 @@ module.exports = (() => {
     ...resolver,
     assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
     sourceExts: [...resolver.sourceExts, "svg"],
+    resolveRequest: (context, moduleName, platform) => {
+      if (platform === "web" && moduleName === "react-native-maps") {
+        return {
+          filePath: path.resolve(__dirname, "shims/react-native-maps.web.js"),
+          type: "sourceFile",
+        };
+      }
+
+      if (typeof resolver.resolveRequest === "function") {
+        return resolver.resolveRequest(context, moduleName, platform);
+      }
+
+      return context.resolveRequest(context, moduleName, platform);
+    },
   };
 
   return config;

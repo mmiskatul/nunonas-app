@@ -1,0 +1,105 @@
+export type BookingMode = "simple" | "detailed";
+
+export type GeoCoordinates = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+};
+
+export type DrivingRoute = {
+  distanceMeters: number | null;
+  distanceText: string | null;
+  durationSeconds: number | null;
+  durationText: string | null;
+  coordinates: GeoCoordinates[];
+};
+
+export type EventBookingResponse = {
+  booking_code?: string;
+  bookingCode?: string;
+  status?: string;
+};
+
+export type CustomerMapEventPayload = {
+  id?: string;
+  _id?: string;
+  title?: string;
+  name?: string;
+  category?: string;
+  entity_type?: string;
+  event_type?: string;
+  eventType?: string;
+  event_date?: string;
+  start_time?: string;
+  end_time?: string;
+  location?: string;
+  locationLabel?: string;
+  venue?: string;
+  address?: string;
+  city?: string;
+  offer_text?: string;
+  offerText?: string;
+  banner_image_url?: string | null;
+  cover_image_url?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  description?: string;
+  capacity?: number | string | null;
+  ticket_price?: number | string | null;
+  ticketPrice?: number | string | null;
+  distance_km?: number | string | null;
+  distanceKm?: number | null;
+  rating?: number | null;
+  reviews_count?: number | null;
+  reviewsCount?: number | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  booking_mode?: string;
+  bookingMode?: BookingMode;
+  can_book_on_map?: boolean;
+  canBookOnMap?: boolean;
+  current_booking_status?: string | null;
+  currentBookingStatus?: string;
+  current_booking_code?: string | null;
+  currentBookingCode?: string;
+  is_sold_out?: boolean;
+  isSoldOut?: boolean;
+  remaining_capacity?: number | string | null;
+  remainingCapacity?: number | null;
+  detail_route?: string | null;
+  detailRoute?: string | null;
+};
+
+export type CustomerMapEventsResponse = {
+  items?: CustomerMapEventPayload[];
+};
+
+export type NormalizedMapEvent = {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  locationLabel: string;
+  venue: string;
+  address: string;
+  tag: string;
+  eventType: string;
+  imageUrl: string;
+  description: string;
+  capacity: number | null;
+  ticketPrice: string | null;
+  distance: string;
+  distanceKm: number | null;
+  rating: number | null;
+  reviewsCount: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  bookingMode: BookingMode;
+  canBookOnMap: boolean;
+  currentBookingStatus: string;
+  currentBookingCode: string;
+  isSoldOut: boolean;
+  remainingCapacity: number | null;
+  detailRoute: string | null;
+};
