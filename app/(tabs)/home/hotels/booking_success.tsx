@@ -9,12 +9,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
 export default function HotelBookingSuccessScreen() {
   const router = useRouter();
+  const { bookingId } = useLocalSearchParams();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,7 +38,7 @@ export default function HotelBookingSuccessScreen() {
         <View style={styles.idCard}>
           <View>
             <Text style={styles.idLabel}>BOOKING ID</Text>
-            <Text style={styles.idValue}>HTL-8947562</Text>
+            <Text style={styles.idValue}>{bookingId || "HTL-8947562"}</Text>
           </View>
           <TouchableOpacity style={styles.copyBtn}>
             <Ionicons

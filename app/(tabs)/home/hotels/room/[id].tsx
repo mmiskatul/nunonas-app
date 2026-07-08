@@ -254,7 +254,12 @@ const RoomDetailsScreen = () => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.bookNowBtn}
-          onPress={() => router.push("/home/hotels/booking")}
+          onPress={() =>
+            router.push({
+              pathname: "/home/hotels/booking",
+              params: { roomId: id },
+            })
+          }
         >
           <Text style={styles.bookNowText}>Book Now</Text>
         </TouchableOpacity>

@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -17,6 +18,7 @@ import { getHotel } from "../../../../lib/customer-api";
 import { getFirstQueryParam } from "../../../../lib/event-map-utils";
 import { getErrorMessage, normalizeHotel } from "../../../../lib/provider-utils";
 import type { NormalizedHotel, ProviderPayload } from "../../../../lib/provider-types";
+import { bookHotelRoom, bookHotelStay, getHotelRoom } from "../../../../lib/customer-api";
 
 // Import Modular Components
 import HotelStayDetails from "../../../../components/tabs/home/hotels/details/booking/HotelStayDetails";
@@ -26,10 +28,13 @@ import HotelCancellationPolicy from "../../../../components/tabs/home/hotels/det
 
 export default function HotelBookingScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, roomId } = useLocalSearchParams();
   const hotelId = getFirstQueryParam(id);
+  const selectedRoomId = getFirstQueryParam(roomId);
   const [hotel, setHotel] = useState<NormalizedHotel | null>(null);
+  const [roomTitle, setRoomTitle] = useState("Executive King Suite");
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -47,6 +52,12 @@ export default function HotelBookingScreen() {
         if (!cancelled) {
           setHotel(normalizeHotel(payload));
         }
+        if (selectedRoomId) {
+          const roomPayload = await getHotelRoom<{ title?: string }>(selectedRoomId);
+          if (!cancelled && roomPayload?.title) {
+            setRoomTitle(roomPayload.title);
+          }
+        }
       } catch (error: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(error, "Failed to load hotel."));
@@ -63,13 +74,46 @@ export default function HotelBookingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [hotelId]);
+  }, [hotelId, selectedRoomId]);
 
-  const handleConfirm = () => {
-    router.replace({
-      pathname: "/home/hotels/booking_success",
-      params: { id: hotelId ?? "" },
-    });
+  const handleConfirm = async () => {
+    if (!hotelId || submitting) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const payload = {
+        check_in_date: "2026-02-15",
+        check_out_date: "2026-02-18",
+        guests: 2,
+        special_notes: "",
+        auto_confirm: true,
+      };
+      const response = selectedRoomId
+        ? await bookHotelRoom(selectedRoomId, payload)
+        : await bookHotelStay(hotelId, payload);
+
+      const bookingId =
+        response?.booking_code ??
+        response?.bookingCode ??
+        response?.booking_id ??
+        response?.id ??
+        "HTL-BOOKING";
+
+      router.replace({
+        pathname: "/home/hotels/booking_success",
+        params: {
+          id: hotelId,
+          bookingId: String(bookingId),
+        },
+      });
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Could not complete hotel booking."));
+      Alert.alert("Booking failed", getErrorMessage(error, "Could not complete hotel booking."));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -138,7 +182,7 @@ export default function HotelBookingScreen() {
             style={styles.roomImage}
           />
           <View style={styles.hotelDetails}>
-            <Text style={styles.hotelName}>Executive King Suite</Text>
+            <Text style={styles.hotelName}>{roomTitle}</Text>
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <Ionicons
@@ -170,8 +214,12 @@ export default function HotelBookingScreen() {
         <HotelPriceBreakdown />
         <HotelCancellationPolicy />
 
-        <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-          <Text style={styles.confirmBtnText}>Confirm Book</Text>
+        <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm} disabled={submitting}>
+          {submitting ? (
+            <ActivityIndicator size="small" color={theme.COLORS.white} />
+          ) : (
+            <Text style={styles.confirmBtnText}>Confirm Book</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

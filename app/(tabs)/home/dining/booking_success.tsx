@@ -16,7 +16,7 @@ export default function BookingSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  const { id, restaurantName, dateTime, guests, seating } = params;
+  const { id, restaurantName, dateTime, guests, seating, bookingId } = params;
 
   const handleBackToHome = () => {
     router.replace("/(tabs)/home");
@@ -31,7 +31,7 @@ export default function BookingSuccessScreen() {
     dateTime: dateTime || "Dec 15, 7:30 PM",
     guests: guests || "4",
     seating: seating || "Window table",
-    bookingId: "#BK2024-1215",
+    bookingId: bookingId || "#BK2024-1215",
   };
 
   return (

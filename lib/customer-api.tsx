@@ -39,6 +39,37 @@ type AuthTokenPayload = {
   session_token?: string | null;
 };
 
+export type BookingResponse = {
+  id?: string | number;
+  booking_id?: string | number;
+  booking_code?: string;
+  bookingCode?: string;
+  status?: string;
+  provider_id?: string;
+  provider_type?: string;
+};
+
+export type RestaurantTableBookingPayload = {
+  date: string;
+  time: string;
+  guests: number;
+  seating_preference?: string;
+  special_notes?: string;
+  auto_confirm?: boolean;
+};
+
+export type HotelStayBookingPayload = {
+  check_in_date: string;
+  check_out_date: string;
+  guests: number;
+  special_notes?: string;
+  auto_confirm?: boolean;
+  guest_name?: string;
+  guest_email?: string;
+  guest_phone?: string;
+  room_id?: string;
+};
+
 export type NormalizedUserProfile = {
   id: string | number;
   full_name: string;
@@ -248,6 +279,27 @@ export async function createBooking<TResponse = unknown, TBody extends JsonObjec
   payload: TBody,
 ): Promise<TResponse> {
   return apiPostAuth<TResponse, TBody>(`${C}/bookings`, payload);
+}
+
+export async function bookRestaurantTable<
+  TResponse = BookingResponse,
+  TBody extends RestaurantTableBookingPayload = RestaurantTableBookingPayload,
+>(restaurantId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${C}/restaurants/${restaurantId}/bookings`, payload);
+}
+
+export async function bookHotelStay<
+  TResponse = BookingResponse,
+  TBody extends HotelStayBookingPayload = HotelStayBookingPayload,
+>(hotelId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${C}/hotels/${hotelId}/bookings`, payload);
+}
+
+export async function bookHotelRoom<
+  TResponse = BookingResponse,
+  TBody extends Omit<HotelStayBookingPayload, "room_id"> = Omit<HotelStayBookingPayload, "room_id">,
+>(roomId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${C}/hotels/rooms/${roomId}/bookings`, payload);
 }
 
 export async function listMyBookings<TResponse = unknown>(
