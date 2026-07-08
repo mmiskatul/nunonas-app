@@ -218,8 +218,9 @@ export default function MapScreen() {
         const items = await listNearbyOffers(50);
         setNearbyEvents(items);
         const selectedId = eventId ?? offerId;
-        const initialEvent =
-          items.find((item) => String(item.id) === String(selectedId ?? "")) ?? items[0] ?? null;
+        const initialEvent = selectedId
+          ? items.find((item) => String(item.id) === String(selectedId)) ?? null
+          : null;
         setSelectedEvent(initialEvent);
       } catch (error) {
         console.error("Error loading offers for map: ", error);
@@ -296,6 +297,10 @@ export default function MapScreen() {
     let cancelled = false;
 
     async function loadRoute() {
+      if (!selectedEvent?.id) {
+        setRouteInfo(null);
+        return;
+      }
       const targetEvent = selectedEventDetails ?? selectedEvent;
       if (!targetEvent?.latitude || !targetEvent?.longitude) {
         setRouteInfo(null);
@@ -463,6 +468,11 @@ export default function MapScreen() {
     cardEvent?.canBookOnMap &&
     !cardEvent?.isSoldOut &&
     !resolvedBookingCode;
+  const routeDistanceText =
+    routeInfo?.distanceText ??
+    (typeof cardEvent?.distanceKm === "number" ? `${cardEvent.distanceKm.toFixed(1)} km away` : cardEvent?.distance ?? "Nearby");
+  const routeDurationText = routeInfo?.durationText ?? "Tap Directions";
+  const routeLocationText = cardEvent?.address ?? cardEvent?.locationLabel ?? cardEvent?.location ?? "Location available";
   const primaryActionLabel = resolvedBookingCode
     ? "View Booking"
     : cardEvent?.isSoldOut
@@ -592,24 +602,27 @@ export default function MapScreen() {
               <Text style={styles.offerSubtitle} numberOfLines={1}>
                 {cardEvent.tag ?? cardEvent.offerText ?? "Active event"}
               </Text>
-              <Text style={styles.locationSubtitle} numberOfLines={2}>
-                {cardEvent.address ?? cardEvent.locationLabel ?? cardEvent.location}
-              </Text>
             </View>
 
-            <View style={styles.metricsRow}>
-              <View style={styles.metricPill}>
-                <Ionicons name="trail-sign-outline" size={15} color={theme.COLORS.primary} />
-                <Text style={styles.metricText}>
-                  {routeInfo?.distanceText ??
-                    (typeof cardEvent.distanceKm === "number"
-                      ? `${cardEvent.distanceKm.toFixed(1)} km`
-                      : cardEvent.distance ?? "Nearby")}
+            <View style={styles.routeSummaryCard}>
+              <View style={styles.routeSummaryHeader}>
+                <Ionicons name="location-outline" size={18} color={theme.COLORS.primary} />
+                <Text style={styles.routeSummaryTitle} numberOfLines={1}>
+                  {cardEvent.venue ?? "Event location"}
                 </Text>
               </View>
-              <View style={styles.metricPill}>
-                <Ionicons name="time-outline" size={15} color={theme.COLORS.primary} />
-                <Text style={styles.metricText}>{routeInfo?.durationText ?? cardEvent.time ?? "Route preview"}</Text>
+              <Text style={styles.routeSummaryAddress} numberOfLines={2}>
+                {routeLocationText}
+              </Text>
+              <View style={styles.metricsRow}>
+                <View style={styles.metricPill}>
+                  <Ionicons name="trail-sign-outline" size={15} color={theme.COLORS.primary} />
+                  <Text style={styles.metricText}>{routeDistanceText}</Text>
+                </View>
+                <View style={styles.metricPill}>
+                  <Ionicons name="time-outline" size={15} color={theme.COLORS.primary} />
+                  <Text style={styles.metricText}>{routeDurationText}</Text>
+                </View>
               </View>
             </View>
 
@@ -716,12 +729,12 @@ export default function MapScreen() {
             <View style={styles.locationInfo}>
               <Ionicons name="location" size={24} color={theme.COLORS.primary} />
               <View style={styles.textContainer}>
-                <Text style={styles.locationTitle}>Selected Location</Text>
+                <Text style={styles.locationTitle}>Nearby Events</Text>
                 <Text style={styles.locationSubtitle} numberOfLines={2}>
                   {addressText}
                 </Text>
                 <Text style={styles.locationHint}>
-                  Tap any event pin to see its name, road distance, and directions.
+                  All events are shown on the map. Tap any event pin to load its route and directions.
                 </Text>
               </View>
             </View>
@@ -919,6 +932,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 4,
   },
+  routeSummaryCard: {
+    marginTop: 14,
+    marginBottom: 14,
+    backgroundColor: "#f8fafc",
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  routeSummaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  routeSummaryTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+  },
+  routeSummaryAddress: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    color: theme.COLORS.textSecondary,
+  },
   locationHint: {
     fontSize: 13,
     color: theme.COLORS.textSecondary,
@@ -959,7 +998,7 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 14,
+    marginTop: 12,
   },
   metricPill: {
     flex: 1,
