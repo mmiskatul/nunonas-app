@@ -32,6 +32,9 @@ export default function HotelDetailsInfo({ hotel }: HotelDetailsInfoProps) {
                 {hotel.locationText}
               </Text>
             </View>
+            {typeof hotel.distanceKm === "number" ? (
+              <Text style={styles.distanceText}>{hotel.distanceKm.toFixed(1)} km away</Text>
+            ) : null}
           </View>
         </View>
         <View style={styles.priceColumn}>
@@ -103,6 +106,11 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
     color: theme.COLORS.textSecondary,
+  },
+  distanceText: {
+    fontSize: 12,
+    color: theme.COLORS.textSecondary,
+    marginLeft: 8,
   },
   priceColumn: {
     alignItems: "flex-end",

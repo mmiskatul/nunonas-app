@@ -64,6 +64,7 @@ export type NormalizedHotel = {
   imageUrl: string;
   statusText: string;
   description: string;
+  distanceKm?: number | null;
 };
 
 export type NormalizedSpa = {

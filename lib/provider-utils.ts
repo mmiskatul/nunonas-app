@@ -78,6 +78,7 @@ export function normalizeHotel(payload: ProviderPayload = {}): NormalizedHotel {
     locationText: getLocationText(payload),
     imageUrl: payload.cover_image_url ?? payload.image_url ?? payload.image ?? "",
     statusText: payload.status ?? "Available",
+    distanceKm: toNumber(payload.distance_km),
     description:
       payload.description ??
       "Explore room availability, amenities, and stay details directly from the app.",
