@@ -135,6 +135,27 @@ export default function MapScreen() {
   });
 
   useEffect(() => {
+    if (selectedEvent || nearbyEvents.length === 0 || !mapRef.current) {
+      return;
+    }
+
+    const eventCoordinates = nearbyEvents
+      .filter((event) => event.latitude != null && event.longitude != null)
+      .map((event) => ({ latitude: event.latitude, longitude: event.longitude }));
+    if (eventCoordinates.length === 0) {
+      return;
+    }
+
+    // Events may be in a different city from the user's current location.
+    // Fit all event pins so the marker is visible instead of remaining
+    // outside the initial camera region.
+    mapRef.current.fitToCoordinates(eventCoordinates, {
+      edgePadding: { top: 160, right: 80, bottom: 260, left: 80 },
+      animated: true,
+    });
+  }, [nearbyEvents, selectedEvent]);
+
+  useEffect(() => {
     startTransitionAnimation();
 
     async function initLocation() {
@@ -465,10 +486,15 @@ export default function MapScreen() {
             <Marker
               key={String(offer.id)}
               coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
+              anchor={{ x: 0.5, y: 1 }}
               title={offer.title}
               description={offer.locationLabel}
               onPress={() => setSelectedEvent(offer)}
-              tracksViewChanges={false}
+              // Keep the custom label/dot rendered on Android as well. With
+              // this disabled, some native map versions cache the marker
+              // before the event label is painted and show nothing useful.
+              tracksViewChanges={true}
+              accessibilityLabel={`Event location: ${offer.title}`}
             >
               <View style={styles.eventMarkerWrap}>
                 <View style={styles.eventMarkerLabel}>
@@ -479,6 +505,7 @@ export default function MapScreen() {
                 <View style={styles.eventMarkerPin}>
                   <View style={styles.eventMarkerPinInner} />
                 </View>
+                <View style={styles.eventMarkerStem} />
               </View>
             </Marker>
           ))}
@@ -837,9 +864,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   eventMarkerPin: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: "#2563eb",
     borderWidth: 3,
     borderColor: theme.COLORS.white,
@@ -848,10 +875,20 @@ const styles = StyleSheet.create({
     ...theme.SHADOWS.card,
   },
   eventMarkerPinInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
     backgroundColor: theme.COLORS.white,
+  },
+  eventMarkerStem: {
+    width: 8,
+    height: 8,
+    backgroundColor: "#2563eb",
+    marginTop: -5,
+    transform: [{ rotate: "45deg" }],
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: theme.COLORS.white,
   },
   bottomOfferImage: {
     width: 62,
