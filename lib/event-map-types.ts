@@ -76,9 +76,13 @@ export type CustomerMapEventsResponse = {
 
 export type NormalizedMapEvent = {
   id: string;
+  entityType: string;
   title: string;
   date: string;
   time: string;
+  eventDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   location: string;
   locationLabel: string;
   venue: string;

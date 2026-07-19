@@ -43,6 +43,15 @@ export function getFirstQueryParam(value: string | string[] | undefined): string
   return value ?? null;
 }
 
+export function isEventNotExpired(eventDate?: string | null, endTime?: string | null): boolean {
+  if (!eventDate || !endTime) {
+    return false;
+  }
+
+  const end = new Date(`${eventDate}T${String(endTime).slice(0, 8)}`);
+  return !Number.isNaN(end.getTime()) && end.getTime() >= Date.now();
+}
+
 function toNumber(value: number | string | null | undefined): number | null {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
@@ -69,9 +78,13 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
 
   return {
     id: item.id ?? item._id ?? "",
+    entityType: item.entity_type ?? item.entityType ?? "event",
     title: item.title ?? item.name ?? "Untitled Event",
     date: formatEventDate(item.event_date),
     time: formatEventTime(item.start_time, item.end_time),
+    eventDate: item.event_date ?? null,
+    startTime: item.start_time ?? null,
+    endTime: item.end_time ?? null,
     location,
     locationLabel: item.locationLabel ?? address,
     venue: item.venue ?? item.location ?? "Venue available",
