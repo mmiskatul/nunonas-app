@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, View, ScrollView, ActivityIndicator, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
-import { bookEventTickets, getEvent } from "../../../../lib/customer-api";
+import { addSaved, bookEventTickets, getEvent, listSaved, removeSaved } from "../../../../lib/customer-api";
 import { getErrorMessage, getFirstQueryParam, normalizeMapEvent } from "../../../../lib/event-map-utils";
 import type {
   CustomerMapEventPayload,
@@ -35,6 +35,8 @@ export default function EventDetailsScreen() {
     loading: false,
     code: "",
   });
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,15 +51,17 @@ export default function EventDetailsScreen() {
       try {
         setLoading(true);
         setError("");
-        const [eventPayload, coords] = await Promise.all([
+        const [eventPayload, coords, savedPayload] = await Promise.all([
           getEvent<CustomerMapEventPayload>(eventId),
           getCurrentCoords().catch(() => null),
+          listSaved<{ items?: Array<{ entity_type?: string; entity_id?: string }> }>().catch(() => ({ items: [] })),
         ]);
         if (cancelled) {
           return;
         }
         setEvent(normalizeMapEvent(eventPayload));
         setOrigin(coords ? { latitude: coords.latitude, longitude: coords.longitude } : null);
+        setSaved(Boolean(savedPayload.items?.some((item) => item.entity_type === "event" && item.entity_id === eventId)));
       } catch (error: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(error, "Could not load event details."));
@@ -76,6 +80,27 @@ export default function EventDetailsScreen() {
     };
   }, [eventId]);
 
+  const handleToggleSaved = async () => {
+    if (!eventId || saving) {
+      return;
+    }
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+    setSaving(true);
+    try {
+      if (nextSaved) {
+        await addSaved("event", eventId);
+      } else {
+        await removeSaved("event", eventId);
+      }
+    } catch (error: unknown) {
+      setSaved(!nextSaved);
+      Alert.alert("Save failed", getErrorMessage(error, "Could not update saved events."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const content = useMemo(() => {
     if (!event) {
       return null;
@@ -83,7 +108,7 @@ export default function EventDetailsScreen() {
 
     return (
       <>
-        <EventImageHeader event={event} />
+        <EventImageHeader event={event} saved={saved} saving={saving} onToggleSaved={handleToggleSaved} />
         <EventKeyInfo event={event} />
         <EventAbout description={event.description} artists={[event.eventType, event.venue]} />
         <EventLocationMap

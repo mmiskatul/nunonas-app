@@ -13,9 +13,12 @@ import type { NormalizedMapEvent } from "../../../../../lib/event-map-types";
 
 type EventImageHeaderProps = {
   event: NormalizedMapEvent;
+  saved: boolean;
+  saving: boolean;
+  onToggleSaved: () => void;
 };
 
-export default function EventImageHeader({ event }: EventImageHeaderProps) {
+export default function EventImageHeader({ event, saved, saving, onToggleSaved }: EventImageHeaderProps) {
   const router = useRouter();
   const imageSource = event.imageUrl
     ? { uri: event.imageUrl }
@@ -33,8 +36,8 @@ export default function EventImageHeader({ event }: EventImageHeaderProps) {
           <Ionicons name="arrow-back" size={24} color={theme.COLORS.white} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="heart-outline" size={24} color={theme.COLORS.white} />
+        <TouchableOpacity style={styles.iconButton} onPress={onToggleSaved} disabled={saving}>
+          <Ionicons name={saved ? "heart" : "heart-outline"} size={24} color={saved ? "#ef4444" : theme.COLORS.white} />
         </TouchableOpacity>
       </View>
 
