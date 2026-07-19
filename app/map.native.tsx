@@ -496,7 +496,7 @@ export default function MapScreen() {
               tracksViewChanges={true}
               accessibilityLabel={`Event location: ${offer.title}`}
             >
-              <View style={styles.eventMarkerWrap}>
+              <View style={styles.eventMarkerWrap} collapsable={false}>
                 {selectedEvent?.id === offer.id ? (
                   <View style={styles.eventMarkerLabel}>
                     <Text style={styles.eventMarkerLabelText} numberOfLines={1}>
