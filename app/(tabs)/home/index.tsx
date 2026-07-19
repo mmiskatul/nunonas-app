@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +26,8 @@ import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [locationText, setLocationText] = useState("Doha Qatar");
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
 
   useEffect(() => {
     async function getUserLocation() {
@@ -48,6 +51,27 @@ export default function HomeScreen() {
 
     getUserLocation();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const coords = await getCurrentCoords();
+      if (coords) {
+        const address = await reverseGeocode(coords.latitude, coords.longitude);
+        if (address) {
+          setLocationText(address);
+        }
+      }
+    } catch (error) {
+      if (!isExpectedLocationError(error)) {
+        console.warn("Could not refresh home location: ", error);
+      }
+    } finally {
+      // Remount data-backed home sections so each section refetches its data.
+      setRefreshVersion((version) => version + 1);
+      setRefreshing(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,7 +100,17 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.COLORS.primary}
+            colors={[theme.COLORS.primary]}
+          />
+        }
+      >
         {/* Welcome Text */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Good Morning, Nuno!</Text>
@@ -86,11 +120,11 @@ export default function HomeScreen() {
         </View>
 
         {/* Components */}
-        <ExploreNearbyBanner />
-        <PlanForMeBanner />
-        <QuickAccess />
-        <TrendingNow />
-        <FeaturedExperiences />
+        <ExploreNearbyBanner key={`nearby-${refreshVersion}`} />
+        <PlanForMeBanner key={`plan-${refreshVersion}`} />
+        <QuickAccess key={`quick-${refreshVersion}`} />
+        <TrendingNow key={`trending-${refreshVersion}`} />
+        <FeaturedExperiences key={`featured-${refreshVersion}`} />
       </ScrollView>
 
       {/* Location Selection Modal Component */}
