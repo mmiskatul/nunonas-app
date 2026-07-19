@@ -114,7 +114,7 @@ const TrendingNow = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Trending Now</Text>
-        <TouchableOpacity onPress={() => router.push("/home/dining")}>
+        <TouchableOpacity onPress={() => router.push("/home/hotels")}>
           <Text style={styles.viewAll}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -196,10 +196,10 @@ const TrendingNow = () => {
         </ScrollView>
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="restaurant-outline" size={28} color={theme.COLORS.textSecondary} />
-          <Text style={styles.emptyTitle}>Trending places are loading soon</Text>
+          <Ionicons name="bed-outline" size={28} color={theme.COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>No trending hotels right now</Text>
           <Text style={styles.emptyText}>
-            Check the full dining list while we prepare recommendations.
+            Hotels appear here when they have an available room.
           </Text>
         </View>
       )}
