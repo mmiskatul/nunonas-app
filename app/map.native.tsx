@@ -500,9 +500,9 @@ export default function MapScreen() {
                   </View>
                 ) : null}
                 <View style={styles.eventMarkerPin}>
+                  <Ionicons name="location-sharp" size={42} color="#dc2626" />
                   <View style={styles.eventMarkerPinInner} />
                 </View>
-                <View style={styles.eventMarkerStem} />
               </View>
             </Marker>
           ))}
@@ -861,31 +861,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   eventMarkerPin: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#dc2626",
-    borderWidth: 3,
-    borderColor: theme.COLORS.white,
+    width: 42,
+    height: 42,
     alignItems: "center",
     justifyContent: "center",
-    ...theme.SHADOWS.card,
   },
   eventMarkerPinInner: {
-    width: 10,
-    height: 10,
+    position: "absolute",
+    top: 10,
+    width: 9,
+    height: 9,
     borderRadius: 5,
     backgroundColor: theme.COLORS.white,
-  },
-  eventMarkerStem: {
-    width: 12,
-    height: 12,
-    backgroundColor: "#dc2626",
-    marginTop: -7,
-    transform: [{ rotate: "45deg" }],
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
-    borderColor: theme.COLORS.white,
   },
   bottomOfferImage: {
     width: 62,
