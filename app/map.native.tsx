@@ -497,11 +497,13 @@ export default function MapScreen() {
               accessibilityLabel={`Event location: ${offer.title}`}
             >
               <View style={styles.eventMarkerWrap}>
-                <View style={styles.eventMarkerLabel}>
-                  <Text style={styles.eventMarkerLabelText} numberOfLines={1}>
-                    {offer.title}
-                  </Text>
-                </View>
+                {selectedEvent?.id === offer.id ? (
+                  <View style={styles.eventMarkerLabel}>
+                    <Text style={styles.eventMarkerLabelText} numberOfLines={1}>
+                      {offer.title}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.eventMarkerPin}>
                   <View style={styles.eventMarkerPinInner} />
                 </View>
