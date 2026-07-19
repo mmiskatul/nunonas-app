@@ -68,7 +68,7 @@ const ExploreNearbyBanner = () => {
     async function loadOffers() {
       try {
         setOffersLoading(true);
-        const items = await listNearbyOffers(6);
+        const items = (await listNearbyOffers(6)).filter((item) => item.entityType !== "event");
         setOffers(items);
         setSelectedOffer(items[0] ?? null);
       } catch (error) {
