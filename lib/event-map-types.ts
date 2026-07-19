@@ -21,6 +21,8 @@ export type EventBookingResponse = {
 };
 
 export type CustomerMapEventPayload = {
+  entity_type?: string | null;
+  entityType?: string | null;
   id?: string;
   _id?: string;
   title?: string;
