@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
-import Svg, { Circle, Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
@@ -444,6 +443,7 @@ export default function MapScreen() {
               key={String(offer.id)}
               coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
               anchor={{ x: 0.5, y: 1 }}
+              pinColor="#dc2626"
               title={offer.title}
               description={offer.locationLabel}
               onPress={() => setSelectedEvent(offer)}
@@ -452,28 +452,7 @@ export default function MapScreen() {
               // before the event label is painted and show nothing useful.
               tracksViewChanges={true}
               accessibilityLabel={`Event location: ${offer.title}`}
-            >
-              <View style={styles.eventMarkerWrap} collapsable={false}>
-                {selectedEvent?.id === offer.id ? (
-                  <View style={styles.eventMarkerLabel}>
-                    <Text style={styles.eventMarkerLabelText} numberOfLines={1}>
-                      {offer.title}
-                    </Text>
-                  </View>
-                ) : null}
-                <View style={styles.eventMarkerPin}>
-                  <Svg width={44} height={54} viewBox="0 0 44 54">
-                    <Path
-                      d="M22 2C12.6 2 5 9.6 5 19c0 12 17 31 17 31s17-19 17-31C39 9.6 31.4 2 22 2Z"
-                      fill="#dc2626"
-                      stroke="#ffffff"
-                      strokeWidth={2}
-                    />
-                    <Circle cx={22} cy={19} r={6} fill="#ffffff" />
-                  </Svg>
-                </View>
-              </View>
-            </Marker>
+            />
           ))}
         </MapView>
 
@@ -810,31 +789,6 @@ const styles = StyleSheet.create({
   },
   headerTextBlock: {
     marginBottom: 14,
-  },
-  eventMarkerWrap: {
-    alignItems: "center",
-  },
-  eventMarkerLabel: {
-    maxWidth: 150,
-    backgroundColor: "#b91c1c",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.92)",
-  },
-  eventMarkerLabelText: {
-    color: theme.COLORS.white,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  eventMarkerPin: {
-    width: 44,
-    height: 54,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "visible",
   },
   bottomOfferImage: {
     width: 62,
