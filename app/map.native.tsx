@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import Svg, { Circle, Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
@@ -461,8 +462,15 @@ export default function MapScreen() {
                   </View>
                 ) : null}
                 <View style={styles.eventMarkerPin}>
-                  <Ionicons name="location-sharp" size={42} color="#dc2626" />
-                  <View style={styles.eventMarkerPinInner} />
+                  <Svg width={44} height={54} viewBox="0 0 44 54">
+                    <Path
+                      d="M22 2C12.6 2 5 9.6 5 19c0 12 17 31 17 31s17-19 17-31C39 9.6 31.4 2 22 2Z"
+                      fill="#dc2626"
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                    />
+                    <Circle cx={22} cy={19} r={6} fill="#ffffff" />
+                  </Svg>
                 </View>
               </View>
             </Marker>
@@ -822,18 +830,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   eventMarkerPin: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 54,
     alignItems: "center",
     justifyContent: "center",
-  },
-  eventMarkerPinInner: {
-    position: "absolute",
-    top: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: theme.COLORS.white,
+    overflow: "visible",
   },
   bottomOfferImage: {
     width: 62,
