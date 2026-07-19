@@ -427,6 +427,7 @@ export default function MapScreen() {
           }}
           showsUserLocation={true}
           showsMyLocationButton={true}
+          onPress={() => setSelectedEvent(null)}
         >
           {routeInfo?.coordinates?.length ? (
             <Polyline
