@@ -118,6 +118,10 @@ export async function getHomeFeed<TResponse = unknown>(): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${C}/home`);
 }
 
+export async function getTrendingHotels<TResponse = unknown>(limit = 6): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/trending/hotels${buildQuery({ limit })}`);
+}
+
 export async function getUnreadNotificationCount<TResponse = unknown>(): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${C}/notifications/unread-count`);
 }

@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
-import { getHomeFeed } from "../../../lib/customer-api";
+import { getTrendingHotels } from "../../../lib/customer-api";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -89,8 +89,8 @@ const TrendingNow = () => {
 
   const fetchTrending = useCallback(async () => {
     try {
-      const homeFeed = await getHomeFeed();
-      setItems(normalizeTrendingItems(homeFeed?.trending_now));
+      const trendingHotels = await getTrendingHotels(6);
+      setItems(normalizeTrendingItems(trendingHotels));
     } catch {
       setItems([]);
     } finally {
