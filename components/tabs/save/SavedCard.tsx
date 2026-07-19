@@ -4,15 +4,16 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../constants/theme";
 
-const SavedCard = ({ item, onDetails, onAction }) => {
-  const isHotel = item.type === "Hotel";
+const SavedCard = ({ item, onDetails, onAction, onRemove }) => {
+  const isHotel = String(item.type).toLowerCase() === "hotel";
+  const imageSource = typeof item.image === "string" ? { uri: item.image } : item.image;
 
   return (
     <View style={styles.container}>
       {/* Image Section */}
       <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.image} resizeMode="cover" />
-        <TouchableOpacity style={styles.heartBtn} activeOpacity={0.8}>
+        {imageSource ? <Image source={imageSource} style={styles.image} resizeMode="cover" /> : <View style={[styles.image, styles.imagePlaceholder]}><Ionicons name="image-outline" size={36} color={theme.COLORS.textSecondary} /></View>}
+        <TouchableOpacity style={styles.heartBtn} activeOpacity={0.8} onPress={onRemove}>
           <Ionicons name="heart" size={24} color={theme.COLORS.error} />
         </TouchableOpacity>
       </View>
@@ -102,6 +103,11 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.surface,
   },
   heartBtn: {
     position: "absolute",

@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
+import { getRestaurantReviews, getSpaReviews } from "../../../../lib/customer-api";
 
-const REVIEWS_DATA = [
+const REVIEWS_DATA = [];
+/* Legacy static reviews removed; reviews are loaded from the provider endpoint.
+const LEGACY_REVIEWS_DATA = [
   {
     id: "1",
     user: "Sarah Johnson",
@@ -40,7 +43,7 @@ const REVIEWS_DATA = [
       "Very satisfied with the service. Everything was handled professionally and efficiently. Minor room for improvement but overall excellent.",
     avatar: "https://i.pravatar.cc/100?img=4",
   },
-];
+]; */
 
 type RatingBarProps = {
   label: string;
@@ -94,42 +97,52 @@ const ReviewCard = ({ review }: { review: Review }) => (
   </View>
 );
 
-export default function ReviewsContent(_: ReviewsContentProps) {
+export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [summary, setSummary] = useState({ average: 0, total: 0, breakdown: {} });
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    getRestaurantReviews(restaurantId)
+      .then((payload: any) => {
+        setReviews(payload?.items ?? []);
+        setSummary({ average: Number(payload?.average_rating ?? 0), total: Number(payload?.total_reviews ?? 0), breakdown: payload?.breakdown ?? {} });
+      })
+      .catch(() => { setReviews([]); setSummary({ average: 0, total: 0, breakdown: {} }); });
+  }, [restaurantId]);
+
   return (
     <View style={styles.container}>
       {/* Summary Header */}
       <View style={styles.summaryCard}>
-        <Text style={styles.overallRating}>4.5</Text>
+        <Text style={styles.overallRating}>{summary.average.toFixed(1)}</Text>
         <View style={styles.starsRowMain}>
           {[1, 2, 3, 4, 5].map((s) => (
             <Ionicons
               key={s}
-              name={s <= 4 ? "star" : "star-outline"} // Custom logic for demo
+              name={s <= Math.round(summary.average) ? "star" : "star-outline"}
               size={24}
               color="#FACC15"
             />
           ))}
         </View>
-        <Text style={styles.reviewsCount}>Based on 248 reviews</Text>
+        <Text style={styles.reviewsCount}>Based on {summary.total} reviews</Text>
 
         <View style={styles.barsContainer}>
-          <RatingBar label="5" percentage={75} count={186} />
-          <RatingBar label="4" percentage={15} count={37} />
-          <RatingBar label="3" percentage={6} count={15} />
-          <RatingBar label="2" percentage={3} count={7} />
-          <RatingBar label="1" percentage={1} count={3} />
+          {[5, 4, 3, 2, 1].map((rating) => {
+            const count = Number(summary.breakdown[String(rating)] ?? 0);
+            return <RatingBar key={rating} label={String(rating)} percentage={summary.total ? Math.round((count / summary.total) * 100) : 0} count={count} />;
+          })}
         </View>
       </View>
 
       <Text style={styles.sectionTitle}>Recent Reviews</Text>
 
-      {REVIEWS_DATA.map((item) => (
+      {reviews.map((item) => (
         <ReviewCard key={item.id} review={item} />
       ))}
 
-      <TouchableOpacity style={styles.loadMoreBtn}>
-        <Text style={styles.loadMoreText}>Load More Reviews</Text>
-      </TouchableOpacity>
+      {reviews.length === 0 ? <Text style={styles.emptyText}>No reviews available.</Text> : null}
     </View>
   );
 }
@@ -138,6 +151,11 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     backgroundColor: "#F8FAFC",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: theme.COLORS.textSecondary,
+    paddingVertical: 24,
   },
   summaryCard: {
     backgroundColor: theme.COLORS.white,

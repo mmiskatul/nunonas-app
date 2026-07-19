@@ -17,7 +17,9 @@ import BookingCard from "../../../../components/tabs/profile/bookings/BookingCar
 import { listMyBookings } from "../../../../lib/customer-api";
 
 
-const bookingsData = [
+const bookingsData = [];
+/* Legacy static booking examples removed; this screen uses listMyBookings().
+const legacyBookingsData = [
   {
     id: "1",
     title: "Grand Palace Hotel",
@@ -63,7 +65,7 @@ const bookingsData = [
     imageUrl:
       "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=300&auto=format&fit=crop",
   },
-];
+]; */
 
 export default function BookingsScreen() {
   const router = useRouter();

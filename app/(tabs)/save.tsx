@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import { listSaved, removeSaved } from "../../lib/customer-api";
 
@@ -21,7 +22,9 @@ import SavedCard from "../../components/tabs/save/SavedCard";
 
 const FILTERS = ["All", "Restaurants", "Events", "Spas", "Hotels"];
 
-const SAVED_ITEMS = [
+const SAVED_ITEMS = [];
+/* Legacy placeholder removed; saved cards are loaded from the customer API. */
+/*
   {
     id: "1",
     title: "The Garden Bistro",
@@ -71,7 +74,7 @@ const SAVED_ITEMS = [
     actionLabel: "Book Now",
     image: require("../../assets/images/hotel/hotel.jpg"),
   },
-];
+]; */
 
 function normalizeSavedItems(payload) {
   if (Array.isArray(payload)) {
@@ -90,6 +93,7 @@ function normalizeSavedItems(payload) {
 }
 
 export default function SaveScreen() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("All");
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -119,9 +123,18 @@ export default function SaveScreen() {
     }
   }, []);
 
-  const normalizedSavedItems = Array.isArray(normalizeSavedItems(savedItems))
-    ? normalizeSavedItems(savedItems)
-    : [];
+  const normalizedSavedItems = normalizeSavedItems(savedItems).map((item) => ({
+    ...item,
+    type: item.type ?? item.entity_type ?? "Venue",
+    title: item.title ?? item.name ?? "Saved item",
+    categoryIcon: item.categoryIcon ?? (item.entity_type === "event" ? "calendar" : item.entity_type === "hotel" ? "bed" : item.entity_type === "spa" ? "leaf" : "restaurant"),
+    rating: item.rating ?? item.avg_rating ?? null,
+    subInfo: item.subInfo ?? item.category ?? "",
+    location: item.location ?? item.address ?? "",
+    distance: item.distance ?? (item.distance_km ? `${item.distance_km} km` : ""),
+    image: item.image_url ?? item.cover_image_url ?? item.image,
+    actionLabel: item.entity_type === "event" ? "Get Tickets" : "Book Now",
+  }));
 
   const filteredItems =
     activeFilter === "All"
@@ -207,8 +220,9 @@ export default function SaveScreen() {
           <SavedCard
             key={item.id ?? item._id ?? `${item.entity_type ?? item.type ?? "saved"}-${index}`}
             item={item}
-            onDetails={() => {}}
-            onAction={() => {}}
+            onDetails={() => router.push(`/home/${item.entity_type === "event" ? "events" : item.entity_type === "hotel" ? "hotels" : item.entity_type === "spa" ? "spa" : "dining"}/${item.entity_id ?? item.id}`)}
+            onAction={() => router.push(`/home/${item.entity_type === "event" ? "events" : item.entity_type === "hotel" ? "hotels" : item.entity_type === "spa" ? "spa" : "dining"}/${item.entity_id ?? item.id}`)}
+            onRemove={() => handleRemoveSaved(item.entity_type ?? item.type, item.entity_id ?? item.id)}
           />
         ))}
 

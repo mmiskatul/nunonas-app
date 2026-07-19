@@ -11,7 +11,7 @@ const SpaCard = ({ spa }) => {
   return (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
-        <Image source={spa.image} style={styles.image} />
+        {spa.image ? <Image source={typeof spa.image === "string" ? { uri: spa.image } : spa.image} style={styles.image} /> : <View style={[styles.image, styles.imagePlaceholder]}><Ionicons name="image-outline" size={42} color={theme.COLORS.textSecondary} /></View>}
         {spa.badge && (
           <View
             style={[
@@ -82,6 +82,11 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.surface,
   },
   badge: {
     position: "absolute",

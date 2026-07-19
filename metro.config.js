@@ -17,7 +17,7 @@ module.exports = (() => {
     resolveRequest: (context, moduleName, platform) => {
       if (platform === "web" && moduleName === "react-native-maps") {
         return {
-          filePath: path.resolve(__dirname, "shims/react-native-maps.web.js"),
+          filePath: path.resolve(__dirname, "shims/react-native-maps.web.tsx"),
           type: "sourceFile",
         };
       }
