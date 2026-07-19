@@ -5,7 +5,7 @@ import theme from "../../../../constants/theme";
 import { getFirstQueryParam } from "../../../../lib/event-map-utils";
 import { getErrorMessage, normalizeSpa } from "../../../../lib/provider-utils";
 import type { NormalizedSpa, ProviderCollectionResponse, ProviderPayload } from "../../../../lib/provider-types";
-import { getSpa, getSpaGallery, getSpaMenu } from "../../../../lib/customer-api";
+import { getSpa, getSpaGallery, getSpaMenu, getSpaServices } from "../../../../lib/customer-api";
 
 // Import Details Components
 import SpaImageHeader from "../../../../components/tabs/home/spa/details/SpaImageHeader";
@@ -14,6 +14,7 @@ import SpaDetailsActions from "../../../../components/tabs/home/spa/details/SpaD
 import SpaDetailsTabs from "../../../../components/tabs/home/spa/details/SpaDetailsTabs";
 import SpaOverviewContent from "../../../../components/tabs/home/spa/details/SpaOverviewContent";
 import SpaMenuContent from "../../../../components/tabs/home/spa/details/SpaMenuContent";
+import SpaServicesContent from "../../../../components/tabs/home/spa/details/SpaServicesContent";
 import SpaGalleryContent from "../../../../components/tabs/home/spa/details/SpaGalleryContent";
 import ReviewsContent from "../../../../components/tabs/home/reviews/ReviewsContent";
 
@@ -24,6 +25,7 @@ export default function SpaDetailsScreen() {
   const [spa, setSpa] = useState<NormalizedSpa | null>(null);
   const [menuItems, setMenuItems] = useState<ProviderPayload[]>([]);
   const [galleryItems, setGalleryItems] = useState<ProviderPayload[]>([]);
+  const [serviceItems, setServiceItems] = useState<ProviderPayload[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,10 +40,11 @@ export default function SpaDetailsScreen() {
       }
 
       try {
-        const [detail, menu, gallery] = await Promise.all([
+        const [detail, menu, gallery, services] = await Promise.all([
           getSpa<ProviderPayload>(spaId),
           getSpaMenu<ProviderCollectionResponse>(spaId),
           getSpaGallery<ProviderCollectionResponse>(spaId),
+          getSpaServices<ProviderCollectionResponse>(spaId),
         ]);
 
         if (cancelled) {
@@ -51,6 +54,7 @@ export default function SpaDetailsScreen() {
         setSpa(normalizeSpa(detail));
         setMenuItems(menu.items ?? []);
         setGalleryItems(gallery.items ?? []);
+        setServiceItems(services.items ?? []);
       } catch (error: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(error, "Failed to load spa details."));
@@ -106,6 +110,7 @@ export default function SpaDetailsScreen() {
         {/* Tab Content */}
         <View style={styles.content}>
           {activeTab === "Overview" && <SpaOverviewContent />}
+          {activeTab === "Services" && <SpaServicesContent items={serviceItems} />}
           {activeTab === "Menu" && <SpaMenuContent items={menuItems} />}
           {activeTab === "Gallery" && <SpaGalleryContent items={galleryItems} />}
           {activeTab === "Reviews" && spaId ? <ReviewsContent restaurantId={spaId} /> : null}

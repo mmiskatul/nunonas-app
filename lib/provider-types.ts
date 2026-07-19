@@ -25,6 +25,12 @@ export type ProviderPayload = {
   description?: string | null;
   status?: string | null;
   amenities?: string[] | null;
+  service_name?: string | null;
+  service_type?: string | null;
+  duration?: number | string | null;
+  duration_minutes?: number | string | null;
+  active_status?: boolean | null;
+  available?: boolean | null;
 };
 
 export type ProviderCollectionResponse<TItem = ProviderPayload> = {

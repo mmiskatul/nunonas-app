@@ -162,6 +162,14 @@ export async function getRestaurantOffers<TResponse = unknown>(restaurantId: str
   return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/offers`);
 }
 
+export async function getRestaurantReviews<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/reviews`);
+}
+
+export async function getSpaReviews<TResponse = unknown>(spaId: string): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/reviews`);
+}
+
 export async function listSpas<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${C}/spas${buildQuery(params)}`);
 }
@@ -180,6 +188,10 @@ export async function getSpaGallery<TResponse = unknown>(spaId: string): Promise
 
 export async function getSpaOffers<TResponse = unknown>(spaId: string): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${C}/spas/${spaId}/offers`);
+}
+
+export async function getSpaServices<TResponse = unknown>(spaId: string): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/services`);
 }
 
 export async function listEvents<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
