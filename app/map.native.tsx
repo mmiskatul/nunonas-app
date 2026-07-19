@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
   },
   eventMarkerLabel: {
     maxWidth: 150,
-    backgroundColor: "#1d4ed8",
+    backgroundColor: "#b91c1c",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -864,7 +864,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#2563eb",
+    backgroundColor: "#dc2626",
     borderWidth: 3,
     borderColor: theme.COLORS.white,
     alignItems: "center",
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   eventMarkerStem: {
     width: 12,
     height: 12,
-    backgroundColor: "#2563eb",
+    backgroundColor: "#dc2626",
     marginTop: -7,
     transform: [{ rotate: "45deg" }],
     borderBottomWidth: 2,
