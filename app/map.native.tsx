@@ -133,27 +133,6 @@ export default function MapScreen() {
   });
 
   useEffect(() => {
-    if (selectedEvent || nearbyEvents.length === 0 || !mapRef.current) {
-      return;
-    }
-
-    const eventCoordinates = nearbyEvents
-      .filter((event) => event.latitude != null && event.longitude != null)
-      .map((event) => ({ latitude: event.latitude, longitude: event.longitude }));
-    if (eventCoordinates.length === 0) {
-      return;
-    }
-
-    // Events may be in a different city from the user's current location.
-    // Fit all event pins so the marker is visible instead of remaining
-    // outside the initial camera region.
-    mapRef.current.fitToCoordinates(eventCoordinates, {
-      edgePadding: { top: 160, right: 80, bottom: 260, left: 80 },
-      animated: true,
-    });
-  }, [nearbyEvents, selectedEvent]);
-
-  useEffect(() => {
     startTransitionAnimation();
 
     async function initLocation() {
@@ -293,24 +272,6 @@ export default function MapScreen() {
       cancelled = true;
     };
   }, [markerCoords.latitude, markerCoords.longitude, selectedEvent, selectedEventDetails]);
-
-  useEffect(() => {
-    const targetEvent = selectedEventDetails ?? selectedEvent;
-    if (targetEvent?.latitude == null || targetEvent?.longitude == null || !mapRef.current) {
-      return;
-    }
-
-    mapRef.current.fitToCoordinates(
-      [
-        markerCoords,
-        { latitude: targetEvent.latitude, longitude: targetEvent.longitude },
-      ],
-      {
-        edgePadding: { top: 140, right: 80, bottom: 240, left: 80 },
-        animated: true,
-      }
-    );
-  }, [markerCoords, selectedEvent, selectedEventDetails]);
 
   const startTransitionAnimation = () => {
     cloudOpacity.setValue(1);
