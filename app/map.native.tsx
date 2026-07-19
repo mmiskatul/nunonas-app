@@ -13,14 +13,13 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
 import {
   getErrorMessage,
-  getFirstQueryParam,
   normalizeMapEvent,
 } from "../lib/event-map-utils";
 import {
@@ -112,7 +111,6 @@ const CLOUDS_CONFIG: CloudConfig[] = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const { offerId, eventId } = useLocalSearchParams<{ offerId?: string | string[]; eventId?: string | string[] }>();
   const mapRef = useRef<MapView | null>(null);
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
@@ -192,11 +190,8 @@ export default function MapScreen() {
         setOffersLoading(true);
         const items = await listNearbyOffers(50);
         setNearbyEvents(items);
-        const selectedId = getFirstQueryParam(eventId) ?? getFirstQueryParam(offerId);
-        const initialEvent = selectedId
-          ? items.find((item) => item.id === selectedId) ?? null
-          : null;
-        setSelectedEvent(initialEvent);
+        // Do not open an event automatically. The map should show all event
+        // pointers first; details open only after the user taps a pointer.
       } catch (error: unknown) {
         console.error("Error loading offers for map: ", error);
         setNearbyEvents([]);
@@ -207,7 +202,7 @@ export default function MapScreen() {
 
     initLocation();
     loadOffers();
-  }, [eventId, offerId]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
