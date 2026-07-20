@@ -25,7 +25,9 @@ export async function getCurrentCoords(
   }
 
   const position = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
+    // Nearby distances need the device's actual position, not a balanced
+    // network estimate that can be hundreds of metres stale.
+    accuracy: Location.Accuracy.Highest,
     ...options,
   });
 

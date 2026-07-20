@@ -100,6 +100,7 @@ const ExploreNearbyBanner = () => {
         await updateCurrentLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
+          location_accuracy_meters: coords.accuracy ?? undefined,
           location_enabled: true,
         });
 

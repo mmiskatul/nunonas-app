@@ -57,6 +57,7 @@ const ExploreNearbyBanner = () => {
         await updateCurrentLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
+          location_accuracy_meters: coords.accuracy ?? undefined,
           location_enabled: true,
         });
         const nextAddress = await reverseGeocode(coords.latitude, coords.longitude);
