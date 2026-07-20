@@ -23,6 +23,7 @@ export type ProviderPayload = {
   image_url?: string | null;
   image?: string | null;
   description?: string | null;
+  about?: string | null;
   status?: string | null;
   amenities?: string[] | null;
   opening_hours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean } | null;
@@ -66,6 +67,8 @@ export type NormalizedHotel = {
   imageUrl: string;
   statusText: string;
   description: string;
+  amenities: string[];
+  openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean };
   distanceKm?: number | null;
 };
 

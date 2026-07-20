@@ -81,8 +81,10 @@ export function normalizeHotel(payload: ProviderPayload = {}): NormalizedHotel {
     statusText: payload.status ?? "Available",
     distanceKm: toNumber(payload.distance_km),
     description:
-      payload.description ??
+      payload.description ?? payload.about ??
       "Explore room availability, amenities, and stay details directly from the app.",
+    amenities: payload.amenities ?? [],
+    openingHours: payload.opening_hours,
   };
 }
 
