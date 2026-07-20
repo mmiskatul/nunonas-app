@@ -7,6 +7,8 @@ import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 import { getHomeFeed } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
+import { calculateDistanceKm } from "../../../lib/distance";
+import { getCurrentCoords } from "../../../lib/location";
 
 function normalizeItems(payload) {
   const items = payload?.featured_experiences;
@@ -29,7 +31,11 @@ const FeaturedExperiences = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      setItems(normalizeItems(await getHomeFeed()));
+      const [feed, coords] = await Promise.all([getHomeFeed(), getCurrentCoords().catch(() => null)]);
+      setItems(normalizeItems(feed).map((item) => {
+        const distanceKm = calculateDistanceKm(coords, item);
+        return distanceKm == null ? item : { ...item, distance_km: distanceKm };
+      }));
     } catch {
       setItems([]);
     } finally {
