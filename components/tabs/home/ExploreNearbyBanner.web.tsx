@@ -19,6 +19,7 @@ import {
 } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
+import { updateCurrentLocation } from "../../../lib/customer-api";
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -52,6 +53,11 @@ const ExploreNearbyBanner = () => {
         }
 
         setGpsCoords({ latitude: coords.latitude, longitude: coords.longitude });
+        await updateCurrentLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location_enabled: true,
+        });
         const nextAddress = await reverseGeocode(coords.latitude, coords.longitude);
         if (nextAddress) {
           setAddress(nextAddress);
@@ -80,8 +86,10 @@ const ExploreNearbyBanner = () => {
       }
     }
 
-    loadLocation();
-    loadOffers();
+    (async () => {
+      await loadLocation();
+      await loadOffers();
+    })();
   }, []);
 
   useEffect(() => {

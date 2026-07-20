@@ -22,6 +22,7 @@ import FeaturedExperiences from "../../../components/tabs/home/FeaturedExperienc
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
+import { updateCurrentLocation } from "../../../lib/customer-api";
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
@@ -34,6 +35,12 @@ export default function HomeScreen() {
       try {
         const coords = await getCurrentCoords();
         if (!coords) return;
+
+        await updateCurrentLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location_enabled: true,
+        });
 
         const address = await reverseGeocode(
           coords.latitude,
@@ -57,6 +64,11 @@ export default function HomeScreen() {
     try {
       const coords = await getCurrentCoords();
       if (coords) {
+        await updateCurrentLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location_enabled: true,
+        });
         const address = await reverseGeocode(coords.latitude, coords.longitude);
         if (address) {
           setLocationText(address);

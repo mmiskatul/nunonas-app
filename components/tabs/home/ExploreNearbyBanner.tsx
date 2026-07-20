@@ -22,6 +22,7 @@ import {
 } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
+import { updateCurrentLocation } from "../../../lib/customer-api";
 
 const { width } = Dimensions.get("window");
 
@@ -93,6 +94,14 @@ const ExploreNearbyBanner = () => {
 
         setGpsCoords({ latitude: coords.latitude, longitude: coords.longitude });
 
+        // Keep the server-side origin in sync before requesting nearby data.
+        // The customer endpoints calculate distance from these coordinates.
+        await updateCurrentLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location_enabled: true,
+        });
+
         const addr = await reverseGeocode(coords.latitude, coords.longitude);
         if (addr) {
           setAddress(addr);
@@ -121,8 +130,12 @@ const ExploreNearbyBanner = () => {
       }
     }
 
-    getCoords();
-    getOffers();
+    // Location must be persisted before the nearby request, otherwise the
+    // first render can be sorted using the previous/stale customer location.
+    (async () => {
+      await getCoords();
+      await getOffers();
+    })();
   }, []);
 
   useEffect(() => {
