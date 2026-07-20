@@ -14,13 +14,16 @@ import { listHotels } from "../../../../lib/customer-api";
 const HotelScreen = () => {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchHotels() {
       try {
+        setError("");
         const res = await listHotels();
         setHotels(res.items || []);
       } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to load hotels right now.");
         console.error("Failed to fetch hotels from API:", err);
       } finally {
         setLoading(false);
@@ -41,6 +44,16 @@ const HotelScreen = () => {
 
         {loading ? (
           <ActivityIndicator size="large" color="#1e3a8a" style={{ marginTop: 40 }} />
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>Hotels could not be loaded</Text>
+            <Text style={styles.emptyText}>Please try again in a moment.</Text>
+          </View>
+        ) : hotels.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No hotels available</Text>
+            <Text style={styles.emptyText}>Approved hotels with available rooms will appear here.</Text>
+          </View>
         ) : (
           <View style={styles.list}>
             {hotels.map((hotel) => (
@@ -75,6 +88,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
+  emptyState: {
+    marginHorizontal: 20,
+    marginTop: 40,
+    padding: 24,
+    borderRadius: 20,
+    backgroundColor: theme.COLORS.surface,
+    alignItems: "center",
+  },
+  emptyTitle: { fontSize: 16, fontWeight: "700", color: theme.COLORS.textPrimary },
+  emptyText: { marginTop: 6, textAlign: "center", color: theme.COLORS.textSecondary },
 });
 
 export default HotelScreen;
