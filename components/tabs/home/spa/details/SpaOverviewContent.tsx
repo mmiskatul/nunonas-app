@@ -3,6 +3,7 @@ import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
+import type { NormalizedSpa } from "../../../../../lib/provider-types";
 
 const { width } = Dimensions.get("window");
 
@@ -15,16 +16,14 @@ const AMENITIES = [
   { id: 6, name: "Sauna", icon: "flame", color: "#3b82f6" },
 ];
 
-const SpaOverviewContent = () => {
+const SpaOverviewContent = ({ spa }: { spa: NormalizedSpa }) => {
   return (
     <View style={styles.container}>
       {/* About Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.aboutText}>
-          Experience ultimate relaxation and rejuvenation at our luxury spa. Our
-          expert therapists offer a range of traditional and modern treatments
-          designed to restore balance to your mind and body.
+          {spa.description || "No description available."}
         </Text>
       </View>
 
@@ -33,15 +32,15 @@ const SpaOverviewContent = () => {
         <Text style={styles.sectionTitle}>Opening Hours</Text>
         <View style={styles.hoursRow}>
           <Text style={styles.dayText}>Monday - Friday</Text>
-          <Text style={styles.timeText}>09:00 AM - 10:00 PM</Text>
+          <Text style={styles.timeText}>{spa.openingHours?.open_time && spa.openingHours?.close_time ? `${spa.openingHours.open_time} - ${spa.openingHours.close_time}` : "Not provided"}</Text>
         </View>
         <View style={styles.hoursRow}>
           <Text style={styles.dayText}>Saturday - Sunday</Text>
-          <Text style={styles.timeText}>10:00 AM - 11:00 PM</Text>
+          <Text style={styles.timeText}>{spa.openingHours?.open_time && spa.openingHours?.close_time ? `${spa.openingHours.open_time} - ${spa.openingHours.close_time}` : "Not provided"}</Text>
         </View>
         <View style={styles.statusBadge}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Open Now</Text>
+          <Text style={styles.statusText}>{spa.openingHours?.is_open_now === false ? "Closed" : "Open Now"}</Text>
         </View>
       </View>
 
@@ -49,14 +48,16 @@ const SpaOverviewContent = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Amenities</Text>
         <View style={styles.amenityGrid}>
-          {AMENITIES.map((item) => (
+          {spa.amenities.map((name, index) => {
+            const item = AMENITIES[index] ?? AMENITIES[0];
+            return (
             <View key={item.id} style={styles.amenityItem}>
               <View style={styles.amenityIconBox}>
                 <Ionicons name={item.icon} size={24} color={item.color} />
               </View>
-              <Text style={styles.amenityName}>{item.name}</Text>
+              <Text style={styles.amenityName}>{name}</Text>
             </View>
-          ))}
+          )})}
         </View>
       </View>
     </View>

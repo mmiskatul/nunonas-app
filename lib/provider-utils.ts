@@ -61,6 +61,7 @@ export function normalizeRestaurant(payload: ProviderPayload = {}): NormalizedRe
       payload.description ??
       "Discover venue details, opening times, menus, and booking options from the app.",
     amenities: payload.amenities ?? ["Free WiFi", "Parking", "Outdoor", "Cards", "Accessible", "Bar"],
+    openingHours: payload.opening_hours,
   };
 }
 
@@ -101,6 +102,8 @@ export function normalizeSpa(payload: ProviderPayload = {}): NormalizedSpa {
     description:
       payload.description ??
       "Check treatment details, timing, and reservation options before you book.",
+    amenities: payload.amenities ?? ["Free WiFi", "Parking", "Locker", "Shower", "Accessible", "Sauna"],
+    openingHours: payload.opening_hours,
   };
 }
 

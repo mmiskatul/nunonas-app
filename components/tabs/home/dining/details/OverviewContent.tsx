@@ -24,7 +24,7 @@ export default function OverviewContent({ restaurant }: OverviewContentProps) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.aboutText}>
-          {restaurant.description}
+          {restaurant.description || "No description available."}
         </Text>
       </View>
 
@@ -33,15 +33,15 @@ export default function OverviewContent({ restaurant }: OverviewContentProps) {
         <Text style={styles.sectionTitle}>Opening Hours</Text>
         <View style={styles.hoursRow}>
           <Text style={styles.dayText}>Monday - Friday</Text>
-          <Text style={styles.timeText}>12:00 PM - 11:00 PM</Text>
+          <Text style={styles.timeText}>{restaurant.openingHours?.open_time && restaurant.openingHours?.close_time ? `${restaurant.openingHours.open_time} - ${restaurant.openingHours.close_time}` : "Not provided"}</Text>
         </View>
         <View style={styles.hoursRow}>
           <Text style={styles.dayText}>Saturday - Sunday</Text>
-          <Text style={styles.timeText}>11:00 AM - 12:00 AM</Text>
+          <Text style={styles.timeText}>{restaurant.openingHours?.open_time && restaurant.openingHours?.close_time ? `${restaurant.openingHours.open_time} - ${restaurant.openingHours.close_time}` : "Not provided"}</Text>
         </View>
         <View style={styles.statusBadge}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Open Now</Text>
+          <Text style={styles.statusText}>{restaurant.openingHours?.is_open_now === false ? "Closed" : "Open Now"}</Text>
         </View>
       </View>
 

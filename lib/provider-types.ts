@@ -25,6 +25,7 @@ export type ProviderPayload = {
   description?: string | null;
   status?: string | null;
   amenities?: string[] | null;
+  opening_hours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean } | null;
   service_name?: string | null;
   service_type?: string | null;
   duration?: number | string | null;
@@ -50,6 +51,7 @@ export type NormalizedRestaurant = {
   imageUrl: string;
   description: string;
   amenities: string[];
+  openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean };
 };
 
 export type NormalizedHotel = {
@@ -79,6 +81,8 @@ export type NormalizedSpa = {
   locationText: string;
   imageUrl: string;
   description: string;
+  amenities: string[];
+  openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean };
 };
 
 export type ProviderImageSource = ImageSourcePropType;

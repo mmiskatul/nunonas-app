@@ -109,7 +109,7 @@ export default function SpaDetailsScreen() {
 
         {/* Tab Content */}
         <View style={styles.content}>
-          {activeTab === "Overview" && <SpaOverviewContent />}
+          {activeTab === "Overview" && <SpaOverviewContent spa={spa} />}
           {activeTab === "Services" && <SpaServicesContent items={serviceItems} />}
           {activeTab === "Menu" && <SpaMenuContent items={menuItems} />}
           {activeTab === "Gallery" && <SpaGalleryContent items={galleryItems} />}
