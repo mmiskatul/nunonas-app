@@ -7,21 +7,18 @@ import { buildStaticMapUrl } from "../../../../../lib/google-maps";
 
 const { width } = Dimensions.get("window");
 
-const AMENITIES = [
-  { name: "Free Wi-Fi", icon: "wifi", library: "Ionicons" },
-  { name: "Breakfast", icon: "restaurant-outline", library: "Ionicons" },
-  { name: "Pool", icon: "pool", library: "MaterialCommunityIcons" },
-  { name: "Gym", icon: "weight-lifter", library: "MaterialCommunityIcons" },
-  { name: "Parking", icon: "parking", library: "MaterialCommunityIcons" },
-  {
-    name: "Room Service",
-    icon: "room-service-outline",
-    library: "MaterialCommunityIcons",
-  },
-];
+const amenityIcon = (name) => {
+  const value = String(name).toLowerCase();
+  if (value.includes("wifi")) return ["wifi", "Ionicons"];
+  if (value.includes("breakfast") || value.includes("food")) return ["restaurant-outline", "Ionicons"];
+  if (value.includes("pool")) return ["pool", "MaterialCommunityIcons"];
+  if (value.includes("gym") || value.includes("fitness")) return ["weight-lifter", "MaterialCommunityIcons"];
+  if (value.includes("parking")) return ["parking", "MaterialCommunityIcons"];
+  return ["information-outline", "Ionicons"];
+};
 
 const HotelOverviewContent = ({ hotel }) => {
-  const address = hotel?.address || hotel?.location || "Manhattan, Doha, Qatar";
+  const address = hotel?.address || hotel?.location || "";
   const mapUrl = buildStaticMapUrl({
     center: address,
     markerLabel: "G",
@@ -33,7 +30,7 @@ const HotelOverviewContent = ({ hotel }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.aboutText}>
-          {hotel?.about || "Experience luxury at our hotel, where comfort meets elegancy. Located in a prime area, we offer world-class services and custom amenities."}
+          {hotel?.about || "No description provided by this property."}
         </Text>
       </View>
 
@@ -41,59 +38,53 @@ const HotelOverviewContent = ({ hotel }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Amenities</Text>
         <View style={styles.amenitiesGrid}>
-          {AMENITIES.map((item, index) => (
-            <View key={index} style={styles.amenityBox}>
+          {(hotel?.amenities ?? []).length ? hotel.amenities.map((name, index) => {
+            const [icon, library] = amenityIcon(name);
+            return <View key={`${name}-${index}`} style={styles.amenityBox}>
               <View style={styles.iconCircle}>
-                {item.library === "Ionicons" ? (
+                {library === "Ionicons" ? (
                   <Ionicons
-                    name={item.icon}
+                    name={icon}
                     size={24}
                     color={theme.COLORS.primary}
                   />
                 ) : (
                   <MaterialCommunityIcons
-                    name={item.icon}
+                    name={icon}
                     size={24}
                     color={theme.COLORS.primary}
                   />
                 )}
               </View>
-              <Text style={styles.amenityName}>{item.name}</Text>
+              <Text style={styles.amenityName}>{name}</Text>
             </View>
-          ))}
+          }) : <Text style={styles.emptyText}>No amenities provided.</Text>}
         </View>
       </View>
 
       {/* Special Offers */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Special Offers</Text>
-        <View style={styles.offerCard}>
+        {(hotel?.offers ?? []).length ? hotel.offers.map((offer, index) => <View key={offer.id ?? index} style={styles.offerCard}>
           <View style={styles.offerIcon}>
             <MaterialCommunityIcons name="percent" size={24} color="#1e3a8a" />
           </View>
           <View>
-            <Text style={styles.offerTitle}>Early Bird Special</Text>
+            <Text style={styles.offerTitle}>{offer.promotion_name ?? offer.title ?? "Special offer"}</Text>
             <Text style={styles.offerDesc}>
-              Save 20% on bookings made 30 days in advance
+              {offer.description ?? offer.offer_text ?? "Available for a limited time."}
             </Text>
           </View>
-        </View>
+        </View>) : <Text style={styles.emptyText}>No special offers available.</Text>}
       </View>
 
       {/* Location Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Location</Text>
-        <View style={styles.mapContainer}>
-          <Image
-            source={
-              mapUrl
-                ? { uri: mapUrl }
-                : require("../../../../../assets/images/discover-experience.png")
-            }
-            style={styles.mapImage}
-          />
-        </View>
-        <Text style={styles.address}>{address}</Text>
+        {mapUrl ? <View style={styles.mapContainer}>
+          <Image source={{ uri: mapUrl }} style={styles.mapImage} />
+        </View> : null}
+        <Text style={styles.address}>{address || "Location not provided."}</Text>
       </View>
     </View>
   );
@@ -186,6 +177,10 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   address: {
+    fontSize: 14,
+    color: theme.COLORS.textSecondary,
+  },
+  emptyText: {
     fontSize: 14,
     color: theme.COLORS.textSecondary,
   },
