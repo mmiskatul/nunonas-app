@@ -15,6 +15,7 @@ import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 import { getTrendingHotels } from "../../../lib/customer-api";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
+import { formatDistanceKm } from "../../../lib/distance";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -55,7 +56,7 @@ function getDistanceLabel(item) {
   }
 
   if (typeof rawDistance === "number") {
-    return `${rawDistance.toFixed(1)} km away`;
+    return formatDistanceKm(rawDistance) ?? "Nearby";
   }
 
   const normalized = String(rawDistance).trim();

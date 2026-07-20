@@ -3,6 +3,7 @@ import { StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
 import type { NormalizedHotel } from "../../../../../lib/provider-types";
+import { formatDistanceKm } from "../../../../../lib/distance";
 
 type HotelDetailsInfoProps = {
   hotel: NormalizedHotel;
@@ -33,7 +34,7 @@ export default function HotelDetailsInfo({ hotel }: HotelDetailsInfoProps) {
               </Text>
             </View>
             {typeof hotel.distanceKm === "number" ? (
-              <Text style={styles.distanceText}>{hotel.distanceKm.toFixed(1)} km away</Text>
+              <Text style={styles.distanceText}>{formatDistanceKm(hotel.distanceKm) ?? "Nearby"}</Text>
             ) : null}
           </View>
         </View>

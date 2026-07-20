@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import Button from "../../../ui/Button";
+import { formatDistanceKm } from "../../../../lib/distance";
 
 function getImageSource(restaurant) {
   if (restaurant?.image?.uri || restaurant?.image?.width) {
@@ -19,7 +20,7 @@ function getImageSource(restaurant) {
 function getDistanceText(restaurant) {
   const rawDistance = restaurant?.distance ?? restaurant?.distance_km;
   if (typeof rawDistance === "number") {
-    return `${rawDistance.toFixed(1)} km away`;
+    return formatDistanceKm(rawDistance) ?? "Nearby";
   }
   if (rawDistance) {
     return String(rawDistance);

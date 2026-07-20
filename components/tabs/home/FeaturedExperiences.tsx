@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 import { getHomeFeed } from "../../../lib/customer-api";
+import { formatDistanceKm } from "../../../lib/distance";
 
 function normalizeItems(payload) {
   const items = payload?.featured_experiences;
@@ -70,7 +71,7 @@ const FeaturedExperiences = () => {
                     <Text style={styles.ratingText}>{Number(item.avg_rating).toFixed(1)}</Text>
                     <Text style={styles.separator}>•</Text>
                   </>}
-                  <Text style={styles.distance}>{item.distance_km != null ? `${Number(item.distance_km).toFixed(1)} km away` : "Nearby"}</Text>
+                  <Text style={styles.distance}>{formatDistanceKm(item.distance_km) ?? "Nearby"}</Text>
                 </View>
                 <Button title={String(item.category ?? "Explore").toLowerCase() === "hotel" ? "Book Stay" : "Explore"} onPress={() => router.push(route)} style={styles.actionBtn} textStyle={styles.actionBtnText} />
               </View>

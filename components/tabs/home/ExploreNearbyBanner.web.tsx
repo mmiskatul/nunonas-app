@@ -20,6 +20,7 @@ import {
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
+import { formatDistanceKm } from "../../../lib/distance";
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -27,7 +28,7 @@ function getDistanceLabel(offer, routeInfo) {
   }
 
   if (typeof offer?.distanceKm === "number") {
-    return `${offer.distanceKm.toFixed(1)} km nearby`;
+    return formatDistanceKm(offer.distanceKm, " nearby") ?? "Nearby";
   }
 
   return "Nearby";
