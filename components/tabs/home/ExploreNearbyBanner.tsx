@@ -71,7 +71,9 @@ function OfferMarker({ offer, onPress, active }) {
 
 const ExploreNearbyBanner = () => {
   const router = useRouter();
-  const [showMap, setShowMap] = useState(false);
+  // Start collapsed: the compact map/footer is the default home view.
+  // Tapping the top chevron opens the expanded offer panel.
+  const [showMap, setShowMap] = useState(true);
   const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.531 });
   const [address, setAddress] = useState("Doha, Qatar");
   const [loading, setLoading] = useState(true);
