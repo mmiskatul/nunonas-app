@@ -31,11 +31,11 @@ function getLocationLabel(item) {
 
 function normalizeTrendingItems(payload) {
   if (Array.isArray(payload)) {
-    return payload;
+    return payload.filter((item) => (item?.id ?? item?._id) && (item?.name ?? item?.title));
   }
 
   if (Array.isArray(payload?.items)) {
-    return payload.items;
+    return payload.items.filter((item) => (item?.id ?? item?._id) && (item?.name ?? item?.title));
   }
 
   return [];
@@ -127,7 +127,7 @@ const TrendingNow = () => {
         >
           {items.map((item, index) => {
             const itemId = item.id ?? item._id ?? `trending-${index}`;
-            const title = item.name ?? item.title ?? "Trending Place";
+            const title = item.name ?? item.title;
             const detailRoute = getDetailRoute(item);
 
             return (
