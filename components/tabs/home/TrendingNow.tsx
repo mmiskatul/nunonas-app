@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 import { getTrendingHotels } from "../../../lib/customer-api";
+import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -69,6 +70,22 @@ function getDistanceLabel(item) {
   return normalized;
 }
 
+function calculateDistanceKm(origin, item) {
+  const latitude = Number(item?.latitude);
+  const longitude = Number(item?.longitude);
+  if (!origin || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  const toRadians = (value) => (value * Math.PI) / 180;
+  const dLat = toRadians(latitude - origin.latitude);
+  const dLng = toRadians(longitude - origin.longitude);
+  const lat1 = toRadians(origin.latitude);
+  const lat2 = toRadians(latitude);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function getDetailRoute(item) {
   if (item?.detail_route) {
     return item.detail_route;
@@ -89,8 +106,22 @@ const TrendingNow = () => {
 
   const fetchTrending = useCallback(async () => {
     try {
-      const trendingHotels = await getTrendingHotels(6);
-      setItems(normalizeTrendingItems(trendingHotels));
+      // Calculate a fallback distance on-device as well. This keeps the card
+      // accurate even when the API response was generated before the latest
+      // GPS sync completed.
+      const [trendingHotels, coords] = await Promise.all([
+        getTrendingHotels(6),
+        getCurrentCoords().catch((error) => {
+          if (!isExpectedLocationError(error)) console.warn("Could not read location for distance:", error);
+          return null;
+        }),
+      ]);
+      const normalized = normalizeTrendingItems(trendingHotels).map((item) => {
+        if (item?.distance_km != null || item?.distanceKm != null) return item;
+        const distanceKm = calculateDistanceKm(coords, item);
+        return distanceKm == null ? item : { ...item, distance_km: distanceKm };
+      });
+      setItems(normalized);
     } catch {
       setItems([]);
     } finally {
