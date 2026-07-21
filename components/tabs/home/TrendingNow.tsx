@@ -78,7 +78,7 @@ function getDetailRoute(item) {
   }
 
   const itemId = item?.id ?? item?._id;
-  const type = String(item?.entity_type ?? item?.category ?? "").toLowerCase();
+  const type = String(item?.service_type ?? item?.entity_type ?? item?.category ?? "").toLowerCase();
   if (type === "hotel") return `/home/hotels/${itemId}`;
   if (type === "spa") return `/home/spa/${itemId}`;
   if (type === "event") return `/home/events/${itemId}`;
