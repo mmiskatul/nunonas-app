@@ -20,7 +20,7 @@ const HotelScreen = () => {
     async function fetchHotels() {
       try {
         setError("");
-        const res = await listHotels();
+        const res = await listHotels({ nearby: true });
         setHotels(res.items || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load hotels right now.");

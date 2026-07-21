@@ -19,7 +19,7 @@ export default function SpaScreen() {
 
   const loadSpas = useCallback(async () => {
     try {
-      const payload = await listSpas({ limit: 50 });
+      const payload = await listSpas({ limit: 50, nearby: true });
       const items = payload?.items ?? payload?.data ?? payload ?? [];
       setSpas(Array.isArray(items) ? items.map((item) => {
         const spa = normalizeSpa(item);

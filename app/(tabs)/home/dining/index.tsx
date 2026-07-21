@@ -31,6 +31,7 @@ export default function DiningScreen() {
       const params = {
         limit: 30,
         skip: 0,
+        nearby: true,
         ...(searchQuery ? { search: searchQuery } : {}),
         ...(filters.open_now != null ? { open_now: filters.open_now } : {}),
         ...(filters.top_rated != null ? { top_rated: filters.top_rated } : {}),
