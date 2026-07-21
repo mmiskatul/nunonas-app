@@ -166,6 +166,10 @@ export async function getRestaurantOffers<TResponse = unknown>(restaurantId: str
   return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/offers`);
 }
 
+export async function getRestaurantServices<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/services`);
+}
+
 export async function getRestaurantReviews<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/reviews`);
 }
