@@ -8,6 +8,7 @@ import { apiDeleteAuth, apiGetAuth, apiPatchAuth, apiPostAuth, apiPostAuthForm }
 
 const V1 = "/api/v1";
 const C = `${V1}/customer`;
+const SERVICES = V1;
 
 type QueryValue = string | number | boolean | null | undefined;
 type QueryParams = Record<string, QueryValue>;
@@ -147,59 +148,59 @@ export async function listCategories<TResponse = unknown>(): Promise<TResponse> 
 export async function listRestaurants<TResponse = unknown>(
   params: QueryParams = {},
 ): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants${buildQuery(params)}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants${buildQuery(params)}`);
 }
 
 export async function getRestaurant<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}`);
 }
 
 export async function getRestaurantMenu<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/menu`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}/menu`);
 }
 
 export async function getRestaurantGallery<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/gallery`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}/gallery`);
 }
 
 export async function getRestaurantOffers<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/offers`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}/offers`);
 }
 
 export async function getRestaurantServices<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/services`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}/services`);
 }
 
 export async function getRestaurantReviews<TResponse = unknown>(restaurantId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/restaurants/${restaurantId}/reviews`);
+  return apiGetAuth<TResponse>(`${SERVICES}/restaurants/${restaurantId}/reviews`);
 }
 
 export async function getSpaReviews<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/reviews`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}/reviews`);
 }
 
 export async function listSpas<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas${buildQuery(params)}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas${buildQuery(params)}`);
 }
 
 export async function getSpa<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}`);
 }
 
 export async function getSpaMenu<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/menu`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}/menu`);
 }
 
 export async function getSpaGallery<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/gallery`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}/gallery`);
 }
 
 export async function getSpaOffers<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/offers`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}/offers`);
 }
 
 export async function getSpaServices<TResponse = unknown>(spaId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/spas/${spaId}/services`);
+  return apiGetAuth<TResponse>(`${SERVICES}/spas/${spaId}/services`);
 }
 
 export async function listEvents<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
@@ -222,30 +223,30 @@ export async function bookEventTickets<TResponse = unknown, TBody extends JsonOb
 }
 
 export async function listHotels<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels${buildQuery(params)}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels${buildQuery(params)}`);
 }
 
 export async function getHotel<TResponse = unknown>(hotelId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels/${hotelId}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels/${hotelId}`);
 }
 
 export async function listHotelRooms<TResponse = unknown>(
   hotelId: string,
   params: QueryParams = {},
 ): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels/${hotelId}/rooms${buildQuery(params)}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels/${hotelId}/rooms${buildQuery(params)}`);
 }
 
 export async function getHotelRoom<TResponse = unknown>(roomId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels/rooms/${roomId}`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels/rooms/${roomId}`);
 }
 
 export async function getHotelGallery<TResponse = unknown>(hotelId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels/${hotelId}/gallery`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels/${hotelId}/gallery`);
 }
 
 export async function getHotelReviews<TResponse = unknown>(hotelId: string): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/hotels/${hotelId}/reviews`);
+  return apiGetAuth<TResponse>(`${SERVICES}/hotels/${hotelId}/reviews`);
 }
 
 export async function globalSearch<TResponse = unknown>(
@@ -305,21 +306,21 @@ export async function bookRestaurantTable<
   TResponse = BookingResponse,
   TBody extends RestaurantTableBookingPayload = RestaurantTableBookingPayload,
 >(restaurantId: string, payload: TBody): Promise<TResponse> {
-  return apiPostAuth<TResponse, TBody>(`${C}/restaurants/${restaurantId}/bookings`, payload);
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/restaurants/${restaurantId}/bookings`, payload);
 }
 
 export async function bookHotelStay<
   TResponse = BookingResponse,
   TBody extends HotelStayBookingPayload = HotelStayBookingPayload,
 >(hotelId: string, payload: TBody): Promise<TResponse> {
-  return apiPostAuth<TResponse, TBody>(`${C}/hotels/${hotelId}/bookings`, payload);
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/hotels/${hotelId}/bookings`, payload);
 }
 
 export async function bookHotelRoom<
   TResponse = BookingResponse,
   TBody extends Omit<HotelStayBookingPayload, "room_id"> = Omit<HotelStayBookingPayload, "room_id">,
 >(roomId: string, payload: TBody): Promise<TResponse> {
-  return apiPostAuth<TResponse, TBody>(`${C}/hotels/rooms/${roomId}/bookings`, payload);
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/hotels/rooms/${roomId}/bookings`, payload);
 }
 
 export async function listMyBookings<TResponse = unknown>(
