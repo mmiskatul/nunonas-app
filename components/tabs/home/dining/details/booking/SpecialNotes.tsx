@@ -12,6 +12,8 @@ const SpecialNotes = ({ notes, onNotesChange }) => {
         placeholder="Any seating or timing preference?"
         placeholderTextColor={theme.COLORS.textSecondary}
         multiline
+        maxLength={2000}
+        accessibilityLabel="Special booking notes"
         value={notes}
         onChangeText={onNotesChange}
       />

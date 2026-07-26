@@ -84,7 +84,7 @@ export default function BookingDetailsScreen() {
     date: liveBooking?.scheduled_date || liveBooking?.date || routeParams.date,
     time: liveBooking?.scheduled_time || liveBooking?.time,
     guests: liveBooking?.guests || routeParams.guests,
-    notes: liveBooking?.special_requests || liveBooking?.notes,
+    notes: liveBooking?.special_requests || liveBooking?.special_notes || liveBooking?.notes,
     payment_status: liveBooking?.payment_status || routeParams.payment_status,
     seating_preference: liveBooking?.seating_preference || routeParams.seating_preference,
     total_amount: liveBooking?.total_amount ?? routeParams.total_amount,

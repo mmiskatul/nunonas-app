@@ -118,7 +118,7 @@ export default function BookingsScreen() {
         location: item.provider_area ?? item.location ?? "",
         imageUrl: item.provider_image ?? item.imageUrl ?? "",
         guests: item.guests,
-        notes: item.special_notes ?? item.notes ?? "",
+    notes: item.special_requests ?? item.special_notes ?? item.notes ?? "",
         bookingId: item.bookingId || item.booking_code || `#${(item.id ?? item._id ?? "").slice(0, 8).toUpperCase()}`,
       },
     });
