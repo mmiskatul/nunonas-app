@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
 import ReviewModal from "../../../../components/ui/ReviewModal";
+import { getBooking } from "../../../../lib/customer-api";
 
 const InfoRow = ({ label, value, valueStyle }) => (
   <View style={styles.infoRow}>
@@ -61,7 +62,30 @@ const ActionButton = ({ icon, label, onPress, variant = "secondary" }) => (
 
 export default function BookingDetailsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const routeParams = useLocalSearchParams();
+  const [liveBooking, setLiveBooking] = React.useState(null);
+  React.useEffect(() => {
+    const bookingId = routeParams.id;
+    if (!bookingId) return;
+    let active = true;
+    getBooking(String(bookingId)).then((booking) => {
+      if (active) setLiveBooking(booking);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [routeParams.id]);
+  const params = {
+    ...routeParams,
+    ...(liveBooking || {}),
+    title: liveBooking?.provider_name || liveBooking?.service || routeParams.title,
+    category: liveBooking?.provider_type === "hotel" || liveBooking?.provider_type === "hotel_room" ? "Hotel" : routeParams.category,
+    location: liveBooking?.provider_area || liveBooking?.provider_address || routeParams.location || "Location unavailable",
+    phone: liveBooking?.provider_phone || routeParams.phone,
+    bookingId: liveBooking?.booking_code || routeParams.bookingId,
+    date: liveBooking?.scheduled_date || liveBooking?.date || routeParams.date,
+    time: liveBooking?.scheduled_time || liveBooking?.time,
+    guests: liveBooking?.guests || routeParams.guests,
+    notes: liveBooking?.special_requests || liveBooking?.notes,
+  };
   const isHotel = params.category === "Hotel";
   const [showReviewModal, setShowReviewModal] = React.useState(false);
 
