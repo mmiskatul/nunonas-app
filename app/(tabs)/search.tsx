@@ -20,7 +20,7 @@ import { clearRecentSearches, listCategories, listRecentSearches } from "../../l
 import CategoryCard from "../../components/tabs/search/CategoryCard";
 import RecentSearchItem from "../../components/tabs/search/RecentSearchItem";
 
-const CATEGORIES = [
+const CATEGORY_DEFINITIONS = [
   {
     id: "restaurants",
     title: "Restaurants",
@@ -61,7 +61,10 @@ export default function SearchScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState(INITIAL_RECENT_SEARCHES);
-  const [currentLocation, setCurrentLocation] = useState("Downtown, San Francisco");
+  const [categories, setCategories] = useState(() =>
+    CATEGORY_DEFINITIONS.map((category) => ({ ...category })),
+  );
+  const [currentLocation, setCurrentLocation] = useState("Location unavailable");
 
   useEffect(() => {
     Promise.all([listRecentSearches(), listCategories()])
@@ -69,12 +72,18 @@ export default function SearchScreen() {
         const recentItems = recent?.items ?? recent?.data ?? recent ?? [];
         setRecentSearches(Array.isArray(recentItems) ? recentItems.map((item) => item.query ?? item.text ?? item).filter(Boolean) : []);
         const categoryItems = categories?.items ?? categories?.data ?? [];
-        if (Array.isArray(categoryItems) && categoryItems.length) {
-          categoryItems.forEach((item) => {
-            const match = CATEGORIES.find((category) => category.id.replace(/s$/, "") === String(item.key ?? "").toLowerCase());
-            if (match) match.count = `${item.count ?? 0} places`;
-          });
-        }
+        const counts = new Map(
+          (Array.isArray(categoryItems) ? categoryItems : []).map((item) => [
+            String(item.key ?? "").toLowerCase(),
+            Number(item.count ?? 0),
+          ]),
+        );
+        setCategories((current) =>
+          current.map((category) => ({
+            ...category,
+            count: `${counts.get(category.id.replace(/s$/, "")) ?? 0} places`,
+          })),
+        );
       })
       .catch(() => { setRecentSearches([]); });
   }, []);
@@ -167,7 +176,7 @@ export default function SearchScreen() {
           <Text style={styles.sectionTitle}>Browse by Category</Text>
         </View>
         <View style={styles.categoryGrid}>
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <CategoryCard
               key={category.id}
               title={category.title}
