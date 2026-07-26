@@ -350,6 +350,16 @@ export async function cancelBooking<TResponse = unknown>(
   return apiPatchAuth<TResponse, { reason: string }>(`${C}/bookings/${bookingId}/cancel`, { reason });
 }
 
+export async function createBookingReview<TResponse = unknown>(
+  bookingId: string,
+  payload: { rating: number; review_text: string },
+): Promise<TResponse> {
+  return apiPostAuth<TResponse, { rating: number; review_text: string }>(
+    `${C}/bookings/${bookingId}/review`,
+    payload,
+  );
+}
+
 export async function rescheduleBooking<TResponse = unknown, TBody extends JsonObject = JsonObject>(
   bookingId: string,
   payload: TBody,

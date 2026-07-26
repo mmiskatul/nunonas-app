@@ -19,14 +19,21 @@ import theme from "../../constants/theme";
 const ReviewModal = ({ visible, onClose, onSubmit }) => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (onSubmit) {
-      onSubmit({ rating, review });
+  const handleSubmit = async () => {
+    if (rating === 0 || review.trim().length < 2 || submitting) return;
+    setSubmitting(true);
+    try {
+      if (onSubmit) {
+        await onSubmit({ rating, review: review.trim() });
+      }
+      setRating(0);
+      setReview("");
+      onClose();
+    } finally {
+      setSubmitting(false);
     }
-    setRating(0);
-    setReview("");
-    onClose();
   };
 
   return (
@@ -95,12 +102,12 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
                 <TouchableOpacity
                   style={[
                     styles.submitButton,
-                    rating === 0 && styles.submitButtonDisabled,
+                    (rating === 0 || review.trim().length < 2 || submitting) && styles.submitButtonDisabled,
                   ]}
                   onPress={handleSubmit}
-                  disabled={rating === 0}
+                  disabled={rating === 0 || review.trim().length < 2 || submitting}
                 >
-                  <Text style={styles.submitButtonText}>Submit Review</Text>
+                  <Text style={styles.submitButtonText}>{submitting ? "Submitting..." : "Submit Review"}</Text>
                 </TouchableOpacity>
                 </ScrollView>
               </View>

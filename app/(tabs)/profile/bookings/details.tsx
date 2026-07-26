@@ -9,13 +9,14 @@ import {
   TouchableOpacity,
   StatusBar,
   Linking,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
 import ReviewModal from "../../../../components/ui/ReviewModal";
-import { getBooking } from "../../../../lib/customer-api";
+import { cancelBooking, createBookingReview, getBooking } from "../../../../lib/customer-api";
 
 const InfoRow = ({ label, value, valueStyle }) => (
   <View style={styles.infoRow}>
@@ -88,13 +89,53 @@ export default function BookingDetailsScreen() {
     payment_status: liveBooking?.payment_status || routeParams.payment_status,
     seating_preference: liveBooking?.seating_preference || routeParams.seating_preference,
     total_amount: liveBooking?.total_amount ?? routeParams.total_amount,
+    review: liveBooking?.review,
   };
   const isHotel = params.category === "Hotel";
   const [showReviewModal, setShowReviewModal] = React.useState(false);
+  const normalizedStatus = String(params.status || "").toLowerCase();
+  const canCancel = ["pending", "confirmed", "check_in", "check in"].includes(normalizedStatus);
+  const canReview = ["complete", "completed"].includes(normalizedStatus) && !params.review;
 
   const handleCall = () => {
     const phoneNumber = params.phone || "+15551234567";
     Linking.openURL(`tel:${phoneNumber}`);
+  };
+
+  const handleCancel = () => {
+    Alert.alert("Cancel booking?", "This action will cancel your booking.", [
+      { text: "Keep Booking", style: "cancel" },
+      {
+        text: "Cancel Booking",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const updated = await cancelBooking(String(routeParams.id), "Cancelled by customer");
+            setLiveBooking(updated);
+          } catch (error) {
+            Alert.alert("Cancellation failed", error?.message || "Could not cancel this booking.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleReviewSubmit = async ({ rating, review }) => {
+    try {
+      const createdReview = await createBookingReview(String(routeParams.id), {
+        rating,
+        review_text: review,
+      });
+      setLiveBooking((current) => ({
+        ...(current || {}),
+        review: createdReview,
+        has_review: true,
+      }));
+      Alert.alert("Review submitted", "Your review is now visible to the service provider.");
+    } catch (error) {
+      Alert.alert("Review failed", error?.message || "Could not submit your review.");
+      throw error;
+    }
   };
 
   const renderHotelLayout = () => (
@@ -260,18 +301,25 @@ export default function BookingDetailsScreen() {
             variant="primary"
             onPress={handleCall}
           />
-          <ActionButton icon="close" label="Cancel Booking" variant="danger" />
+          {canCancel ? <ActionButton icon="close" label="Cancel Booking" variant="danger" onPress={handleCancel} /> : null}
           <ActionButton
             icon="headset"
             label="Contact Support"
             onPress={() => router.push("/profile/support")}
           />
-          <ActionButton
+          {canReview ? <ActionButton
             icon="star"
             label="Leave Review"
             onPress={() => setShowReviewModal(true)}
-          />
+          /> : null}
         </View>
+        {params.review ? (
+          <DetailCard title="Your Review">
+            <InfoRow label="Rating" value={`${params.review.rating || params.review.star_rating}/5`} />
+            <View style={styles.cardDivider} />
+            <Text style={styles.notesValue}>{params.review.review_text || params.review.comment}</Text>
+          </DetailCard>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -294,22 +342,32 @@ export default function BookingDetailsScreen() {
               variant="primary"
               onPress={handleCall}
             />
-            <ActionButton
+            {canCancel ? <ActionButton
               icon="close"
               label="Cancel Booking"
               variant="danger"
-            />
+              onPress={handleCancel}
+            /> : null}
             <ActionButton
               icon="headset"
               label="Contact Support"
               onPress={() => router.push("/profile/support")}
             />
-            <ActionButton
+            {canReview ? <ActionButton
               icon="star"
               label="Leave Review"
               onPress={() => setShowReviewModal(true)}
-            />
+            /> : null}
           </View>
+          {params.review ? (
+            <View style={{ paddingHorizontal: 20, paddingBottom: 30 }}>
+              <DetailCard title="Your Review">
+                <InfoRow label="Rating" value={`${params.review.rating || params.review.star_rating}/5`} />
+                <View style={styles.cardDivider} />
+                <Text style={styles.notesValue}>{params.review.review_text || params.review.comment}</Text>
+              </DetailCard>
+            </View>
+          ) : null}
         </ScrollView>
       ) : (
         renderRestaurantLayout()
@@ -318,9 +376,7 @@ export default function BookingDetailsScreen() {
       <ReviewModal
         visible={showReviewModal}
         onClose={() => setShowReviewModal(false)}
-        onSubmit={(data) => {
-          console.log("Review submitted:", data);
-        }}
+        onSubmit={handleReviewSubmit}
       />
     </SafeAreaView>
   );
