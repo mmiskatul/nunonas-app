@@ -5,14 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../../../../constants/theme";
 
 const PointsBanner = ({ points }) => {
+  const awarded = Number.isFinite(Number(points)) && Number(points) > 0;
   return (
     <View style={styles.banner}>
       <View style={styles.iconCircle}>
         <Ionicons name="gift" size={20} color={theme.COLORS.primary} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>You earned +{points} points 🎁</Text>
-        <Text style={styles.subtitle}>Thanks for being a loyal customer!</Text>
+        <Text style={styles.title}>{awarded ? `You earned +${points} points 🎁` : "Points available after completion"}</Text>
+        <Text style={styles.subtitle}>{awarded ? "Thanks for being a loyal customer!" : "Points are awarded when the provider completes your booking."}</Text>
       </View>
     </View>
   );

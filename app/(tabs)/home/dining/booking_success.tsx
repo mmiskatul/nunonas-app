@@ -44,7 +44,7 @@ export default function BookingSuccessScreen() {
         
         <ConfirmedDetailsCard details={details} />
         
-        <PointsBanner points={50} />
+        <PointsBanner points={0} />
 
         <Button
           title="View My Booking"
