@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   ScrollView,
+  Keyboard,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,13 +36,16 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={styles.modalContainer}
-            >
+      <View style={styles.overlay}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
+        <KeyboardAvoidingView
+          behavior="padding"
+          keyboardVerticalOffset={0}
+          style={styles.modalContainer}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.card}>
                 <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
                 <View style={styles.header}>
@@ -100,10 +104,9 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
                 </TouchableOpacity>
                 </ScrollView>
               </View>
-            </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -111,8 +114,11 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
     justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
   },
   modalContainer: {
     flex: 1,
