@@ -91,7 +91,7 @@ export default function ConfirmBookingScreen() {
         guests: Number(guests || 4),
         seating_preference: String(seating || "Outdoor"),
         special_notes: typeof notes === "string" ? notes : "",
-        auto_confirm: true,
+        auto_confirm: false,
       });
 
       const bookingId = response?.booking_code ?? response?.bookingCode ?? response?.booking_id ?? response?.id ?? "#BK2026";

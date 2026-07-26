@@ -357,10 +357,10 @@ export default function MapScreen() {
       setBookingState((current) => ({ ...current, loading: true }));
       const response = await bookEventTickets(eventDetailsId, {
         quantity: ticketQuantity,
-        auto_confirm: true,
+        auto_confirm: false,
       });
       const bookingCode = response?.booking_code ?? response?.bookingCode ?? "";
-      const bookingStatus = response?.status ?? "confirmed";
+      const bookingStatus = response?.status ?? "pending";
       setBookingState({
         loading: false,
         code: bookingCode,

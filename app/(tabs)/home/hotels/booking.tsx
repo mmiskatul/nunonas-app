@@ -88,7 +88,7 @@ export default function HotelBookingScreen() {
         check_out_date: "2026-02-18",
         guests: 2,
         special_notes: "",
-        auto_confirm: true,
+        auto_confirm: false,
       };
       const response = selectedRoomId
         ? await bookHotelRoom(selectedRoomId, payload)

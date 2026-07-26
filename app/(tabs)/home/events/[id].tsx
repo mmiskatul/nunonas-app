@@ -134,7 +134,7 @@ export default function EventDetailsScreen() {
       setBookingState({ loading: true, code: bookingState.code });
       const response = await bookEventTickets<EventBookingResponse, { quantity: number; auto_confirm: boolean }>(event.id, {
         quantity: ticketQuantity,
-        auto_confirm: true,
+        auto_confirm: false,
       });
       const bookingCode = response.booking_code ?? response.bookingCode ?? "";
       setBookingState({ loading: false, code: bookingCode });

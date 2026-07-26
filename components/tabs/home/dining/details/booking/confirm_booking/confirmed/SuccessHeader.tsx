@@ -10,8 +10,8 @@ const SuccessHeader = () => {
       <View style={styles.iconCircle}>
         <Ionicons name="checkmark" size={50} color={theme.COLORS.white} />
       </View>
-      <Text style={styles.title}>Booking Confirmed 🎉</Text>
-      <Text style={styles.subtitle}>Your table has been successfully reserved.</Text>
+      <Text style={styles.title}>Booking Request Sent</Text>
+      <Text style={styles.subtitle}>The service provider will confirm your table booking.</Text>
     </View>
   );
 };
