@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,6 +43,7 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
               style={styles.modalContainer}
             >
               <View style={styles.card}>
+                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
                 <View style={styles.header}>
                   <Text style={styles.title}>Write a Review</Text>
                   <TouchableOpacity onPress={onClose}>
@@ -96,6 +98,7 @@ const ReviewModal = ({ visible, onClose, onSubmit }) => {
                 >
                   <Text style={styles.submitButtonText}>Submit Review</Text>
                 </TouchableOpacity>
+                </ScrollView>
               </View>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
@@ -112,10 +115,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContainer: {
+    flex: 1,
     width: "100%",
-    maxWidth: 400,
+    justifyContent: "flex-end",
   },
   card: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "88%",
+    alignSelf: "center",
     backgroundColor: theme.COLORS.white,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
