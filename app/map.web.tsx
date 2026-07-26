@@ -28,7 +28,7 @@ import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/ev
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
 const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
-const DEFAULT_ADDRESS = "Doha Qatar";
+const DEFAULT_ADDRESS = "Location unavailable";
 type BookingState = { loading: boolean; code: string; status: string };
 
 export default function MapScreenWeb() {

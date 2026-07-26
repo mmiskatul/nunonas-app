@@ -24,7 +24,7 @@ const { width, height } = Dimensions.get("window");
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
   const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.5310 });
-  const [address, setAddress] = useState(currentLocation || "Doha, Qatar");
+  const [address, setAddress] = useState(currentLocation || "Select a location");
   const [loading, setLoading] = useState(true);
 
   // PanResponder to detect swipe gestures on the grabber bar

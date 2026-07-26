@@ -7,7 +7,7 @@ import theme from "../../../../constants/theme";
 const Step4 = ({ data, setData, onComplete }) => {
   const [vouchersOnly, setVouchersOnly] = useState(data.vouchersOnly || false);
   const [selectedArea, setSelectedArea] = useState(
-    data.area || "Anywhere in Doha",
+    data.area || "Anywhere",
   );
 
   const handleToggle = (value) => {

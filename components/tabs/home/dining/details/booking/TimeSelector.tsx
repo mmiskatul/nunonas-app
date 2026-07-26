@@ -3,42 +3,29 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import theme from "../../../../../../constants/theme";
 
-const TIME_SLOTS = [
-  "6:00 PM",
-  "6:30 PM",
-  "7:00 PM",
-  "7:30 PM",
-  "8:00 PM",
-  "8:30 PM",
-  "9:00 PM",
-  "9:30 PM",
-  "10:00 PM",
-];
-
-const TimeSelector = ({ selectedTime, onTimeSelect }) => {
+const TimeSelector = ({ selectedTime, onTimeSelect, times = [] }) => {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Select Time</Text>
       <View style={styles.timeGrid}>
-        {TIME_SLOTS.map((time) => (
+        {times.map((time) => (
           <TouchableOpacity
             key={time}
             style={[
               styles.timeSlot,
               selectedTime === time && styles.selectedTimeSlot,
-              (time === "6:00 PM" || time === "8:30 PM" || time === "10:00 PM") && styles.disabledTimeSlot,
             ]}
             onPress={() => onTimeSelect(time)}
           >
             <Text style={[
               styles.timeText,
               selectedTime === time && styles.selectedTimeText,
-              (time === "6:00 PM" || time === "8:30 PM" || time === "10:00 PM") && styles.disabledTimeText,
             ]}>
               {time}
             </Text>
           </TouchableOpacity>
         ))}
+        {!times.length ? <Text style={styles.emptyText}>No available times for this date.</Text> : null}
       </View>
     </View>
   );
@@ -87,6 +74,10 @@ const styles = StyleSheet.create({
   },
   disabledTimeText: {
     color: "#cbd5e1",
+  },
+  emptyText: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 14,
   },
 });
 

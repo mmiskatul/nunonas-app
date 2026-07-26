@@ -3,20 +3,23 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import theme from "../../../../../../constants/theme";
 
-const DAYS = [
-  { day: "Mon", date: "15", month: "Jan" },
-  { day: "Tue", date: "16", month: "Jan" },
-  { day: "Wed", date: "17", month: "Jan" },
-  { day: "Thu", date: "18", month: "Jan" },
-  { day: "Fri", date: "19", month: "Jan" },
-];
+function getBookingDays() {
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
+    const dateValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    return { day: date.toLocaleDateString(undefined, { weekday: "short" }), date: dateValue, dateNumber: date.toLocaleDateString(undefined, { day: "numeric" }), month: date.toLocaleDateString(undefined, { month: "short" }) };
+  });
+}
 
 const DateSelector = ({ selectedDate, onDateSelect }) => {
+  const days = getBookingDays();
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Select Date</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateList}>
-        {DAYS.map((item) => (
+        {days.map((item) => (
           <TouchableOpacity
             key={item.date}
             style={[
@@ -29,7 +32,7 @@ const DateSelector = ({ selectedDate, onDateSelect }) => {
               {item.day}
             </Text>
             <Text style={[styles.dateNumber, selectedDate === item.date && styles.selectedDateText]}>
-              {item.date}
+              {item.dateNumber}
             </Text>
             <Text style={[styles.dateMonth, selectedDate === item.date && styles.selectedDateText]}>
               {item.month}

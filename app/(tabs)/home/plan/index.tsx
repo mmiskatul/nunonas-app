@@ -19,7 +19,7 @@ export default function PlanScreen() {
     companion: "",
     vibe: "",
     budget: "",
-    area: "Anywhere in Doha",
+    area: "Anywhere",
     vouchersOnly: false,
   });
 

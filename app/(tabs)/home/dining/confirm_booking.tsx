@@ -76,14 +76,7 @@ export default function ConfirmBookingScreen() {
     router.back();
   };
 
-  const buildBookingDate = (value) => {
-    if (!value) {
-      return "2026-01-24";
-    }
-
-    const parsed = String(value).padStart(2, "0");
-    return `2026-01-${parsed}`;
-  };
+  const buildBookingDate = (value) => String(value || "");
 
   const handleConfirm = async () => {
     if (!restaurantId || submitting) {
@@ -121,9 +114,9 @@ export default function ConfirmBookingScreen() {
   };
 
   // Format date for display
-  const displayDate = date ? `Wednesday, Jan ${date}, 2026` : "Saturday, Jan 24, 2026";
-  const displayTime = time || "7:30 PM";
-  const displayGuests = guests || "4";
+  const displayDate = date ? new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", year: "numeric" }) : "";
+  const displayTime = time || "";
+  const displayGuests = guests || "2";
   const displaySeating = seating || "Outdoor";
 
   if (loading) {

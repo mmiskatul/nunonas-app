@@ -61,6 +61,7 @@ export function normalizeRestaurant(payload: ProviderPayload = {}): NormalizedRe
       payload.description ??
       "Discover venue details, opening times, menus, and booking options from the app.",
     amenities: payload.amenities ?? ["Free WiFi", "Parking", "Outdoor", "Cards", "Accessible", "Bar"],
+    seatingPreferences: payload.seating_preferences ?? ["Indoor", "Outdoor", "No preference"],
     openingHours: payload.opening_hours,
   };
 }

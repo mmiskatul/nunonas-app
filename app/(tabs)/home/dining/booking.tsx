@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
 import Button from "../../../../components/ui/Button";
-import { getRestaurant } from "../../../../lib/customer-api";
+import { getBookingAvailability, getRestaurant } from "../../../../lib/customer-api";
 import { getFirstQueryParam } from "../../../../lib/event-map-utils";
 import { getErrorMessage, normalizeRestaurant } from "../../../../lib/provider-utils";
 import type { NormalizedRestaurant, ProviderPayload } from "../../../../lib/provider-types";
@@ -23,8 +23,12 @@ export default function BookingScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const restaurantId = getFirstQueryParam(id);
-  const [selectedDate, setSelectedDate] = useState("16");
-  const [selectedTime, setSelectedTime] = useState("7:00 PM");
+  const localDate = new Date();
+  const today = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedTime, setSelectedTime] = useState("");
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [seatingPreferences, setSeatingPreferences] = useState<string[]>(["Indoor", "Outdoor", "No preference"]);
   const [guests, setGuests] = useState(2);
   const [seating, setSeating] = useState("Outdoor");
   const [notes, setNotes] = useState("");
@@ -45,7 +49,10 @@ export default function BookingScreen() {
       try {
         const payload = await getRestaurant<ProviderPayload>(restaurantId);
         if (!cancelled) {
-          setRestaurant(normalizeRestaurant(payload));
+          const normalized = normalizeRestaurant(payload);
+          setRestaurant(normalized);
+          setSeatingPreferences(normalized.seatingPreferences);
+          setSeating(normalized.seatingPreferences[0] ?? "No preference");
         }
       } catch (error: unknown) {
         if (!cancelled) {
@@ -64,6 +71,24 @@ export default function BookingScreen() {
       cancelled = true;
     };
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (!restaurantId || !selectedDate) return;
+    let cancelled = false;
+    getBookingAvailability<{ slots?: { time?: string; available?: boolean }[] }>(restaurantId, selectedDate)
+      .then((payload) => {
+        if (cancelled) return;
+        const times = (payload?.slots ?? [])
+          .filter((slot) => slot.available !== false && slot.time)
+          .map((slot) => String(slot.time));
+        setAvailableTimes(times);
+        setSelectedTime((current) => times.includes(current) ? current : (times[0] ?? ""));
+      })
+      .catch(() => {
+        if (!cancelled) { setAvailableTimes([]); setSelectedTime(""); }
+      });
+    return () => { cancelled = true; };
+  }, [restaurantId, selectedDate]);
 
   const handleBack = () => {
     router.back();
@@ -106,6 +131,7 @@ export default function BookingScreen() {
         <TimeSelector 
           selectedTime={selectedTime} 
           onTimeSelect={setSelectedTime} 
+          times={availableTimes}
         />
         
         <GuestCounter 
@@ -116,6 +142,7 @@ export default function BookingScreen() {
         <SeatingPreference 
           seating={seating} 
           onSeatingChange={setSeating} 
+          preferences={seatingPreferences}
         />
         
         <SpecialNotes 
@@ -127,7 +154,9 @@ export default function BookingScreen() {
 
         <Button
           title="Continue"
+          disabled={!selectedTime}
           onPress={() => {
+            if (!selectedTime) return;
             router.push({
               pathname: "/(tabs)/home/dining/confirm_booking",
               params: {

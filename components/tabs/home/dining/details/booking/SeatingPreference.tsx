@@ -3,14 +3,12 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import theme from "../../../../../../constants/theme";
 
-const SEATING_PREFERENCES = ["Indoor", "Outdoor", "No preference"];
-
-const SeatingPreference = ({ seating, onSeatingChange }) => {
+const SeatingPreference = ({ seating, onSeatingChange, preferences = ["Indoor", "Outdoor", "No preference"] }) => {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Seating Preference</Text>
       <View style={styles.seatingRow}>
-        {SEATING_PREFERENCES.map((pref) => (
+        {preferences.map((pref) => (
           <TouchableOpacity
             key={pref}
             style={[

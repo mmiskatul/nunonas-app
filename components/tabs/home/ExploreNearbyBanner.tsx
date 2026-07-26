@@ -77,7 +77,7 @@ const ExploreNearbyBanner = () => {
   // Tapping the top chevron opens the expanded offer panel.
   const [showMap, setShowMap] = useState(true);
   const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.531 });
-  const [address, setAddress] = useState("Doha, Qatar");
+  const [address, setAddress] = useState("Location unavailable");
   const [loading, setLoading] = useState(true);
   const [offersLoading, setOffersLoading] = useState(true);
   const [offers, setOffers] = useState([]);

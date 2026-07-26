@@ -26,7 +26,8 @@ export type ProviderPayload = {
   about?: string | null;
   status?: string | null;
   amenities?: string[] | null;
-  opening_hours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean } | null;
+  seating_preferences?: string[] | null;
+  opening_hours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean; available_times?: string[] } | null;
   service_name?: string | null;
   service_type?: string | null;
   duration?: number | string | null;
@@ -52,7 +53,8 @@ export type NormalizedRestaurant = {
   imageUrl: string;
   description: string;
   amenities: string[];
-  openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean };
+  seatingPreferences: string[];
+  openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean; available_times?: string[] };
 };
 
 export type NormalizedHotel = {

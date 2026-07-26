@@ -33,7 +33,7 @@ import { listNearbyOffers } from "../lib/nearby-offers";
 
 const { width, height } = Dimensions.get("window");
 const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
-const DEFAULT_ADDRESS = "Doha Qatar";
+const DEFAULT_ADDRESS = "Location unavailable";
 type BookingState = { loading: boolean; code: string; status: string };
 type CloudConfig = {
   id: number;

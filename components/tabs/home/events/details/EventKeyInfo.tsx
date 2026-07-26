@@ -46,7 +46,7 @@ export default function EventKeyInfo({ event }: EventKeyInfoProps) {
 
       <InfoItem
         icon="location-outline"
-        title={event?.location || "Doha Convention Center"}
+        title={event?.location || "Event location unavailable"}
         subtitle={locationSubtitle || "Venue available"}
       />
 

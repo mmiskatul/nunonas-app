@@ -26,7 +26,7 @@ import { updateCurrentLocation } from "../../../lib/customer-api";
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
-  const [locationText, setLocationText] = useState("Doha Qatar");
+  const [locationText, setLocationText] = useState("Select location");
   const [refreshing, setRefreshing] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
