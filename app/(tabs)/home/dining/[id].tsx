@@ -110,7 +110,7 @@ export default function RestaurantDetailsScreen() {
           {activeTab === "Overview" && <OverviewContent restaurant={restaurant} />}
           {activeTab === "Menu" && <MenuContent items={menuItems} />}
           {activeTab === "Gallery" && <GalleryContent items={galleryItems} />}
-          {activeTab === "Reviews" && restaurantId ? <ReviewsContent restaurantId={restaurantId} /> : null}
+          {activeTab === "Reviews" && restaurantId ? <ReviewsContent restaurantId={restaurantId} providerType="restaurant" /> : null}
         </View>
       </ScrollView>
     </View>

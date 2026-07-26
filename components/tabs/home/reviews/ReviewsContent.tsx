@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
-import { getRestaurantReviews } from "../../../../lib/customer-api";
+import {
+  getHotelReviews,
+  getRestaurantReviews,
+  getSpaReviews,
+} from "../../../../lib/customer-api";
 
 type RatingBarProps = {
   label: string;
@@ -22,6 +26,7 @@ type Review = {
 
 type ReviewsContentProps = {
   restaurantId?: string;
+  providerType?: "restaurant" | "spa" | "hotel";
 };
 
 type ReviewSummary = {
@@ -75,7 +80,10 @@ const ReviewCard = ({ review }: { review: Review }) => (
   </View>
 );
 
-export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
+export default function ReviewsContent({
+  restaurantId,
+  providerType = "restaurant",
+}: ReviewsContentProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState<ReviewSummary>({
     average: 0,
@@ -94,7 +102,13 @@ export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
 
     setLoading(true);
     setError("");
-    getRestaurantReviews(restaurantId)
+    const request =
+      providerType === "hotel"
+        ? getHotelReviews
+        : providerType === "spa"
+          ? getSpaReviews
+          : getRestaurantReviews;
+    request(restaurantId)
       .then((payload: any) => {
         setReviews(payload?.items ?? []);
         setSummary({
@@ -109,7 +123,7 @@ export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
         setError(requestError?.message || "Reviews could not be loaded.");
       })
       .finally(() => setLoading(false));
-  }, [restaurantId]);
+  }, [providerType, restaurantId]);
 
   if (loading) {
     return (

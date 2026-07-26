@@ -176,7 +176,15 @@ const TrendingNow = () => {
                         onPress={() =>
                           router.push({
                             pathname: `/home/reviews/${itemId}`,
-                            params: { title: `${title} Reviews` },
+                            params: {
+                              title: `${title} Reviews`,
+                              providerType:
+                                item.entity_type === "hotel" || item.service_type === "hotel"
+                                  ? "hotel"
+                                  : item.entity_type === "spa" || item.service_type === "spa"
+                                    ? "spa"
+                                    : "restaurant",
+                            },
                           })
                         }
                       >

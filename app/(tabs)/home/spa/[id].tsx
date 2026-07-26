@@ -113,7 +113,7 @@ export default function SpaDetailsScreen() {
           {activeTab === "Services" && <SpaServicesContent items={serviceItems} />}
           {activeTab === "Menu" && <SpaMenuContent items={menuItems} />}
           {activeTab === "Gallery" && <SpaGalleryContent items={galleryItems} />}
-          {activeTab === "Reviews" && spaId ? <ReviewsContent restaurantId={spaId} /> : null}
+          {activeTab === "Reviews" && spaId ? <ReviewsContent restaurantId={spaId} providerType="spa" /> : null}
         </View>
       </ScrollView>
     </View>

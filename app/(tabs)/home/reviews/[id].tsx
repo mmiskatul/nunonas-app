@@ -16,8 +16,9 @@ import ReviewsContent from "../../../../components/tabs/home/reviews/ReviewsCont
 
 export default function ReviewsScreen() {
   const router = useRouter();
-  const { id, title } = useLocalSearchParams();
+  const { id, title, providerType } = useLocalSearchParams();
   const providerId = Array.isArray(id) ? id[0] : id;
+  const reviewProviderType = Array.isArray(providerType) ? providerType[0] : providerType;
 
   return (
     <View style={styles.container}>
@@ -39,7 +40,14 @@ export default function ReviewsScreen() {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          <ReviewsContent restaurantId={providerId} />
+          <ReviewsContent
+            restaurantId={providerId}
+            providerType={
+              reviewProviderType === "hotel" || reviewProviderType === "spa"
+                ? reviewProviderType
+                : "restaurant"
+            }
+          />
         </ScrollView>
       </SafeAreaView>
     </View>

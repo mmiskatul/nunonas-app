@@ -65,7 +65,7 @@ const RestaurantCard = ({ restaurant }) => {
           onPress={() => {
             router.push({
               pathname: `/home/reviews/${restaurant.id}`,
-              params: { title: `${title} Reviews` },
+              params: { title: `${title} Reviews`, providerType: "restaurant" },
             });
           }}
         >

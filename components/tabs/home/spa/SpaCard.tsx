@@ -30,7 +30,7 @@ const SpaCard = ({ spa }) => {
           onPress={() => {
             router.push({
               pathname: `/home/reviews/${spa.id}`,
-              params: { title: `${spa.title} Reviews` },
+              params: { title: `${spa.title} Reviews`, providerType: "spa" },
             });
           }}
         >

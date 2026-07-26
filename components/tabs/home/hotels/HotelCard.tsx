@@ -73,15 +73,12 @@ const HotelCard = ({ hotel }) => {
               e.stopPropagation();
               router.push({
                 pathname: `/home/reviews/${hotel.id}`,
-                params: { title: `${hotel.title} Reviews` },
+                params: { title: `${hotel.title} Reviews`, providerType: "hotel" },
               });
             }}
           >
             <Ionicons name="star" size={14} color="#facc15" />
-            <Ionicons name="star" size={14} color="#facc15" />
-            <Ionicons name="star" size={14} color="#facc15" />
-            <Ionicons name="star" size={14} color="#facc15" />
-            <Ionicons name="star" size={14} color="#facc15" />
+            <Text style={styles.reviewsText}>{Number(hotel.rating ?? 0).toFixed(1)}</Text>
             <Text style={styles.reviewsText}>({hotel.reviews} reviews)</Text>
           </TouchableOpacity>
         </View>
