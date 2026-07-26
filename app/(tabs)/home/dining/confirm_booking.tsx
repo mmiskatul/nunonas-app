@@ -24,6 +24,7 @@ export default function ConfirmBookingScreen() {
   
   const { id, date, time, guests, notes, seating } = params;
   const restaurantId = getFirstQueryParam(id);
+  const [specialNotes, setSpecialNotes] = useState(typeof notes === "string" ? notes : "");
   const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +91,7 @@ export default function ConfirmBookingScreen() {
         time: String(time || "7:30 PM"),
         guests: Number(guests || 4),
         seating_preference: String(seating || "Outdoor"),
-        special_notes: typeof notes === "string" ? notes : "",
+        special_notes: specialNotes,
         auto_confirm: false,
       });
 
@@ -155,7 +156,7 @@ export default function ConfirmBookingScreen() {
           seating={displaySeating}
         />
         
-        <ConfirmNotes notes={notes} />
+        <ConfirmNotes notes={specialNotes} onNotesChange={setSpecialNotes} />
 
         <Button
           title="confirm Booking"

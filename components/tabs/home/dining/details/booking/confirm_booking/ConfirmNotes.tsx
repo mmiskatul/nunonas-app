@@ -1,20 +1,23 @@
 // @ts-nocheck
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TextInput } from "react-native";
 import theme from "../../../../../../../constants/theme";
 
-const ConfirmNotes = ({ notes }) => {
+const ConfirmNotes = ({ notes, onNotesChange }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Special Notes</Text>
-      <View style={styles.notesBox}>
-        <Text style={[
-          styles.notesText,
-          !notes && styles.placeholderText
-        ]}>
-          {notes || "Any seating or timing preference?"}
-        </Text>
-      </View>
+      <TextInput
+        style={styles.notesInput}
+        placeholder="Any seating or timing preference?"
+        placeholderTextColor={theme.COLORS.textSecondary}
+        multiline
+        maxLength={2000}
+        textAlignVertical="top"
+        accessibilityLabel="Special booking notes"
+        value={notes}
+        onChangeText={onNotesChange}
+      />
     </View>
   );
 };
@@ -29,20 +32,16 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textPrimary,
     marginBottom: 20,
   },
-  notesBox: {
+  notesInput: {
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.COLORS.border,
     minHeight: 120,
-  },
-  notesText: {
     fontSize: 16,
     color: theme.COLORS.textPrimary,
     lineHeight: 24,
-  },
-  placeholderText: {
-    color: theme.COLORS.textSecondary,
+    textAlignVertical: "top",
   },
 });
 
