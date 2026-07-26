@@ -24,6 +24,7 @@ type UserProfilePayload = {
   created_at?: string | null;
   points_balance?: number | string | null;
   location_enabled?: boolean | null;
+  notification_preferences?: { nearby_events?: boolean; booking_reminders?: boolean } | null;
 };
 
 type UploadableFile = {
@@ -82,6 +83,7 @@ export type NormalizedUserProfile = {
   member_since: string;
   points_balance: number;
   location_enabled: boolean;
+  notification_preferences: { nearby_events: boolean; booking_reminders: boolean };
 };
 
 function memberSinceYear(createdAt: string | null | undefined): string {
@@ -103,6 +105,10 @@ export function normalizeUserProfile(profile: UserProfilePayload = {}): Normaliz
     member_since: memberSinceYear(profile.created_at),
     points_balance: Number(profile.points_balance ?? 0),
     location_enabled: Boolean(profile.location_enabled),
+    notification_preferences: {
+      nearby_events: profile.notification_preferences?.nearby_events ?? false,
+      booking_reminders: profile.notification_preferences?.booking_reminders ?? true,
+    },
   };
 }
 

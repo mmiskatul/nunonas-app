@@ -4,11 +4,11 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../../constants/theme";
 
-const BookingPolicy = () => {
+const BookingPolicy = ({ policy = "You can modify or cancel this booking later." }) => {
   return (
     <View style={styles.infoBox}>
       <Ionicons name="information-circle" size={20} color={theme.COLORS.secondary} />
-      <Text style={styles.infoText}>You can modify or cancel this booking later.</Text>
+      <Text style={styles.infoText}>{policy}</Text>
     </View>
   );
 };

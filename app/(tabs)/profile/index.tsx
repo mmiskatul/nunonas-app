@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
 import { logoutSession } from "../../../lib/auth-session";
-import { getMe } from "../../../lib/customer-api";
+import { getMe, updateNotificationPreferences } from "../../../lib/customer-api";
 
 // Import Components
 import ProfileMenuItem from "../../../components/tabs/profile/ProfileMenuItem";
@@ -55,6 +55,8 @@ export default function ProfileScreen() {
           const data = await getMe();
           if (active) {
             setProfile(data);
+            setNearbyEvents(data.notification_preferences.nearby_events);
+            setBookingReminders(data.notification_preferences.booking_reminders);
           }
         } catch (error) {
           if (active) {
@@ -74,6 +76,23 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await logoutSession();
     router.replace("/auth/login");
+  };
+
+  const updatePreference = async (key, value) => {
+    const previous = key === "nearby_events" ? nearbyEvents : bookingReminders;
+    if (key === "nearby_events") setNearbyEvents(value);
+    else setBookingReminders(value);
+    try {
+      const updated = await updateNotificationPreferences({
+        ...profile?.notification_preferences,
+        [key]: value,
+      });
+      setProfile(updated);
+    } catch (error) {
+      if (key === "nearby_events") setNearbyEvents(previous);
+      else setBookingReminders(previous);
+      Alert.alert("Notification settings", error?.message || "Could not save this preference.");
+    }
   };
 
   return (
@@ -133,13 +152,13 @@ export default function ProfileScreen() {
             icon="location-outline"
             title="Nearby events"
             switchValue={nearbyEvents}
-            onSwitchChange={setNearbyEvents}
+            onSwitchChange={(value) => updatePreference("nearby_events", value)}
           />
           <ProfileMenuItem
             icon="notifications-outline"
             title="Booking reminders"
             switchValue={bookingReminders}
-            onSwitchChange={setBookingReminders}
+            onSwitchChange={(value) => updatePreference("booking_reminders", value)}
           />
 
           {/* Links */}

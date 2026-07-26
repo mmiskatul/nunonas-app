@@ -8,7 +8,7 @@ const BookingCard = ({ item, onViewDetails }) => (
   <View style={styles.card}>
     <View style={styles.cardContent}>
       <View style={styles.imageWrapper}>
-        <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
+        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.cardImage} /> : <View style={[styles.cardImage, styles.imagePlaceholder]}><Ionicons name="calendar-outline" size={30} color={theme.COLORS.primary} /></View>}
         <View style={styles.statusBadge}>
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
@@ -68,6 +68,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 15,
+  },
+  imagePlaceholder: {
+    backgroundColor: "#eff6ff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardDetails: {
     flex: 1,

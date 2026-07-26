@@ -150,7 +150,7 @@ export default function BookingScreen() {
           onNotesChange={setNotes} 
         />
         
-        <BookingPolicy />
+        <BookingPolicy policy={restaurant.bookingPolicy} />
 
         <Button
           title="Continue"

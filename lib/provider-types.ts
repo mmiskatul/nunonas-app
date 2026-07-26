@@ -27,6 +27,8 @@ export type ProviderPayload = {
   status?: string | null;
   amenities?: string[] | null;
   seating_preferences?: string[] | null;
+  policy?: string | null;
+  booking_policy?: string | null;
   opening_hours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean; available_times?: string[] } | null;
   service_name?: string | null;
   service_type?: string | null;
@@ -54,6 +56,7 @@ export type NormalizedRestaurant = {
   description: string;
   amenities: string[];
   seatingPreferences: string[];
+  bookingPolicy: string;
   openingHours?: { open_time?: string | null; close_time?: string | null; is_open_now?: boolean; available_times?: string[] };
 };
 

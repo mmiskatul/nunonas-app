@@ -147,12 +147,12 @@ const TrendingNow = () => {
             const detailRoute = getDetailRoute(item);
 
             return (
-              <TouchableOpacity
-                key={itemId}
-                style={styles.card}
-                onPress={() => router.push(detailRoute)}
-                activeOpacity={0.9}
-              >
+              <View key={itemId} style={styles.cardShadow}>
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => router.push(detailRoute)}
+                  activeOpacity={0.9}
+                >
                 {item.cover_image_url || item.image_url ? (
                   <Image
                     source={{ uri: item.cover_image_url ?? item.image_url }}
@@ -206,7 +206,8 @@ const TrendingNow = () => {
                     textStyle={styles.bookBtnText}
                   />
                 </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             );
           })}
         </ScrollView>
@@ -282,15 +283,14 @@ const styles = StyleSheet.create({
     width: 320,
     backgroundColor: theme.COLORS.white,
     borderRadius: 30,
-    marginRight: 18,
     borderWidth: 1,
-    borderColor: "#eef0f6",
+    borderColor: "#f1f3f7",
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 8,
+  },
+  cardShadow: {
+    width: 320,
+    marginRight: 18,
+    borderRadius: 30,
   },
   image: {
     width: "100%",

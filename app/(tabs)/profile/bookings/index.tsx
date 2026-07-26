@@ -74,11 +74,23 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const normalizeBooking = (item) => ({
+    ...item,
+    title: item.provider_name || item.service || item.title || "Booking",
+    category: item.provider_type === "event" ? "Event" : item.provider_type === "hotel" || item.provider_type === "hotel_room" ? "Hotel" : item.provider_type === "spa" ? "Spa" : "Restaurant",
+    status: item.status || "pending",
+    date: item.scheduled_date || item.date || "Date not available",
+    time: item.scheduled_time || item.time || "",
+    location: item.provider_area || item.provider_address || item.location || "Location unavailable",
+    imageUrl: item.provider_image || item.imageUrl || "",
+    bookingId: item.booking_code || item.bookingId || item.id || item._id || "",
+  });
+
   const fetchBookings = useCallback(async (tab) => {
     try {
       const data = await listMyBookings({ status: tab.toLowerCase(), limit: 50 });
       const items = data?.items ?? data ?? [];
-      setBookings(items);
+      setBookings(items.map(normalizeBooking));
     } catch (err) {
       console.warn("Failed to load bookings:", err.message);
       setBookings([]);
@@ -107,7 +119,7 @@ export default function BookingsScreen() {
         imageUrl: item.provider_image ?? item.imageUrl ?? "",
         guests: item.guests,
         notes: item.special_notes ?? item.notes ?? "",
-        bookingId: `#${(item.id ?? item._id ?? "").slice(0, 8).toUpperCase()}`,
+        bookingId: item.bookingId || item.booking_code || `#${(item.id ?? item._id ?? "").slice(0, 8).toUpperCase()}`,
       },
     });
   };

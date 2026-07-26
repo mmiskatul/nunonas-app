@@ -23,7 +23,10 @@ export default function BookingSuccessScreen() {
   };
 
   const handleViewBooking = () => {
-    // Navigate to bookings list or detailed view
+    router.push({
+      pathname: "/profile/bookings",
+      params: { bookingId: String(bookingId || "") },
+    });
   };
 
   const details = {
