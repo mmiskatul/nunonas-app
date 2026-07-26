@@ -18,7 +18,7 @@ const amenityIcon = (name) => {
 };
 
 const HotelOverviewContent = ({ hotel }) => {
-  const address = hotel?.address || hotel?.location || "";
+  const address = hotel?.address || hotel?.location || hotel?.locationText || "";
   const mapUrl = buildStaticMapUrl({
     center: address,
     markerLabel: "G",
@@ -30,7 +30,7 @@ const HotelOverviewContent = ({ hotel }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.aboutText}>
-          {hotel?.about || "No description provided by this property."}
+          {hotel?.about || hotel?.description || "No description provided by this property."}
         </Text>
       </View>
 
@@ -72,7 +72,7 @@ const HotelOverviewContent = ({ hotel }) => {
           <View>
             <Text style={styles.offerTitle}>{offer.promotion_name ?? offer.title ?? "Special offer"}</Text>
             <Text style={styles.offerDesc}>
-              {offer.description ?? offer.offer_text ?? "Available for a limited time."}
+              {offer.description ?? offer.internal_description ?? offer.offer_text ?? "Available for a limited time."}
             </Text>
           </View>
         </View>) : <Text style={styles.emptyText}>No special offers available.</Text>}

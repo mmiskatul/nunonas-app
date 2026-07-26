@@ -70,6 +70,11 @@ export function normalizeRestaurant(payload: ProviderPayload = {}): NormalizedRe
 export function normalizeHotel(payload: ProviderPayload = {}): NormalizedHotel {
   const reviewsCount = getReviewsCount(payload);
   const price = toNumber(payload.price);
+  const description =
+    payload.about ??
+    payload.description ??
+    "Explore room availability, amenities, and stay details directly from the app.";
+  const locationText = getLocationText(payload);
   return {
     id: String(payload.id ?? payload._id ?? ""),
     title: payload.title ?? payload.name ?? "Hotel",
@@ -78,14 +83,16 @@ export function normalizeHotel(payload: ProviderPayload = {}): NormalizedHotel {
     reviewsCount,
     priceText: price != null ? `${price}` : "0",
     priceRange: payload.price_range ?? payload.priceRange ?? "$$$",
-    locationText: getLocationText(payload),
+    locationText,
     imageUrl: payload.cover_image_url ?? payload.image_url ?? payload.image ?? "",
     statusText: payload.status ?? "Available",
     distanceKm: toNumber(payload.distance_km),
-    description:
-      payload.description ?? payload.about ??
-      "Explore room availability, amenities, and stay details directly from the app.",
+    description,
+    about: description,
+    address: payload.address ?? payload.location ?? "",
+    location: payload.location ?? payload.address ?? locationText,
     amenities: payload.amenities ?? [],
+    offers: (payload.offers ?? []).filter((offer) => offer.active !== false),
     openingHours: payload.opening_hours,
   };
 }
