@@ -85,6 +85,9 @@ export default function BookingDetailsScreen() {
     time: liveBooking?.scheduled_time || liveBooking?.time,
     guests: liveBooking?.guests || routeParams.guests,
     notes: liveBooking?.special_requests || liveBooking?.notes,
+    payment_status: liveBooking?.payment_status || routeParams.payment_status,
+    seating_preference: liveBooking?.seating_preference || routeParams.seating_preference,
+    total_amount: liveBooking?.total_amount ?? routeParams.total_amount,
   };
   const isHotel = params.category === "Hotel";
   const [showReviewModal, setShowReviewModal] = React.useState(false);
@@ -233,6 +236,14 @@ export default function BookingDetailsScreen() {
           <InfoRow label="Time" value={params.time || "7:30 PM"} />
           <View style={styles.cardDivider} />
           <InfoRow label="Guests" value={params.guests || "4 People"} />
+          <View style={styles.cardDivider} />
+          <InfoRow label="Status" value={params.status || "Pending"} />
+          <View style={styles.cardDivider} />
+          <InfoRow label="Payment" value={params.payment_status || "Unpaid"} />
+          <View style={styles.cardDivider} />
+          <InfoRow label="Seating" value={params.seating_preference || "No preference"} />
+          <View style={styles.cardDivider} />
+          <InfoRow label="Total" value={params.total_amount != null ? `$${Number(params.total_amount).toFixed(2)}` : "—"} />
           <View style={styles.cardDivider} />
           <View style={styles.notesRow}>
             <Text style={styles.infoLabel}>Special Notes</Text>
