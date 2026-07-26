@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import { reverseGeocode } from "../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
@@ -66,12 +66,14 @@ export default function SearchScreen() {
   );
   const [currentLocation, setCurrentLocation] = useState("Location unavailable");
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    let active = true;
     Promise.all([listRecentSearches(), listCategories()])
-      .then(([recent, categories]) => {
+      .then(([recent, categoryResponse]) => {
+        if (!active) return;
         const recentItems = recent?.items ?? recent?.data ?? recent ?? [];
         setRecentSearches(Array.isArray(recentItems) ? recentItems.map((item) => item.query ?? item.text ?? item).filter(Boolean) : []);
-        const categoryItems = categories?.items ?? categories?.data ?? [];
+        const categoryItems = categoryResponse?.items ?? categoryResponse?.data ?? [];
         const counts = new Map(
           (Array.isArray(categoryItems) ? categoryItems : []).map((item) => [
             String(item.key ?? "").toLowerCase(),
@@ -85,8 +87,13 @@ export default function SearchScreen() {
           })),
         );
       })
-      .catch(() => { setRecentSearches([]); });
-  }, []);
+      .catch(() => {
+        if (active) setRecentSearches([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []));
 
   useEffect(() => {
     async function getUserLocation() {
