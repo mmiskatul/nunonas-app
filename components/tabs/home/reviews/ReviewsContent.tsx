@@ -1,49 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
-import { getRestaurantReviews, getSpaReviews } from "../../../../lib/customer-api";
-
-const REVIEWS_DATA = [];
-/* Legacy static reviews removed; reviews are loaded from the provider endpoint.
-const LEGACY_REVIEWS_DATA = [
-  {
-    id: "1",
-    user: "Sarah Johnson",
-    date: "2 days ago",
-    rating: 5,
-    comment:
-      "Amazing experience! The service was exceptional and everything went smoothly. Highly recommend to anyone looking for quality service.",
-    avatar: "https://i.pravatar.cc/100?img=1",
-  },
-  {
-    id: "2",
-    user: "Michael Chen",
-    date: "1 week ago",
-    rating: 4,
-    comment:
-      "Great overall experience. The team was professional and the process was straightforward. Would definitely use again.",
-    avatar: "https://i.pravatar.cc/100?img=2",
-  },
-  {
-    id: "3",
-    user: "Emma Wilson",
-    date: "2 weeks ago",
-    rating: 5,
-    comment:
-      "Outstanding service from start to finish. The attention to detail and customer care was impressive. Exceeded my expectations!",
-    avatar: "https://i.pravatar.cc/100?img=3",
-  },
-  {
-    id: "4",
-    user: "David Rodriguez",
-    date: "3 weeks ago",
-    rating: 4,
-    comment:
-      "Very satisfied with the service. Everything was handled professionally and efficiently. Minor room for improvement but overall excellent.",
-    avatar: "https://i.pravatar.cc/100?img=4",
-  },
-]; */
+import { getRestaurantReviews } from "../../../../lib/customer-api";
 
 type RatingBarProps = {
   label: string;
@@ -57,11 +16,18 @@ type Review = {
   date: string;
   rating: number;
   comment: string;
-  avatar: string;
+  avatar?: string;
+  vendor_reply?: string | null;
 };
 
 type ReviewsContentProps = {
   restaurantId?: string;
+};
+
+type ReviewSummary = {
+  average: number;
+  total: number;
+  breakdown: Record<string, number>;
 };
 
 const RatingBar = ({ label, percentage, count }: RatingBarProps) => (
@@ -77,14 +43,20 @@ const RatingBar = ({ label, percentage, count }: RatingBarProps) => (
 const ReviewCard = ({ review }: { review: Review }) => (
   <View style={styles.reviewCard}>
     <View style={styles.reviewHeader}>
-      <Image source={{ uri: review.avatar }} style={styles.avatar} />
+      {review.avatar ? (
+        <Image source={{ uri: review.avatar }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarFallback]}>
+          <Text style={styles.avatarInitial}>{(review.user || "C").charAt(0).toUpperCase()}</Text>
+        </View>
+      )}
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{review.user}</Text>
         <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4, 5].map((star) => (
             <Ionicons
-              key={s}
-              name={s <= review.rating ? "star" : "star-outline"}
+              key={star}
+              name={star <= review.rating ? "star" : "star-outline"}
               size={14}
               color="#FACC15"
             />
@@ -94,33 +66,68 @@ const ReviewCard = ({ review }: { review: Review }) => (
       <Text style={styles.reviewDate}>{review.date}</Text>
     </View>
     <Text style={styles.reviewComment}>{review.comment}</Text>
+    {review.vendor_reply ? (
+      <View style={styles.providerReply}>
+        <Text style={styles.providerReplyLabel}>SERVICE PROVIDER RESPONSE</Text>
+        <Text style={styles.providerReplyText}>{review.vendor_reply}</Text>
+      </View>
+    ) : null}
   </View>
 );
 
 export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [summary, setSummary] = useState({ average: 0, total: 0, breakdown: {} });
+  const [summary, setSummary] = useState<ReviewSummary>({
+    average: 0,
+    total: 0,
+    breakdown: {},
+  });
+  const [loading, setLoading] = useState(Boolean(restaurantId));
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      setLoading(false);
+      setError("This service provider could not be identified.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
     getRestaurantReviews(restaurantId)
       .then((payload: any) => {
         setReviews(payload?.items ?? []);
-        setSummary({ average: Number(payload?.average_rating ?? 0), total: Number(payload?.total_reviews ?? 0), breakdown: payload?.breakdown ?? {} });
+        setSummary({
+          average: Number(payload?.average_rating ?? 0),
+          total: Number(payload?.total_reviews ?? 0),
+          breakdown: payload?.breakdown ?? {},
+        });
       })
-      .catch(() => { setReviews([]); setSummary({ average: 0, total: 0, breakdown: {} }); });
+      .catch((requestError: any) => {
+        setReviews([]);
+        setSummary({ average: 0, total: 0, breakdown: {} });
+        setError(requestError?.message || "Reviews could not be loaded.");
+      })
+      .finally(() => setLoading(false));
   }, [restaurantId]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Summary Header */}
       <View style={styles.summaryCard}>
         <Text style={styles.overallRating}>{summary.average.toFixed(1)}</Text>
         <View style={styles.starsRowMain}>
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4, 5].map((star) => (
             <Ionicons
-              key={s}
-              name={s <= Math.round(summary.average) ? "star" : "star-outline"}
+              key={star}
+              name={star <= Math.round(summary.average) ? "star" : "star-outline"}
               size={24}
               color="#FACC15"
             />
@@ -131,30 +138,44 @@ export default function ReviewsContent({ restaurantId }: ReviewsContentProps) {
         <View style={styles.barsContainer}>
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = Number(summary.breakdown[String(rating)] ?? 0);
-            return <RatingBar key={rating} label={String(rating)} percentage={summary.total ? Math.round((count / summary.total) * 100) : 0} count={count} />;
+            const percentage = summary.total ? Math.round((count / summary.total) * 100) : 0;
+            return (
+              <RatingBar
+                key={rating}
+                label={String(rating)}
+                percentage={percentage}
+                count={count}
+              />
+            );
           })}
         </View>
       </View>
 
       <Text style={styles.sectionTitle}>Recent Reviews</Text>
-
-      {reviews.map((item) => (
-        <ReviewCard key={item.id} review={item} />
-      ))}
-
-      {reviews.length === 0 ? <Text style={styles.emptyText}>No reviews available.</Text> : null}
+      {reviews.map((review) => <ReviewCard key={review.id} review={review} />)}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!error && reviews.length === 0 ? (
+        <Text style={styles.emptyText}>No reviews available yet.</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#F8FAFC",
+  container: { padding: 20, backgroundColor: "#F8FAFC" },
+  loadingContainer: {
+    minHeight: 320,
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyText: {
     textAlign: "center",
     color: theme.COLORS.textSecondary,
+    paddingVertical: 24,
+  },
+  errorText: {
+    textAlign: "center",
+    color: "#DC2626",
     paddingVertical: 24,
   },
   summaryCard: {
@@ -171,25 +192,14 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
     marginBottom: 8,
   },
-  starsRowMain: {
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 8,
-  },
+  starsRowMain: { flexDirection: "row", gap: 4, marginBottom: 8 },
   reviewsCount: {
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     marginBottom: 20,
   },
-  barsContainer: {
-    width: "100%",
-    gap: 10,
-  },
-  ratingBarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+  barsContainer: { width: "100%", gap: 10 },
+  ratingBarRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   ratingBarLabel: {
     fontSize: 13,
     fontWeight: "700",
@@ -203,11 +213,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: "hidden",
   },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#FACC15",
-    borderRadius: 4,
-  },
+  progressBar: { height: "100%", backgroundColor: "#FACC15", borderRadius: 4 },
   ratingBarCount: {
     fontSize: 12,
     color: theme.COLORS.textSecondary,
@@ -227,55 +233,45 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     ...theme.SHADOWS.card,
   },
-  reviewHeader: {
-    flexDirection: "row",
+  reviewHeader: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  avatarFallback: {
+    backgroundColor: "#E0F2FE",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
+  avatarInitial: { color: "#0369A1", fontSize: 17, fontWeight: "800" },
+  userInfo: { flex: 1, marginLeft: 12 },
   userName: {
     fontSize: 15,
     fontWeight: "700",
     color: theme.COLORS.textPrimary,
     marginBottom: 2,
   },
-  starsRow: {
-    flexDirection: "row",
-    gap: 2,
-  },
+  starsRow: { flexDirection: "row", gap: 2 },
   reviewDate: {
     fontSize: 12,
     color: theme.COLORS.textSecondary,
     alignSelf: "flex-start",
     marginTop: 2,
   },
-  reviewComment: {
-    fontSize: 14,
+  reviewComment: { fontSize: 14, color: theme.COLORS.textSecondary, lineHeight: 20 },
+  providerReply: {
+    marginTop: 14,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
+    padding: 14,
+  },
+  providerReplyLabel: {
+    color: "#0284C7",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+    marginBottom: 6,
+  },
+  providerReplyText: {
     color: theme.COLORS.textSecondary,
-    lineHeight: 20,
-  },
-  loadMoreBtn: {
-    borderWidth: 1,
-    borderColor: "#1E3A8A",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  loadMoreText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1E3A8A",
+    fontSize: 13,
+    lineHeight: 19,
   },
 });
-
-

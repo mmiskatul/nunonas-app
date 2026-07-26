@@ -31,7 +31,7 @@ const HotelReviewsContent = ({ hotelId }) => {
     );
   }
 
-  const averageRating = reviewsData?.average_rating || "4.5";
+  const averageRating = reviewsData?.average_rating ?? 0;
   const totalReviews = reviewsData?.total_reviews || 0;
   const reviewsList = reviewsData?.items || [];
 
@@ -80,6 +80,12 @@ const HotelReviewsContent = ({ hotelId }) => {
               </View>
             </View>
             <Text style={styles.comment}>{review.comment}</Text>
+            {review.vendor_reply ? (
+              <View style={styles.providerReply}>
+                <Text style={styles.providerReplyLabel}>SERVICE PROVIDER RESPONSE</Text>
+                <Text style={styles.providerReplyText}>{review.vendor_reply}</Text>
+              </View>
+            ) : null}
           </View>
         ))}
       </View>
@@ -167,6 +173,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     lineHeight: 20,
+  },
+  providerReply: {
+    marginTop: 14,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
+    padding: 14,
+  },
+  providerReplyLabel: {
+    color: "#0284C7",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+    marginBottom: 6,
+  },
+  providerReplyText: {
+    color: "#64748B",
+    fontSize: 13,
+    lineHeight: 19,
   },
 });
 

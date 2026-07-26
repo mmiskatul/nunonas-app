@@ -127,7 +127,7 @@ export default function ProfileScreen() {
           <ProfileMenuItem
             icon="star-outline"
             title="Reviews"
-            onPress={() => {}}
+            onPress={() => router.push("/profile/reviews")}
           />
 
           {/* About me */}

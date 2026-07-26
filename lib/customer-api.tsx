@@ -360,6 +360,12 @@ export async function createBookingReview<TResponse = unknown>(
   );
 }
 
+export async function listMyReviews<TResponse = unknown>(
+  params: QueryParams = {},
+): Promise<TResponse> {
+  return apiGetAuth<TResponse>(`${C}/reviews${buildQuery(params)}`);
+}
+
 export async function rescheduleBooking<TResponse = unknown, TBody extends JsonObject = JsonObject>(
   bookingId: string,
   payload: TBody,
