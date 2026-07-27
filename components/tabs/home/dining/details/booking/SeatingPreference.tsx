@@ -8,9 +8,9 @@ const SeatingPreference = ({ seating, onSeatingChange, preferences = ["Indoor", 
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Seating Preference</Text>
       <View style={styles.seatingRow}>
-        {preferences.map((pref) => (
+        {preferences.map((pref, index) => (
           <TouchableOpacity
-            key={pref}
+            key={`${pref}-${index}`}
             style={[
               styles.seatingOption,
               seating === pref && styles.selectedSeatingOption,
@@ -42,10 +42,11 @@ const styles = StyleSheet.create({
   },
   seatingRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   seatingOption: {
-    flex: 1,
+    width: "31%",
     height: 52,
     borderRadius: 10,
     borderWidth: 1,

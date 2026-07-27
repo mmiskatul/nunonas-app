@@ -99,7 +99,7 @@ const RoomDetailsScreen = () => {
         contentContainerStyle={styles.scrollBody}
       >
         {/* Main Image */}
-        <View style={styles.imageContainer}>
+        {roomData.images?.length ? <View style={styles.imageContainer}>
           <Image
             source={typeof roomData.images[activeImage] === "string" ? { uri: roomData.images[activeImage] } : roomData.images[activeImage]}
             style={styles.mainImage}
@@ -109,10 +109,10 @@ const RoomDetailsScreen = () => {
               {activeImage + 1}/{roomData.images.length}
             </Text>
           </View>
-        </View>
+        </View> : null}
 
         {/* Thumbnails */}
-        <View style={styles.thumbnailRow}>
+        {roomData.images?.length > 1 ? <View style={styles.thumbnailRow}>
           {roomData.images.map((img, index) => {
             const imgSource = typeof img === "string" ? { uri: img } : img;
             return (
@@ -128,7 +128,7 @@ const RoomDetailsScreen = () => {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </View> : null}
 
         <View style={styles.content}>
           <View style={styles.titleRow}>
@@ -138,43 +138,22 @@ const RoomDetailsScreen = () => {
             </View>
           </View>
 
-          {/* Key Stats Grid */}
+          {/* Provider-configured room details only */}
           <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="arrow-expand-all"
-                size={18}
-                color="#64748b"
-              />
-              <Text style={styles.statText}>{roomData.size}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="account-group-outline"
-                size={18}
-                color="#64748b"
-              />
-              <Text style={styles.statText}>{roomData.guests}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="bed-king-outline"
-                size={18}
-                color="#64748b"
-              />
-              <Text style={styles.statText}>{roomData.bed}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="office-building-marker-outline"
-                size={18}
-                color="#64748b"
-              />
-              <Text style={styles.statText}>{roomData.view}</Text>
-            </View>
+            {[
+              roomData.size ? { icon: "arrow-expand-all", value: roomData.size } : null,
+              roomData.guests ? { icon: "account-group-outline", value: roomData.guests } : null,
+              roomData.bed ? { icon: "bed-king-outline", value: roomData.bed } : null,
+              roomData.view ? { icon: "office-building-marker-outline", value: roomData.view } : null,
+            ].filter(Boolean).map((item, index) => (
+              <View key={`${item.value}-${index}`} style={styles.statItem}>
+                <MaterialCommunityIcons name={item.icon} size={18} color="#64748b" />
+                <Text style={styles.statText}>{item.value}</Text>
+              </View>
+            ))}
           </View>
 
-          <CollapsibleSection
+          {roomData.amenities?.length ? <CollapsibleSection
             title="Room Amenities"
             isOpen={sections.amenities}
             onToggle={() => toggleSection("amenities")}
@@ -187,7 +166,7 @@ const RoomDetailsScreen = () => {
                 </View>
               ))}
             </View>
-          </CollapsibleSection>
+          </CollapsibleSection> : null}
 
           <CollapsibleSection
             title="Price Breakdown"
@@ -208,7 +187,7 @@ const RoomDetailsScreen = () => {
             </View>
           </CollapsibleSection>
 
-          <CollapsibleSection
+          {false && <CollapsibleSection
             title="Policies"
             isOpen={sections.policies}
             onToggle={() => toggleSection("policies")}
@@ -235,7 +214,7 @@ const RoomDetailsScreen = () => {
                 </Text>
               </View>
             </View>
-          </CollapsibleSection>
+          </CollapsibleSection>}
 
           {/* Urgency Alert */}
           <View style={styles.alertBox}>

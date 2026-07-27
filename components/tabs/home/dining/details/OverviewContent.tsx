@@ -52,7 +52,7 @@ export default function OverviewContent({ restaurant }: OverviewContentProps) {
           {restaurant.amenities.map((name, index) => {
             const item = AMENITIES[index] ?? AMENITIES[0];
             return (
-            <View key={item.id} style={styles.amenityItem}>
+            <View key={`${item.id}-${index}-${String(name)}`} style={styles.amenityItem}>
               <View style={styles.amenityIconBox}>
                 <Ionicons name={item.icon} size={24} color={item.color} />
               </View>
