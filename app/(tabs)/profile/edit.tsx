@@ -304,7 +304,7 @@ const EditProfileScreen = () => {
             disabled={saving || uploadingImage}
           >
             <Text style={styles.saveButtonText}>
-              {uploadingImage ? "Uploading image..." : saving ? "Saving..." : "Save Changes"}
+              Save Changes
             </Text>
           </TouchableOpacity>
 
@@ -313,6 +313,15 @@ const EditProfileScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {saving || uploadingImage ? (
+        <View style={styles.saveLoadingOverlay} pointerEvents="auto">
+          <View style={styles.saveLoadingCard}>
+            <ActivityIndicator size="large" color={theme.COLORS.primary} />
+            <Text style={styles.saveLoadingText}>{uploadingImage ? "Uploading image..." : "Saving changes..."}</Text>
+          </View>
+        </View>
+      ) : null}
 
       {/* Calendar Modal */}
       <Modal
@@ -577,6 +586,33 @@ const styles = StyleSheet.create({
     color: theme.COLORS.white,
     fontSize: 16,
     fontWeight: "700",
+  },
+  saveLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.62)",
+  },
+  saveLoadingCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 150,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    borderRadius: 18,
+    backgroundColor: theme.COLORS.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  saveLoadingText: {
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.COLORS.textPrimary,
   },
   logoutButton: {
     height: 56,

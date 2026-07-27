@@ -88,11 +88,11 @@ export type NormalizedUserProfile = {
   notification_preferences: { nearby_events: boolean; booking_reminders: boolean };
 };
 
-function memberSinceYear(createdAt: string | null | undefined): string {
+function memberSinceLabel(createdAt: string | null | undefined): string {
   if (!createdAt) return "";
   const parsed = new Date(createdAt);
   if (Number.isNaN(parsed.getTime())) return "";
-  return String(parsed.getFullYear());
+  return parsed.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 export function normalizeUserProfile(profile: UserProfilePayload = {}): NormalizedUserProfile {
@@ -105,7 +105,7 @@ export function normalizeUserProfile(profile: UserProfilePayload = {}): Normaliz
     date_of_birth: profile.date_of_birth ?? "",
     profile_image_url: profile.profile_image_url ?? "",
     created_at: profile.created_at ?? null,
-    member_since: memberSinceYear(profile.created_at),
+    member_since: memberSinceLabel(profile.created_at),
     points_balance: Number(profile.points_balance ?? 0),
     location_enabled: Boolean(profile.location_enabled),
     notification_preferences: {
