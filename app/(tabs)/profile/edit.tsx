@@ -69,6 +69,7 @@ const EditProfileScreen = () => {
     fullName: "",
     email: "",
     phoneNumber: "",
+    gender: "",
     dob: "",
     memberSince: "",
     imageUrl: "",
@@ -89,6 +90,7 @@ const EditProfileScreen = () => {
           fullName: profile.full_name || "",
           email: profile.email || "",
           phoneNumber: profile.phone || "",
+          gender: profile.gender || "",
           dob: profile.date_of_birth || "",
           memberSince: profile.member_since || "",
           imageUrl: profile.profile_image_url || "",
@@ -132,6 +134,7 @@ const EditProfileScreen = () => {
         full_name: fullName,
         email: formData.email.trim().toLowerCase() || null,
         phone: formData.phoneNumber.trim() || null,
+        gender: formData.gender || null,
         date_of_birth: formData.dob || null,
       });
       setFormData((current) => ({
@@ -139,6 +142,7 @@ const EditProfileScreen = () => {
         fullName: updated.full_name || current.fullName,
         email: updated.email || "",
         phoneNumber: updated.phone || "",
+        gender: updated.gender || "",
         dob: updated.date_of_birth || "",
         memberSince: updated.member_since || current.memberSince,
         imageUrl,
@@ -262,6 +266,17 @@ const EditProfileScreen = () => {
             }
           />
 
+          <View style={styles.genderArea}>
+            <Text style={styles.genderLabel}>Gender</Text>
+            <View style={styles.genderOptions}>
+              {[['female', 'Female'], ['male', 'Male'], ['other', 'Other'], ['prefer_not_to_say', 'Prefer not to say']].map(([value, label]) => (
+                <TouchableOpacity key={value} onPress={() => setFormData({ ...formData, gender: value })} style={[styles.genderOption, formData.gender === value && styles.selectedGenderOption]}>
+                  <Text style={[styles.genderText, formData.gender === value && styles.selectedGenderText]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <InputField
             label="Date of Birth"
             value={formData.dob}
@@ -371,6 +386,39 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: "relative",
     marginBottom: 15,
+  },
+  genderArea: {
+    marginTop: 18,
+  },
+  genderLabel: {
+    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.COLORS.textPrimary,
+  },
+  genderOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  genderOption: {
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  selectedGenderOption: {
+    backgroundColor: theme.COLORS.primary,
+    borderColor: theme.COLORS.primary,
+  },
+  genderText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.COLORS.textSecondary,
+  },
+  selectedGenderText: {
+    color: theme.COLORS.white,
   },
   editImageButton: {
     position: "absolute",

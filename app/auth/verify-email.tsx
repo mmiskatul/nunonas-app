@@ -64,6 +64,7 @@ export default function VerifyEmailScreen() {
       setResending(true);
       await registerUser({
         full_name: pendingSignup.fullName,
+        gender: pendingSignup.gender || null,
         email,
         phone: pendingSignup.phone || null,
         password: pendingSignup.password,

@@ -36,6 +36,7 @@ export default function SignupScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [enableLocation, setEnableLocation] = useState(false);
@@ -232,6 +233,7 @@ export default function SignupScreen() {
       setLoading(true);
       await registerUser({
         full_name: fullName.trim(),
+        gender: gender || null,
         email: normalizedEmail,
         phone: normalizedPhone || null,
         password,
@@ -242,6 +244,7 @@ export default function SignupScreen() {
       });
       setPendingSignup({
         fullName: fullName.trim(),
+        gender,
         email: normalizedEmail,
         phone: normalizedPhone,
         password,
@@ -319,6 +322,17 @@ export default function SignupScreen() {
               onChangeText={setPhone}
               keyboardType="phone-pad"
             />
+
+            <View style={styles.genderArea}>
+              <Text style={styles.genderLabel}>Gender <Text style={styles.optionalLabel}>(Optional)</Text></Text>
+              <View style={styles.genderOptions}>
+                {[['female', 'Female'], ['male', 'Male'], ['other', 'Other'], ['prefer_not_to_say', 'Prefer not to say']].map(([value, label]) => (
+                  <TouchableOpacity key={value} onPress={() => setGender(value)} style={[styles.genderOption, gender === value && styles.selectedGenderOption]}>
+                    <Text style={[styles.genderText, gender === value && styles.selectedGenderText]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
             <InputField
               label="Password"
@@ -514,6 +528,43 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderWidth: 1,
     borderColor: theme.COLORS.border,
+  },
+  genderArea: {
+    marginTop: 18,
+  },
+  genderLabel: {
+    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.COLORS.textPrimary,
+  },
+  optionalLabel: {
+    fontWeight: "500",
+    color: theme.COLORS.textSecondary,
+  },
+  genderOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  genderOption: {
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  selectedGenderOption: {
+    backgroundColor: theme.COLORS.primary,
+    borderColor: theme.COLORS.primary,
+  },
+  genderText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: theme.COLORS.textSecondary,
+  },
+  selectedGenderText: {
+    color: theme.COLORS.white,
   },
   locationInfo: {
     flexDirection: "row",
