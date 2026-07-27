@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from "react-native-maps";
 import theme from "../../../constants/theme";
 import {
   buildDirectionsUrl,
@@ -26,6 +26,10 @@ import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 
 const { width } = Dimensions.get("window");
+const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+const MAPBOX_TILE_URL = MAPBOX_ACCESS_TOKEN
+  ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_ACCESS_TOKEN}`
+  : "";
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -120,7 +124,7 @@ const ExploreNearbyBanner = () => {
     async function getOffers() {
       try {
         setOffersLoading(true);
-        const items = (await listNearbyOffers(8)).filter((item) => item.entityType !== "event");
+        const items = (await listNearbyOffers(8)).filter((item) => item.entityType === "event");
         setOffers(items);
         setSelectedOffer(items[0] ?? null);
       } catch (error) {
@@ -211,6 +215,7 @@ const ExploreNearbyBanner = () => {
             ) : (
               <MapView
                 provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+                mapType={Platform.OS === "android" && MAPBOX_TILE_URL ? "none" : "standard"}
                 style={styles.staticMap}
                 initialRegion={{
                   latitude: gpsCoords.latitude,
@@ -223,6 +228,7 @@ const ExploreNearbyBanner = () => {
                 pitchEnabled={true}
                 rotateEnabled={true}
               >
+                {MAPBOX_TILE_URL ? <UrlTile urlTemplate={MAPBOX_TILE_URL} maximumZ={19} flipY={false} /> : null}
                 <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
                 {markerOffers.map((offer) => (
                   <OfferMarker
@@ -253,7 +259,7 @@ const ExploreNearbyBanner = () => {
             <View style={styles.locationInfo}>
               <View style={styles.locationRow}>
                 <Ionicons name="pricetag" size={16} color={theme.COLORS.primary} />
-                <Text style={styles.locationLabel}>{getCardLabel(selectedOffer)}</Text>
+                <Text style={styles.locationLabel}>{selectedOffer?.entityType === "event" ? "Nearby Event" : getCardLabel(selectedOffer)}</Text>
               </View>
               <Text style={styles.locationText} numberOfLines={1}>
                 {selectedOffer?.title ?? address}
@@ -288,6 +294,7 @@ const ExploreNearbyBanner = () => {
         ) : (
           <MapView
             provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+            mapType={Platform.OS === "android" && MAPBOX_TILE_URL ? "none" : "standard"}
             style={StyleSheet.absoluteFillObject}
             initialRegion={{
               latitude: gpsCoords.latitude,
@@ -300,6 +307,7 @@ const ExploreNearbyBanner = () => {
             pitchEnabled={false}
             rotateEnabled={false}
           >
+            {MAPBOX_TILE_URL ? <UrlTile urlTemplate={MAPBOX_TILE_URL} maximumZ={19} flipY={false} /> : null}
             <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
             {markerOffers.map((offer) => (
               <OfferMarker
@@ -325,7 +333,7 @@ const ExploreNearbyBanner = () => {
           <Text style={styles.sparkles}>Nearby on the road, not just by pin</Text>
 
           <Text style={styles.description}>
-            Tap any hotel or provider marker to preview the live offer and driving distance.
+            Tap any event marker to preview the event and driving distance.
           </Text>
 
           {selectedOffer ? (
