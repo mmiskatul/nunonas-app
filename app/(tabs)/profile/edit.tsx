@@ -59,9 +59,17 @@ function InputField({
   );
 }
 
+const GENDER_OPTIONS = [
+  ["female", "Female"],
+  ["male", "Male"],
+  ["other", "Other"],
+  ["prefer_not_to_say", "Prefer not to say"],
+];
+
 const EditProfileScreen = () => {
   const router = useRouter();
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showGenderOptions, setShowGenderOptions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -268,13 +276,12 @@ const EditProfileScreen = () => {
 
           <View style={styles.genderArea}>
             <Text style={styles.genderLabel}>Gender</Text>
-            <View style={styles.genderOptions}>
-              {[['female', 'Female'], ['male', 'Male'], ['other', 'Other'], ['prefer_not_to_say', 'Prefer not to say']].map(([value, label]) => (
-                <TouchableOpacity key={value} onPress={() => setFormData({ ...formData, gender: value })} style={[styles.genderOption, formData.gender === value && styles.selectedGenderOption]}>
-                  <Text style={[styles.genderText, formData.gender === value && styles.selectedGenderText]}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity style={styles.genderDropdown} onPress={() => setShowGenderOptions(true)} activeOpacity={0.8}>
+              <Text style={[styles.genderDropdownText, !formData.gender && styles.genderPlaceholder]}>
+                {GENDER_OPTIONS.find(([value]) => value === formData.gender)?.[1] || "Select gender"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={theme.COLORS.textSecondary} />
+            </TouchableOpacity>
           </View>
 
           <InputField
@@ -352,6 +359,36 @@ const EditProfileScreen = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      <Modal
+        visible={showGenderOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGenderOptions(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowGenderOptions(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.genderModalContainer}>
+                <Text style={styles.genderModalTitle}>Select Gender</Text>
+                {GENDER_OPTIONS.map(([value, label]) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[styles.genderModalOption, formData.gender === value && styles.genderModalSelected]}
+                    onPress={() => {
+                      setFormData({ ...formData, gender: value });
+                      setShowGenderOptions(false);
+                    }}
+                  >
+                    <Text style={[styles.genderModalText, formData.gender === value && styles.genderModalSelectedText]}>{label}</Text>
+                    {formData.gender === value ? <Ionicons name="checkmark" size={20} color={theme.COLORS.primary} /> : null}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -396,29 +433,56 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: theme.COLORS.textPrimary,
   },
-  genderOptions: {
+  genderDropdown: {
+    minHeight: 52,
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  genderOption: {
+    alignItems: "center",
+    justifyContent: "space-between",
     borderWidth: 1,
     borderColor: theme.COLORS.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingHorizontal: 16,
   },
-  selectedGenderOption: {
-    backgroundColor: theme.COLORS.primary,
-    borderColor: theme.COLORS.primary,
+  genderDropdownText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.COLORS.textPrimary,
   },
-  genderText: {
+  genderPlaceholder: {
+    color: theme.COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  genderModalContainer: {
+    width: "88%",
+    borderRadius: 20,
+    backgroundColor: theme.COLORS.white,
+    padding: 20,
+  },
+  genderModalTitle: {
+    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: "800",
+    color: theme.COLORS.textPrimary,
+  },
+  genderModalOption: {
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: theme.COLORS.border,
+    paddingHorizontal: 8,
+  },
+  genderModalSelected: {
+    backgroundColor: theme.COLORS.surface,
+  },
+  genderModalText: {
     fontSize: 12,
     fontWeight: "600",
-    color: theme.COLORS.textSecondary,
+    color: theme.COLORS.textPrimary,
   },
-  selectedGenderText: {
-    color: theme.COLORS.white,
+  genderModalSelectedText: {
+    color: theme.COLORS.primary,
   },
   editImageButton: {
     position: "absolute",

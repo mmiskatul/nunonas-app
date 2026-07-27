@@ -17,6 +17,7 @@ type JsonObject = Record<string, unknown>;
 type UserProfilePayload = {
   id?: string | number | null;
   full_name?: string | null;
+  gender?: string | null;
   email?: string | null;
   phone?: string | null;
   date_of_birth?: string | null;
@@ -75,6 +76,7 @@ export type HotelStayBookingPayload = {
 export type NormalizedUserProfile = {
   id: string | number;
   full_name: string;
+  gender: string;
   email: string;
   phone: string;
   date_of_birth: string;
@@ -97,6 +99,7 @@ export function normalizeUserProfile(profile: UserProfilePayload = {}): Normaliz
   return {
     id: profile.id ?? "",
     full_name: profile.full_name ?? "",
+    gender: profile.gender ?? "",
     email: profile.email ?? "",
     phone: profile.phone ?? "",
     date_of_birth: profile.date_of_birth ?? "",
