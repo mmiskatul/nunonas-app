@@ -10,7 +10,17 @@ import { Ionicons } from "@expo/vector-icons";
 export default function SpaBookingSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { spaName, dateTime, guests } = params;
+  const {
+    bookingRecordId,
+    bookingCode,
+    spaName,
+    serviceName,
+    dateTime,
+    guests,
+    totalAmount,
+    estimatedPoints,
+    promotionName,
+  } = params;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -23,18 +33,32 @@ export default function SpaBookingSuccessScreen() {
           />
         </View>
 
-        <Text style={styles.title}>Booking Successful!</Text>
+        <Text style={styles.title}>Booking Request Sent</Text>
         <Text style={styles.subtitle}>
-          Your appointment at {spaName || "Serenity Spa"} has been confirmed.
+          {spaName || "The spa"} will review and confirm your appointment.
         </Text>
 
         <View style={styles.detailsBox}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Booking ID</Text>
+            <Text style={styles.detailValue}>{bookingCode || "Pending"}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Service</Text>
+            <Text style={styles.detailValue}>{serviceName || "Spa service"}</Text>
+          </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date & Time</Text>
             <Text style={styles.detailValue}>
               {dateTime || "Saturday, Jan 24, 7:30 PM"}
             </Text>
           </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Estimated total</Text>
+            <Text style={styles.detailValue}>${Number(totalAmount || 0).toFixed(2)}</Text>
+          </View>
+          {promotionName ? <Text style={styles.promotionText}>{promotionName} applied</Text> : null}
+          {Number(estimatedPoints || 0) > 0 ? <Text style={styles.pointsText}>Earn approximately {estimatedPoints} points after completion</Text> : null}
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Guests</Text>
             <Text style={styles.detailValue}>{guests || "4"} People</Text>
@@ -49,7 +73,16 @@ export default function SpaBookingSuccessScreen() {
 
         <Button
           title="View My Bookings"
-          onPress={() => router.push("/profile")}
+          onPress={() => {
+            if (!bookingRecordId) {
+              router.push("/profile/bookings");
+              return;
+            }
+            router.push({
+              pathname: "/profile/bookings/details",
+              params: { id: String(bookingRecordId), category: "Spa" },
+            });
+          }}
           variant="outline"
           style={styles.bookingsButton}
         />
@@ -106,6 +139,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: theme.COLORS.textPrimary,
+  },
+  promotionText: {
+    color: "#15803d",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  pointsText: {
+    color: "#a16207",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 8,
   },
   homeButton: {
     width: "100%",

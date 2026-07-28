@@ -12,8 +12,8 @@ const PointsBanner = ({ points }) => {
         <Ionicons name="gift" size={20} color={theme.COLORS.primary} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{awarded ? `You earned +${points} points 🎁` : "Points available after completion"}</Text>
-        <Text style={styles.subtitle}>{awarded ? "Thanks for being a loyal customer!" : "Points are awarded when the provider completes your booking."}</Text>
+        <Text style={styles.title}>{awarded ? `Earn approximately ${points} points` : "Points available after completion"}</Text>
+        <Text style={styles.subtitle}>Points are awarded when the provider completes your booking.</Text>
       </View>
     </View>
   );

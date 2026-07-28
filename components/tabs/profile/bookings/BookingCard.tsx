@@ -4,12 +4,22 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const BookingCard = ({ item, onViewDetails }) => (
+const BookingCard = ({ item, onViewDetails }) => {
+  const status = String(item.status || "pending").toLowerCase();
+  const statusStyle = status === "canceled" || status === "cancelled"
+    ? styles.statusCanceled
+    : status === "pending"
+      ? styles.statusPending
+      : status === "complete" || status === "completed"
+        ? styles.statusComplete
+        : styles.statusConfirmed;
+
+  return (
   <View style={styles.card}>
     <View style={styles.cardContent}>
       <View style={styles.imageWrapper}>
         {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.cardImage} /> : <View style={[styles.cardImage, styles.imagePlaceholder]}><Ionicons name="calendar-outline" size={30} color={theme.COLORS.primary} /></View>}
-        <View style={styles.statusBadge}>
+        <View style={[styles.statusBadge, statusStyle]}>
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
@@ -44,7 +54,8 @@ const BookingCard = ({ item, onViewDetails }) => (
       </View>
     </View>
   </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -94,10 +105,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 5,
     left: 5,
-    backgroundColor: "rgba(34, 197, 94, 0.9)", // theme.COLORS.success with opacity
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+  },
+  statusPending: {
+    backgroundColor: "#d97706",
+  },
+  statusConfirmed: {
+    backgroundColor: theme.COLORS.primary,
+  },
+  statusComplete: {
+    backgroundColor: theme.COLORS.success,
+  },
+  statusCanceled: {
+    backgroundColor: theme.COLORS.error,
   },
   statusText: {
     fontSize: 10,

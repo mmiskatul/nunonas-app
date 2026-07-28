@@ -16,57 +16,6 @@ import theme from "../../../../constants/theme";
 import BookingCard from "../../../../components/tabs/profile/bookings/BookingCard";
 import { listMyBookings } from "../../../../lib/customer-api";
 
-
-const bookingsData = [];
-/* Legacy static booking examples removed; this screen uses listMyBookings().
-const legacyBookingsData = [
-  {
-    id: "1",
-    title: "Grand Palace Hotel",
-    category: "Hotel",
-    status: "Confirmed",
-    date: "Dec 20-22, 2024",
-    location: "Downtown Manhattan, New York",
-    imageUrl:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop",
-    rating: "4-Star Hotel",
-    checkIn: "Feb 15, 2026",
-    checkOut: "Feb 18, 2026",
-    nights: "3 Nights",
-    roomType: "Deluxe King Suite",
-    guests: "2 Adults",
-    pricePerNight: "$299.00",
-    totalPrice: "$897.00",
-    taxes: "$127.05",
-    totalPaid: "$974.05",
-  },
-  {
-    id: "2",
-    title: "The Grand Restaurant",
-    category: "Restaurant",
-    status: "Confirmed",
-    date: "March 15, 2024",
-    time: "7:30 PM",
-    guests: "4 People",
-    location: "123 Gourmet Street, Downtown District, New York, NY 10001",
-    phone: "+1 (555) 123-4567",
-    notes: "Window seating preferred, celebrating anniversary",
-    bookingId: "#BK2024001",
-    imageUrl:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    id: "3",
-    title: "Serenity Spa",
-    category: "Spa",
-    status: "Confirmed",
-    date: "Tomorrow, 2:00 PM",
-    location: "Wellness Center, Central Park",
-    imageUrl:
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=300&auto=format&fit=crop",
-  },
-]; */
-
 export default function BookingsScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Upcoming");
@@ -118,7 +67,7 @@ export default function BookingsScreen() {
         location: item.provider_area ?? item.location ?? "",
         imageUrl: item.provider_image ?? item.imageUrl ?? "",
         guests: item.guests,
-    notes: item.special_requests ?? item.special_notes ?? item.notes ?? "",
+        notes: item.special_requests ?? item.special_notes ?? item.notes ?? "",
         bookingId: item.bookingId || item.booking_code || `#${(item.id ?? item._id ?? "").slice(0, 8).toUpperCase()}`,
       },
     });

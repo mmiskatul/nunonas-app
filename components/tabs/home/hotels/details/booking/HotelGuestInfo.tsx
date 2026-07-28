@@ -1,9 +1,24 @@
-// @ts-nocheck
 import React from "react";
 import { StyleSheet, View, Text, TextInput } from "react-native";
 import theme from "../../../../../../constants/theme";
 
-const HotelGuestInfo = () => {
+type HotelGuestInfoProps = {
+  name: string;
+  email: string;
+  phone: string;
+  onNameChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onPhoneChange: (value: string) => void;
+};
+
+const HotelGuestInfo = ({
+  name,
+  email,
+  phone,
+  onNameChange,
+  onEmailChange,
+  onPhoneChange,
+}: HotelGuestInfoProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Guest Information</Text>
@@ -14,6 +29,8 @@ const HotelGuestInfo = () => {
           style={styles.input}
           placeholder="John Smith"
           placeholderTextColor="#999"
+          value={name}
+          onChangeText={onNameChange}
         />
       </View>
 
@@ -24,6 +41,9 @@ const HotelGuestInfo = () => {
           placeholder="john@example.com"
           placeholderTextColor="#999"
           keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={onEmailChange}
         />
       </View>
 
@@ -34,6 +54,8 @@ const HotelGuestInfo = () => {
           placeholder="+1 (555) 123-4567"
           placeholderTextColor="#999"
           keyboardType="phone-pad"
+          value={phone}
+          onChangeText={onPhoneChange}
         />
       </View>
     </View>

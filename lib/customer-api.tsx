@@ -50,6 +50,39 @@ export type BookingResponse = {
   status?: string;
   provider_id?: string;
   provider_type?: string;
+  estimated_points?: number;
+  total_amount?: number;
+  discount_amount?: number;
+  promotion_name?: string | null;
+};
+
+export type BookingQuote = {
+  provider_id?: string;
+  provider_name?: string;
+  provider_type?: string;
+  service_id?: string;
+  service_name?: string;
+  room_id?: string;
+  room_name?: string;
+  date?: string;
+  time?: string;
+  check_in_date?: string;
+  check_out_date?: string;
+  nights?: number;
+  guests?: number;
+  unit_price?: number;
+  rate_per_night?: number;
+  original_subtotal?: number;
+  room_discount_amount?: number;
+  discount_amount?: number;
+  promotion_name?: string | null;
+  promo_code?: string | null;
+  subtotal?: number;
+  service_fee?: number;
+  taxes?: number;
+  tax_included?: boolean;
+  total?: number;
+  estimated_points?: number;
 };
 
 export type RestaurantTableBookingPayload = {
@@ -59,6 +92,7 @@ export type RestaurantTableBookingPayload = {
   seating_preference?: string;
   special_notes?: string;
   auto_confirm?: boolean;
+  promo_code?: string;
 };
 
 export type HotelStayBookingPayload = {
@@ -71,6 +105,17 @@ export type HotelStayBookingPayload = {
   guest_email?: string;
   guest_phone?: string;
   room_id?: string;
+  promo_code?: string;
+};
+
+export type SpaBookingPayload = {
+  date: string;
+  time: string;
+  guests: number;
+  service_id?: string;
+  special_notes?: string;
+  auto_confirm?: boolean;
+  promo_code?: string;
 };
 
 export type NormalizedUserProfile = {
@@ -231,6 +276,13 @@ export async function bookEventTickets<TResponse = unknown, TBody extends JsonOb
   return apiPostAuth<TResponse, TBody>(`${C}/events/${eventId}/bookings`, payload);
 }
 
+export async function getEventBookingQuote<
+  TResponse = BookingQuote,
+  TBody extends { quantity: number; auto_confirm?: boolean; promo_code?: string } = { quantity: number; auto_confirm?: boolean; promo_code?: string },
+>(eventId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${C}/events/${eventId}/booking-quote`, payload);
+}
+
 export async function listHotels<TResponse = unknown>(params: QueryParams = {}): Promise<TResponse> {
   return apiGetAuth<TResponse>(`${SERVICES}/hotels${buildQuery(params)}`);
 }
@@ -295,8 +347,9 @@ export async function getFilters<TResponse = unknown>(): Promise<TResponse> {
 export async function getBookingAvailability<TResponse = unknown>(
   providerId: string,
   date: string,
+  providerType: "restaurant" | "hotel" | "spa" = "restaurant",
 ): Promise<TResponse> {
-  return apiGetAuth<TResponse>(`${C}/bookings/availability${buildQuery({ provider_id: providerId, date })}`);
+  return apiGetAuth<TResponse>(`${C}/bookings/availability${buildQuery({ provider_id: providerId, date, provider_type: providerType })}`);
 }
 
 export async function getBookingQuote<TResponse = unknown, TBody extends JsonObject = JsonObject>(
@@ -330,6 +383,27 @@ export async function bookHotelRoom<
   TBody extends Omit<HotelStayBookingPayload, "room_id"> = Omit<HotelStayBookingPayload, "room_id">,
 >(roomId: string, payload: TBody): Promise<TResponse> {
   return apiPostAuth<TResponse, TBody>(`${SERVICES}/hotels/rooms/${roomId}/bookings`, payload);
+}
+
+export async function getHotelBookingQuote<
+  TResponse = BookingQuote,
+  TBody extends Pick<HotelStayBookingPayload, "check_in_date" | "check_out_date" | "guests" | "room_id" | "promo_code"> = Pick<HotelStayBookingPayload, "check_in_date" | "check_out_date" | "guests" | "room_id" | "promo_code">,
+>(hotelId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/hotels/${hotelId}/booking-quote`, payload);
+}
+
+export async function getSpaBookingQuote<
+  TResponse = BookingQuote,
+  TBody extends SpaBookingPayload = SpaBookingPayload,
+>(spaId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/spas/${spaId}/booking-quote`, payload);
+}
+
+export async function bookSpa<
+  TResponse = BookingResponse,
+  TBody extends SpaBookingPayload = SpaBookingPayload,
+>(spaId: string, payload: TBody): Promise<TResponse> {
+  return apiPostAuth<TResponse, TBody>(`${SERVICES}/spas/${spaId}/bookings`, payload);
 }
 
 export async function listMyBookings<TResponse = unknown>(

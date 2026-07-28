@@ -16,25 +16,39 @@ export default function BookingSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  const { id, restaurantName, dateTime, guests, seating, bookingId } = params;
+  const {
+    restaurantName,
+    dateTime,
+    guests,
+    seating,
+    bookingRecordId,
+    bookingCode,
+    estimatedPoints,
+    totalAmount,
+    promotionName,
+  } = params;
 
   const handleBackToHome = () => {
     router.replace("/(tabs)/home");
   };
 
   const handleViewBooking = () => {
+    if (!bookingRecordId) {
+      router.push("/profile/bookings");
+      return;
+    }
     router.push({
-      pathname: "/profile/bookings",
-      params: { bookingId: String(bookingId || "") },
+      pathname: "/profile/bookings/details",
+      params: { id: String(bookingRecordId), category: "Restaurant" },
     });
   };
 
   const details = {
-    restaurantName: restaurantName || "Serenity Spa & Wellness",
-    dateTime: dateTime || "Dec 15, 7:30 PM",
-    guests: guests || "4",
-    seating: seating || "Window table",
-    bookingId: bookingId || "#BK2024-1215",
+    restaurantName: restaurantName || "Restaurant",
+    dateTime: dateTime || "Date pending",
+    guests: guests || "1",
+    seating: seating || "No preference",
+    bookingId: bookingCode || "Pending",
   };
 
   return (
@@ -44,7 +58,12 @@ export default function BookingSuccessScreen() {
         
         <ConfirmedDetailsCard details={details} />
         
-        <PointsBanner points={0} />
+        {Number(estimatedPoints || 0) > 0 ? (
+          <PointsBanner points={Number(estimatedPoints)} />
+        ) : null}
+
+        {promotionName ? <Text style={styles.promotionText}>{promotionName} was applied.</Text> : null}
+        {Number(totalAmount || 0) > 0 ? <Text style={styles.totalText}>Estimated total: ${Number(totalAmount).toFixed(2)}</Text> : null}
 
         <Button
           title="View My Booking"
@@ -101,6 +120,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     flex: 1,
+  },
+  promotionText: {
+    color: "#15803d",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  totalText: {
+    color: theme.COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 18,
   },
 });
 

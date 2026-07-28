@@ -10,12 +10,43 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
 export default function HotelBookingSuccessScreen() {
   const router = useRouter();
-  const { bookingId } = useLocalSearchParams();
+  const {
+    bookingRecordId,
+    bookingCode,
+    hotelName,
+    hotelLocation,
+    roomName,
+    checkInDate,
+    checkOutDate,
+    nights,
+    guests,
+    totalAmount,
+    estimatedPoints,
+    promotionName,
+  } = useLocalSearchParams();
+  const formatDate = (value) => {
+    if (!value) return "Not available";
+    return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+  const viewBooking = () => {
+    if (!bookingRecordId) {
+      router.push("/profile/bookings");
+      return;
+    }
+    router.push({
+      pathname: "/profile/bookings/details",
+      params: { id: String(bookingRecordId), category: "Hotel" },
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,9 +59,9 @@ export default function HotelBookingSuccessScreen() {
           <View style={styles.checkCircle}>
             <Ionicons name="checkmark" size={60} color="white" />
           </View>
-          <Text style={styles.successTitle}>Booking Confirmed</Text>
+          <Text style={styles.successTitle}>Booking Request Sent</Text>
           <Text style={styles.successSubtitle}>
-            Your reservation has been successfully processed.
+            The hotel will review and confirm your reservation.
           </Text>
         </View>
 
@@ -38,7 +69,7 @@ export default function HotelBookingSuccessScreen() {
         <View style={styles.idCard}>
           <View>
             <Text style={styles.idLabel}>BOOKING ID</Text>
-            <Text style={styles.idValue}>{bookingId || "HTL-8947562"}</Text>
+            <Text style={styles.idValue}>{bookingCode || "Pending"}</Text>
           </View>
           <TouchableOpacity style={styles.copyBtn}>
             <Ionicons
@@ -56,14 +87,8 @@ export default function HotelBookingSuccessScreen() {
             style={styles.hotelImage}
           />
           <View style={styles.hotelInfo}>
-            <Text style={styles.hotelName}>Grand Plaza Hotel</Text>
-            <Text style={styles.hotelLoc}>Downtown Manhattan, NYC</Text>
-            <View style={styles.ratingRow}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Ionicons key={i} name="star" size={12} color="#facc15" />
-              ))}
-              <Text style={styles.ratingText}>4.8 (1,247)</Text>
-            </View>
+            <Text style={styles.hotelName}>{hotelName || "Hotel"}</Text>
+            <Text style={styles.hotelLoc}>{hotelLocation || "Location unavailable"}</Text>
           </View>
         </View>
 
@@ -73,24 +98,32 @@ export default function HotelBookingSuccessScreen() {
 
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Check-in</Text>
-            <Text style={styles.detailValue}>Mar 15, 2024</Text>
+            <Text style={styles.detailValue}>{formatDate(checkInDate)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Check-out</Text>
-            <Text style={styles.detailValue}>Mar 18, 2024</Text>
+            <Text style={styles.detailValue}>{formatDate(checkOutDate)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Nights</Text>
-            <Text style={styles.detailValue}>3 nights</Text>
+            <Text style={styles.detailValue}>{nights || "1"} nights</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Room</Text>
-            <Text style={styles.detailValue}>Deluxe King</Text>
+            <Text style={styles.detailValue}>{roomName || "Hotel Room"}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Guests</Text>
-            <Text style={styles.detailValue}>2 Adults</Text>
+            <Text style={styles.detailValue}>{guests || "1"} guests</Text>
           </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Estimated total</Text>
+            <Text style={styles.detailValue}>${Number(totalAmount || 0).toFixed(2)}</Text>
+          </View>
+          {promotionName ? <Text style={styles.promotionText}>{promotionName} applied</Text> : null}
+          {Number(estimatedPoints || 0) > 0 ? (
+            <Text style={styles.pointsText}>Earn approximately {estimatedPoints} points after completion</Text>
+          ) : null}
         </View>
 
         {/* Important Info */}
@@ -100,13 +133,13 @@ export default function HotelBookingSuccessScreen() {
             <Text style={styles.infoHeading}>Important Information</Text>
             <Text style={styles.infoText}>• Check-in time: 3:00 PM</Text>
             <Text style={styles.infoText}>
-              • Free cancellation until 24 hours before arrival
+              • Cancellation is available while the booking is active
             </Text>
-            <Text style={styles.infoText}>• Valid ID required at check-in</Text>
+            <Text style={styles.infoText}>• Valid ID may be required at check-in</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryBtn}>
+        <TouchableOpacity style={styles.primaryBtn} onPress={viewBooking}>
           <Text style={styles.primaryBtnText}>View My Booking</Text>
         </TouchableOpacity>
 
@@ -117,30 +150,6 @@ export default function HotelBookingSuccessScreen() {
           <Text style={styles.backHomeText}>Back to Home</Text>
         </TouchableOpacity>
 
-        {/* What's Next */}
-        <Text style={styles.nextTitle}>What's Next?</Text>
-
-        <View style={styles.nextCard}>
-          <View style={styles.nextIconBox}>
-            <Ionicons name="mail-outline" size={24} color="#1e3a8a" />
-          </View>
-          <View>
-            <Text style={styles.nextItemTitle}>Confirmation Email</Text>
-            <Text style={styles.nextItemDesc}>
-              Sent to your registered email
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.nextCard}>
-          <View style={styles.nextIconBox}>
-            <Ionicons name="car-outline" size={24} color="#1e3a8a" />
-          </View>
-          <View>
-            <Text style={styles.nextItemTitle}>Airport Transfer</Text>
-            <Text style={styles.nextItemDesc}>Book your ride to the hotel</Text>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -273,6 +282,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: theme.COLORS.textPrimary,
+  },
+  promotionText: {
+    color: "#15803d",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  pointsText: {
+    color: "#a16207",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 8,
   },
   infoBox: {
     flexDirection: "row",

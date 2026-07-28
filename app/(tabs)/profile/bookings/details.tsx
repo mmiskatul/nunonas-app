@@ -78,7 +78,15 @@ export default function BookingDetailsScreen() {
     ...routeParams,
     ...(liveBooking || {}),
     title: liveBooking?.provider_name || liveBooking?.service || routeParams.title,
-    category: liveBooking?.provider_type === "hotel" || liveBooking?.provider_type === "hotel_room" ? "Hotel" : routeParams.category,
+    category: liveBooking
+      ? liveBooking.provider_type === "hotel" || liveBooking.provider_type === "hotel_room"
+        ? "Hotel"
+        : liveBooking.provider_type === "spa"
+          ? "Spa"
+          : liveBooking.provider_type === "event"
+            ? "Event"
+            : "Restaurant"
+      : routeParams.category,
     location: liveBooking?.provider_area || liveBooking?.provider_address || routeParams.location || "Location unavailable",
     phone: liveBooking?.provider_phone || routeParams.phone,
     bookingId: liveBooking?.booking_code || routeParams.bookingId,
@@ -89,7 +97,21 @@ export default function BookingDetailsScreen() {
     payment_status: liveBooking?.payment_status || routeParams.payment_status,
     seating_preference: liveBooking?.seating_preference || routeParams.seating_preference,
     total_amount: liveBooking?.total_amount ?? routeParams.total_amount,
+    checkIn: liveBooking?.check_in_date || routeParams.checkIn,
+    checkOut: liveBooking?.check_out_date || routeParams.checkOut,
+    nights: liveBooking?.nights || routeParams.nights,
+    roomType: liveBooking?.room_type || liveBooking?.service || routeParams.roomType,
+    pricePerNight: liveBooking?.rate_per_night,
+    originalSubtotal: liveBooking?.original_subtotal,
+    serviceFee: liveBooking?.service_fee,
+    taxes: liveBooking?.taxes,
+    discountAmount: liveBooking?.discount_amount,
+    promotionName: liveBooking?.promotion_name,
+    estimatedPoints: liveBooking?.estimated_points,
+    pointsAwarded: liveBooking?.points_awarded,
+    statusHistory: liveBooking?.status_history || [],
     review: liveBooking?.review,
+    imageUrl: liveBooking?.provider_image || routeParams.imageUrl,
   };
   const isHotel = params.category === "Hotel";
   const [showReviewModal, setShowReviewModal] = React.useState(false);
@@ -98,7 +120,11 @@ export default function BookingDetailsScreen() {
   const canReview = ["complete", "completed"].includes(normalizedStatus) && !params.review;
 
   const handleCall = () => {
-    const phoneNumber = params.phone || "+15551234567";
+    const phoneNumber = params.phone;
+    if (!phoneNumber) {
+      Alert.alert("Phone unavailable", "This service provider has not added a contact number.");
+      return;
+    }
     Linking.openURL(`tel:${phoneNumber}`);
   };
 
@@ -138,10 +164,34 @@ export default function BookingDetailsScreen() {
     }
   };
 
+  const renderTimeline = () => (
+    <DetailCard title="Booking Timeline">
+      {(params.statusHistory || []).map((entry, index) => (
+        <View key={`${entry.status}-${entry.at}-${index}`} style={styles.timelineRow}>
+          <View style={styles.timelineDot} />
+          <View style={styles.timelineContent}>
+            <Text style={styles.timelineTitle}>{entry.label || String(entry.status || "Updated").replace(/_/g, " ")}</Text>
+            <Text style={styles.timelineDate}>{entry.at ? new Date(entry.at).toLocaleString() : "Time unavailable"}</Text>
+            {entry.note ? <Text style={styles.timelineNote}>{entry.note}</Text> : null}
+          </View>
+        </View>
+      ))}
+      {!params.statusHistory?.length ? <Text style={styles.notesValue}>No status updates available.</Text> : null}
+      {Number(params.pointsAwarded || params.estimatedPoints || 0) > 0 ? (
+        <Text style={styles.pointsNote}>
+          {Number(params.pointsAwarded || 0) > 0 ? `${params.pointsAwarded} points awarded` : `Approximately ${params.estimatedPoints} points after completion`}
+        </Text>
+      ) : null}
+    </DetailCard>
+  );
+
   const renderHotelLayout = () => (
     <>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: params.imageUrl }} style={styles.headerImage} />
+        <Image
+          source={params.imageUrl ? { uri: params.imageUrl } : require("../../../../assets/images/discover-experience.png")}
+          style={styles.headerImage}
+        />
         <TouchableOpacity
           style={styles.backButtonOverlay}
           onPress={() => router.back()}
@@ -160,7 +210,7 @@ export default function BookingDetailsScreen() {
       <View style={styles.contentContainer}>
         <View style={styles.titleSection}>
           <Text style={styles.title}>{params.title}</Text>
-          <View style={styles.ratingRow}>
+          {params.rating ? <View style={styles.ratingRow}>
             <View style={styles.stars}>
               {[1, 2, 3, 4].map((i) => (
                 <Ionicons key={i} name="star" size={16} color="#FFD700" />
@@ -168,7 +218,7 @@ export default function BookingDetailsScreen() {
               <Ionicons name="star-outline" size={16} color="#FFD700" />
             </View>
             <Text style={styles.ratingText}>{params.rating}</Text>
-          </View>
+          </View> : null}
           <View style={styles.locationRow}>
             <Ionicons name="location" size={16} color={theme.COLORS.primary} />
             <Text style={styles.locationText}>{params.location}</Text>
@@ -179,39 +229,42 @@ export default function BookingDetailsScreen() {
           title="Stay Information"
           containerStyle={styles.stayInfoCard}
         >
-          <InfoRow label="Check-in" value={params.checkIn || "Feb 15, 2026"} />
+          <InfoRow label="Check-in" value={params.checkIn || "Not available"} />
           <InfoRow
             label="Check-out"
-            value={params.checkOut || "Feb 18, 2026"}
+            value={params.checkOut || "Not available"}
           />
           <InfoRow
             label="Number of Nights"
-            value={params.nights || "3 Nights"}
+            value={params.nights ? `${params.nights} nights` : "Not available"}
           />
           <InfoRow
             label="Room Type"
-            value={params.roomType || "Deluxe King Suite"}
+            value={params.roomType || "Hotel Room"}
           />
-          <InfoRow label="Guests" value={params.guests || "2 Adults"} />
+          <InfoRow label="Guests" value={params.guests || "1"} />
         </DetailCard>
 
         <DetailCard title="Payment Summary">
           <InfoRow
             label="Room Price (per night)"
-            value={params.pricePerNight || "$299.00"}
+            value={params.pricePerNight != null ? `$${Number(params.pricePerNight).toFixed(2)}` : "Not available"}
           />
           <InfoRow
-            label={`${params.nights || "3"} Nights`}
-            value={params.totalPrice || "$897.00"}
+            label="Original amount"
+            value={params.originalSubtotal != null ? `$${Number(params.originalSubtotal).toFixed(2)}` : "Not available"}
           />
-          <InfoRow label="Taxes & Fees" value={params.taxes || "$127.05"} />
+          {Number(params.discountAmount || 0) > 0 ? <InfoRow label={params.promotionName || "Promotion"} value={`-$${Number(params.discountAmount).toFixed(2)}`} /> : null}
+          <InfoRow label="Service fee" value={`$${Number(params.serviceFee || 0).toFixed(2)}`} />
+          <InfoRow label="Taxes" value={`$${Number(params.taxes || 0).toFixed(2)}`} />
           <View style={styles.divider} />
           <InfoRow
-            label="Total Paid"
-            value={params.totalPaid || "$974.05"}
+            label="Total amount"
+            value={params.total_amount != null ? `$${Number(params.total_amount).toFixed(2)}` : "Not available"}
             valueStyle={styles.totalPaidValue}
           />
         </DetailCard>
+        {renderTimeline()}
       </View>
     </>
   );
@@ -240,7 +293,7 @@ export default function BookingDetailsScreen() {
         <View style={styles.restaurantCard}>
           <Text style={styles.entityTitle}>{params.title}</Text>
           <Text style={styles.entityCategory}>
-            {params.category} / Fine Dining
+            {params.category || "Service"}
           </Text>
 
           <View style={styles.entityInfoRow}>
@@ -261,7 +314,7 @@ export default function BookingDetailsScreen() {
             <Text
               style={[styles.entityInfoText, { color: theme.COLORS.primary }]}
             >
-              {params.phone || "+1 (555) 123-4567"}
+              {params.phone || "Phone unavailable"}
             </Text>
           </View>
         </View>
@@ -269,14 +322,14 @@ export default function BookingDetailsScreen() {
         <DetailCard title="Booking Information">
           <InfoRow
             label="Booking ID"
-            value={params.bookingId || "#BK2024001"}
+            value={params.bookingId || "Pending"}
           />
           <View style={styles.cardDivider} />
           <InfoRow label="Date" value={params.date} />
           <View style={styles.cardDivider} />
-          <InfoRow label="Time" value={params.time || "7:30 PM"} />
+          <InfoRow label="Time" value={params.time || "Not available"} />
           <View style={styles.cardDivider} />
-          <InfoRow label="Guests" value={params.guests || "4 People"} />
+          <InfoRow label="Guests" value={params.guests || "1"} />
           <View style={styles.cardDivider} />
           <InfoRow label="Status" value={params.status || "Pending"} />
           <View style={styles.cardDivider} />
@@ -284,6 +337,12 @@ export default function BookingDetailsScreen() {
           <View style={styles.cardDivider} />
           <InfoRow label="Seating" value={params.seating_preference || "No preference"} />
           <View style={styles.cardDivider} />
+          {Number(params.discountAmount || 0) > 0 ? (
+            <>
+              <InfoRow label={params.promotionName || "Promotion"} value={`-$${Number(params.discountAmount).toFixed(2)}`} />
+              <View style={styles.cardDivider} />
+            </>
+          ) : null}
           <InfoRow label="Total" value={params.total_amount != null ? `$${Number(params.total_amount).toFixed(2)}` : "—"} />
           <View style={styles.cardDivider} />
           <View style={styles.notesRow}>
@@ -293,6 +352,7 @@ export default function BookingDetailsScreen() {
             </Text>
           </View>
         </DetailCard>
+        {renderTimeline()}
 
         <View style={styles.actionsContainer}>
           <ActionButton
@@ -389,6 +449,45 @@ const styles = StyleSheet.create({
   },
   restaurantContainer: {
     flex: 1,
+  },
+  timelineRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.COLORS.primary,
+    marginTop: 5,
+  },
+  timelineContent: {
+    flex: 1,
+  },
+  timelineTitle: {
+    color: theme.COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  timelineDate: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  timelineNote: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  pointsNote: {
+    color: "#a16207",
+    backgroundColor: "#fffbeb",
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 12,
+    fontWeight: "700",
   },
   header: {
     flexDirection: "row",

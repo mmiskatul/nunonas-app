@@ -3,8 +3,8 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import theme from "../../../../../../constants/theme";
 
-function getBookingDays() {
-  const today = new Date();
+function getBookingDays(startDate) {
+  const today = startDate ? new Date(`${startDate}T12:00:00`) : new Date();
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today);
     date.setDate(today.getDate() + index);
@@ -13,11 +13,11 @@ function getBookingDays() {
   });
 }
 
-const DateSelector = ({ selectedDate, onDateSelect }) => {
-  const days = getBookingDays();
+const DateSelector = ({ selectedDate, onDateSelect, title = "Select Date", startDate = undefined }) => {
+  const days = getBookingDays(startDate);
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Select Date</Text>
+      <Text style={styles.sectionTitle}>{title}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateList}>
         {days.map((item) => (
           <TouchableOpacity

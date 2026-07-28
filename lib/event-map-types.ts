@@ -15,9 +15,12 @@ export type DrivingRoute = {
 };
 
 export type EventBookingResponse = {
+  id?: string;
   booking_code?: string;
   bookingCode?: string;
   status?: string;
+  estimated_points?: number;
+  promotion_name?: string | null;
 };
 
 export type CustomerMapEventPayload = {

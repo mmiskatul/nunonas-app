@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, View, ScrollView, ActivityIndicator, Text } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
-import { addSaved, bookEventTickets, getEvent, listSaved, removeSaved } from "../../../../lib/customer-api";
+import { addSaved, bookEventTickets, getEvent, getEventBookingQuote, listSaved, removeSaved } from "../../../../lib/customer-api";
 import { getErrorMessage, getFirstQueryParam, normalizeMapEvent } from "../../../../lib/event-map-utils";
 import type {
   CustomerMapEventPayload,
@@ -17,6 +17,8 @@ import EventKeyInfo from "../../../../components/tabs/home/events/details/EventK
 import EventAbout from "../../../../components/tabs/home/events/details/EventAbout";
 import EventLocationMap from "../../../../components/tabs/home/events/details/EventLocationMap";
 import EventFooter from "../../../../components/tabs/home/events/details/EventFooter";
+import BookingPriceSummary from "../../../../components/ui/BookingPriceSummary";
+import PromoCodeInput from "../../../../components/ui/PromoCodeInput";
 
 type BookingState = {
   loading: boolean;
@@ -24,6 +26,7 @@ type BookingState = {
 };
 
 export default function EventDetailsScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams();
   const eventId = getFirstQueryParam(id);
   const [loading, setLoading] = useState(true);
@@ -37,6 +40,10 @@ export default function EventDetailsScreen() {
   });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,6 +86,31 @@ export default function EventDetailsScreen() {
       cancelled = true;
     };
   }, [eventId]);
+
+  const loadQuote = async (code = promoCode) => {
+    if (!eventId) return null;
+    setQuoteLoading(true);
+    setPromoError("");
+    try {
+      const nextQuote = await getEventBookingQuote(eventId, {
+        quantity: ticketQuantity,
+        auto_confirm: false,
+        promo_code: code.trim() || undefined,
+      });
+      setQuote(nextQuote);
+      return nextQuote;
+    } catch (quoteError: unknown) {
+      setQuote(null);
+      setPromoError(getErrorMessage(quoteError, "Could not calculate ticket price."));
+      return null;
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (eventId) void loadQuote("");
+  }, [eventId, ticketQuantity]);
 
   const handleToggleSaved = async () => {
     if (!eventId || saving) {
@@ -126,23 +158,41 @@ export default function EventDetailsScreen() {
   }, [event, origin]);
 
   const handleBook = async () => {
-    if (!event?.id || bookingState.loading) {
+    if (!event?.id || bookingState.loading || quoteLoading) {
       return;
     }
+    if (!quote && !(await loadQuote(promoCode))) return;
 
     try {
       setBookingState({ loading: true, code: bookingState.code });
-      const response = await bookEventTickets<EventBookingResponse, { quantity: number; auto_confirm: boolean }>(event.id, {
+      const response = await bookEventTickets<EventBookingResponse, { quantity: number; auto_confirm: boolean; promo_code?: string }>(event.id, {
         quantity: ticketQuantity,
         auto_confirm: false,
+        promo_code: promoCode.trim() || undefined,
       });
       const bookingCode = response.booking_code ?? response.bookingCode ?? "";
       setBookingState({ loading: false, code: bookingCode });
+      const pointsText = Number(response.estimated_points || 0) > 0
+        ? ` You can earn approximately ${response.estimated_points} points after completion.`
+        : "";
+      const promotionText = response.promotion_name
+        ? ` ${response.promotion_name} was applied.`
+        : "";
       Alert.alert(
-        "Ticket booked",
-        bookingCode
-          ? `Your booking reference is ${bookingCode}.`
-          : "Your event ticket has been booked."
+        "Booking request sent",
+        `${bookingCode ? `Your booking reference is ${bookingCode}.` : "Your event booking request was sent."}${promotionText}${pointsText}`,
+        [
+          { text: "Done", style: "cancel" },
+          {
+            text: "View booking",
+            onPress: () => response.id
+              ? router.push({
+                  pathname: "/profile/bookings/details",
+                  params: { id: String(response.id), category: "Event" },
+                })
+              : router.push("/profile/bookings"),
+          },
+        ],
       );
     } catch (error: unknown) {
       setBookingState({ loading: false, code: bookingState.code });
@@ -173,6 +223,17 @@ export default function EventDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {content}
+        <View style={styles.bookingOptions}>
+          <PromoCodeInput
+            value={promoCode}
+            onChange={(value) => { setPromoCode(value); setPromoError(""); }}
+            onApply={() => void loadQuote(promoCode)}
+            loading={quoteLoading}
+            appliedPromotion={quote?.promotion_name}
+            error={promoError}
+          />
+          <BookingPriceSummary quote={quote} loading={quoteLoading} />
+        </View>
       </ScrollView>
       <EventFooter
         event={event}
@@ -205,6 +266,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
+  },
+  bookingOptions: {
+    paddingHorizontal: 20,
   },
 });
 

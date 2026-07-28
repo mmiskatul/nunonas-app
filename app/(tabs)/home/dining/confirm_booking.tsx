@@ -8,6 +8,7 @@ import Button from "../../../../components/ui/Button";
 import PageHeader from "../../../../components/ui/PageHeader";
 import {
   bookRestaurantTable,
+  getBookingQuote,
   getRestaurant,
 } from "../../../../lib/customer-api";
 import { getFirstQueryParam, getErrorMessage } from "../../../../lib/event-map-utils";
@@ -17,6 +18,8 @@ import { normalizeRestaurant } from "../../../../lib/provider-utils";
 import ConfirmSummaryCard from "../../../../components/tabs/home/dining/details/booking/confirm_booking/ConfirmSummaryCard";
 import ConfirmationDetails from "../../../../components/tabs/home/dining/details/booking/confirm_booking/ConfirmationDetails";
 import ConfirmNotes from "../../../../components/tabs/home/dining/details/booking/confirm_booking/ConfirmNotes";
+import BookingPriceSummary from "../../../../components/ui/BookingPriceSummary";
+import PromoCodeInput from "../../../../components/ui/PromoCodeInput";
 
 export default function ConfirmBookingScreen() {
   const router = useRouter();
@@ -29,6 +32,10 @@ export default function ConfirmBookingScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +80,35 @@ export default function ConfirmBookingScreen() {
     };
   }, [restaurantId]);
 
+  const loadQuote = async (code = promoCode) => {
+    if (!restaurantId || !date || !time) return null;
+    setQuoteLoading(true);
+    setPromoError("");
+    try {
+      const nextQuote = await getBookingQuote({
+        provider_id: restaurantId,
+        provider_type: "restaurant",
+        date: String(date),
+        time: String(time),
+        guests: Number(guests || 1),
+        seating_preference: String(seating || "No preference"),
+        special_notes: specialNotes,
+        promo_code: code.trim() || undefined,
+      });
+      setQuote(nextQuote);
+      return nextQuote;
+    } catch (quoteError) {
+      setPromoError(getErrorMessage(quoteError, "Could not calculate this booking."));
+      return null;
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadQuote("");
+  }, [restaurantId, date, time, guests, seating]);
+
   const handleBack = () => {
     router.back();
   };
@@ -93,9 +129,11 @@ export default function ConfirmBookingScreen() {
         seating_preference: String(seating || "Outdoor"),
         special_notes: specialNotes,
         auto_confirm: false,
+        promo_code: promoCode.trim() || undefined,
       });
 
-      const bookingId = response?.booking_code ?? response?.bookingCode ?? response?.booking_id ?? response?.id ?? "#BK2026";
+      const bookingRecordId = response?.id ?? response?.booking_id ?? "";
+      const bookingCode = response?.booking_code ?? response?.bookingCode ?? "";
       router.replace({
         pathname: "/(tabs)/home/dining/booking_success",
         params: {
@@ -104,7 +142,11 @@ export default function ConfirmBookingScreen() {
           dateTime: `${displayDate.replace("Wednesday, ", "")} at ${displayTime}`,
           guests: displayGuests,
           seating: displaySeating,
-          bookingId: String(bookingId),
+          bookingRecordId: String(bookingRecordId),
+          bookingCode: String(bookingCode),
+          estimatedPoints: String(response?.estimated_points ?? quote?.estimated_points ?? 0),
+          totalAmount: String(response?.total_amount ?? quote?.total ?? 0),
+          promotionName: String(response?.promotion_name ?? quote?.promotion_name ?? ""),
         }
       });
     } catch (error) {
@@ -158,10 +200,22 @@ export default function ConfirmBookingScreen() {
         
         <ConfirmNotes notes={specialNotes} onNotesChange={setSpecialNotes} />
 
+        <PromoCodeInput
+          value={promoCode}
+          onChange={(value) => { setPromoCode(value); setPromoError(""); }}
+          onApply={() => void loadQuote(promoCode)}
+          loading={quoteLoading}
+          appliedPromotion={quote?.promotion_name}
+          error={promoError}
+        />
+
+        <BookingPriceSummary quote={quote} loading={quoteLoading} />
+
         <Button
-          title="confirm Booking"
+          title="Send Booking Request"
           onPress={handleConfirm}
           loading={submitting}
+          disabled={submitting || quoteLoading || !quote}
           style={styles.confirmButton}
           textStyle={styles.confirmButtonText}
         />

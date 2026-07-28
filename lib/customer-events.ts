@@ -32,7 +32,7 @@ export async function getEvent(eventId: string): Promise<CustomerMapEventPayload
 
 export async function bookEventTickets(
   eventId: string,
-  payload: { quantity: number; auto_confirm: boolean },
+  payload: { quantity: number; auto_confirm: boolean; promo_code?: string },
 ): Promise<EventBookingResponse> {
   return apiPostAuth(`${CUSTOMER_BASE}/events/${eventId}/bookings`, payload) as Promise<EventBookingResponse>;
 }
