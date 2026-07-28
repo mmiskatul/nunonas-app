@@ -7,29 +7,26 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
   Dimensions,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from "react-native-maps";
+import RNMapbox from "@rnmapbox/maps";
 import theme from "../../../constants/theme";
 import {
   buildDirectionsUrl,
   getDrivingRoute,
+  MAPBOX_ACCESS_TOKEN,
   reverseGeocode,
-} from "../../../lib/google-maps";
+} from "../../../lib/mapbox";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 
 const { width } = Dimensions.get("window");
-const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
-const MAPBOX_TILE_URL = MAPBOX_ACCESS_TOKEN
-  ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_ACCESS_TOKEN}`
-  : "";
+RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -51,9 +48,10 @@ function getCardLabel(item) {
 
 function OfferMarker({ offer, onPress, active }) {
   return (
-    <Marker
-      coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
-      onPress={onPress}
+    <RNMapbox.PointAnnotation
+      id={`nearby-event-${offer.id}`}
+      coordinate={[offer.longitude, offer.latitude]}
+      onSelected={onPress}
     >
       <View style={styles.markerWrap}>
         <View style={[styles.markerImageRing, active && styles.markerImageRingActive]}>
@@ -71,7 +69,7 @@ function OfferMarker({ offer, onPress, active }) {
           </Text>
         </View>
       </View>
-    </Marker>
+    </RNMapbox.PointAnnotation>
   );
 }
 
@@ -213,23 +211,17 @@ const ExploreNearbyBanner = () => {
                 <ActivityIndicator size="small" color={theme.COLORS.primary} />
               </View>
             ) : (
-              <MapView
-                provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                mapType={Platform.OS === "android" && MAPBOX_TILE_URL ? "none" : "standard"}
+              <RNMapbox.MapView
                 style={styles.staticMap}
-                initialRegion={{
-                  latitude: gpsCoords.latitude,
-                  longitude: gpsCoords.longitude,
-                  latitudeDelta: 0.03,
-                  longitudeDelta: 0.03,
-                }}
-                scrollEnabled={true}
-                zoomEnabled={true}
-                pitchEnabled={true}
-                rotateEnabled={true}
+                styleURL={RNMapbox.StyleURL.Street}
               >
-                {MAPBOX_TILE_URL ? <UrlTile urlTemplate={MAPBOX_TILE_URL} maximumZ={19} flipY={false} /> : null}
-                <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
+                <RNMapbox.Camera
+                  defaultSettings={{
+                    centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
+                    zoomLevel: 13,
+                  }}
+                />
+                <RNMapbox.UserLocation visible />
                 {markerOffers.map((offer) => (
                   <OfferMarker
                     key={offer.id}
@@ -238,7 +230,7 @@ const ExploreNearbyBanner = () => {
                     onPress={() => setSelectedOffer(offer)}
                   />
                 ))}
-              </MapView>
+              </RNMapbox.MapView>
             )}
 
             <TouchableOpacity
@@ -292,23 +284,17 @@ const ExploreNearbyBanner = () => {
             <ActivityIndicator size="small" color={theme.COLORS.primary} />
           </View>
         ) : (
-          <MapView
-            provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-            mapType={Platform.OS === "android" && MAPBOX_TILE_URL ? "none" : "standard"}
+          <RNMapbox.MapView
             style={StyleSheet.absoluteFillObject}
-            initialRegion={{
-              latitude: gpsCoords.latitude,
-              longitude: gpsCoords.longitude,
-              latitudeDelta: 0.03,
-              longitudeDelta: 0.03,
-            }}
-            scrollEnabled={true}
-            zoomEnabled={true}
-            pitchEnabled={false}
-            rotateEnabled={false}
+            styleURL={RNMapbox.StyleURL.Street}
           >
-            {MAPBOX_TILE_URL ? <UrlTile urlTemplate={MAPBOX_TILE_URL} maximumZ={19} flipY={false} /> : null}
-            <Marker coordinate={gpsCoords} pinColor="#2563eb" title="Your location" />
+            <RNMapbox.Camera
+              defaultSettings={{
+                centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
+                zoomLevel: 13,
+              }}
+            />
+            <RNMapbox.UserLocation visible />
             {markerOffers.map((offer) => (
               <OfferMarker
                 key={offer.id}
@@ -317,7 +303,7 @@ const ExploreNearbyBanner = () => {
                 onPress={() => setSelectedOffer(offer)}
               />
             ))}
-          </MapView>
+          </RNMapbox.MapView>
         )}
 
         <TouchableOpacity

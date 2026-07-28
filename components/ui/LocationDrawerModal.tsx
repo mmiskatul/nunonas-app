@@ -14,12 +14,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import RNMapbox from "@rnmapbox/maps";
 import theme from "../../constants/theme";
-import { reverseGeocode } from "../../lib/google-maps";
+import { MAPBOX_ACCESS_TOKEN, reverseGeocode } from "../../lib/mapbox";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
 
 const { width, height } = Dimensions.get("window");
+RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
@@ -107,28 +108,18 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                     <ActivityIndicator size="small" color={theme.COLORS.primary} />
                   </View>
                 ) : (
-                  <MapView
-                    provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+                  <RNMapbox.MapView
                     style={styles.staticMap}
-                    initialRegion={{
-                      latitude: gpsCoords.latitude,
-                      longitude: gpsCoords.longitude,
-                      latitudeDelta: 0.015,
-                      longitudeDelta: 0.0121,
-                    }}
-                    scrollEnabled={true}
-                    zoomEnabled={true}
-                    pitchEnabled={true}
-                    rotateEnabled={true}
+                    styleURL={RNMapbox.StyleURL.Street}
                   >
-                    <Marker
-                      coordinate={{
-                        latitude: gpsCoords.latitude,
-                        longitude: gpsCoords.longitude,
+                    <RNMapbox.Camera
+                      defaultSettings={{
+                        centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
+                        zoomLevel: 14,
                       }}
-                      pinColor="red"
                     />
-                  </MapView>
+                    <RNMapbox.UserLocation visible />
+                  </RNMapbox.MapView>
                 )}
 
                 {/* Open Live Map Button (Overlaid on Map Preview) */}

@@ -1,5 +1,3 @@
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-
 export default {
   expo: {
     name: "Activity Planner",
@@ -17,9 +15,6 @@ export default {
     },
     ios: {
       supportsTablet: true,
-      config: {
-        googleMapsApiKey,
-      },
     },
     android: {
       adaptiveIcon: {
@@ -32,17 +27,18 @@ export default {
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
       ],
-      config: {
-        googleMaps: {
-          apiKey: googleMapsApiKey,
-        },
-      },
     },
     web: {
       favicon: "./assets/favicon.png",
     },
     plugins: [
       "expo-router",
+      [
+        "@rnmapbox/maps",
+        {
+          RNMapboxMapsVersion: "11.20.1",
+        },
+      ],
       [
         "expo-location",
         {

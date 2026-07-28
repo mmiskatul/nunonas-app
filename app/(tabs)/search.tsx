@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import theme from "../../constants/theme";
-import { reverseGeocode } from "../../lib/google-maps";
+import { reverseGeocode } from "../../lib/mapbox";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
 import { clearRecentSearches, listCategories, listRecentSearches } from "../../lib/customer-api";
 

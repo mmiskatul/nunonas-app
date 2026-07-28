@@ -11,12 +11,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
-import { reverseGeocode } from "../../lib/google-maps";
+import { reverseGeocode } from "../../lib/mapbox";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
+import MapboxWebMap from "./MapboxWebMap";
 
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
   const [address, setAddress] = useState(currentLocation || "Location unavailable");
+  const [coordinates, setCoordinates] = useState({ latitude: 25.2854, longitude: 51.531 });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
           return;
         }
 
+        setCoordinates({ latitude: coords.latitude, longitude: coords.longitude });
         const nextAddress = await reverseGeocode(coords.latitude, coords.longitude);
         if (nextAddress) {
           setAddress(nextAddress);
@@ -62,11 +65,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
 
           <View style={styles.card}>
             <View style={styles.preview}>
-              <Ionicons name="globe-outline" size={36} color={theme.COLORS.primary} />
-              <Text style={styles.previewTitle}>Map preview is available in the native app.</Text>
-              <Text style={styles.previewText}>
-                Web can still use your current location and open the full map screen.
-              </Text>
+              <MapboxWebMap center={coordinates} height={230} zoomLevel={14} />
             </View>
 
             <View style={styles.footer}>
@@ -140,12 +139,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.COLORS.white,
   },
   preview: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 20,
+    height: 230,
     backgroundColor: "#eff6ff",
-    gap: 10,
+    overflow: "hidden",
   },
   previewTitle: {
     fontSize: 16,

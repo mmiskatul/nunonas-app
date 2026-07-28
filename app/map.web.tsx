@@ -23,10 +23,11 @@ import {
   buildDirectionsUrl,
   getDrivingRoute,
   reverseGeocode,
-} from "../lib/google-maps";
+} from "../lib/mapbox";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
+import MapboxWebMap from "../components/ui/MapboxWebMap";
 const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
 const DEFAULT_ADDRESS = "Location unavailable";
 type BookingState = { loading: boolean; code: string; status: string };
@@ -291,15 +292,29 @@ export default function MapScreenWeb() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.noticeCard}>
-          <Ionicons name="desktop-outline" size={22} color={theme.COLORS.primary} />
-          <View style={styles.noticeBody}>
-            <Text style={styles.noticeTitle}>Web fallback view</Text>
-            <Text style={styles.noticeText}>
-              Native map rendering is disabled on web. You can still inspect nearby events,
-              open directions, and book supported events.
-            </Text>
-          </View>
+        <View style={styles.mapShell}>
+          <MapboxWebMap
+            center={
+              selectedEvent?.latitude != null && selectedEvent?.longitude != null
+                ? { latitude: selectedEvent.latitude, longitude: selectedEvent.longitude }
+                : markerCoords
+            }
+            markers={nearbyEvents.map((event) => ({
+              id: String(event.id),
+              title: event.title,
+              latitude: event.latitude,
+              longitude: event.longitude,
+              imageUrl: event.imageUrl,
+            }))}
+            selectedId={selectedEvent?.id ? String(selectedEvent.id) : null}
+            onMarkerPress={(marker) => {
+              const event = nearbyEvents.find((item) => String(item.id) === marker.id);
+              if (event) setSelectedEvent(event);
+            }}
+            height={420}
+            zoomLevel={selectedEvent ? 14 : 12}
+            showCenterMarker={!selectedEvent}
+          />
         </View>
 
             <View style={styles.locationCard}>
@@ -503,6 +518,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     gap: 14,
+  },
+  mapShell: {
+    height: 420,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+    backgroundColor: "#dbeafe",
   },
   noticeCard: {
     backgroundColor: "#eff6ff",

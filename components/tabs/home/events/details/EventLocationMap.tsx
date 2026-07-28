@@ -6,7 +6,7 @@ import {
   buildDirectionsUrl,
   buildPlaceUrl,
   buildStaticMapUrl,
-} from "../../../../../lib/google-maps";
+} from "../../../../../lib/mapbox";
 import type { GeoCoordinates } from "../../../../../lib/event-map-types";
 
 type EventLocationMapProps = {
@@ -22,13 +22,10 @@ export default function EventLocationMap({
   coordinates,
   origin,
 }: EventLocationMapProps) {
-  const resolvedVenueName = venueName || "Skyline Arena";
-  const resolvedAddress = address || "123 Downtown Boulevard, City Center";
+  const resolvedVenueName = venueName || "Event venue";
+  const resolvedAddress = address || "Location not provided.";
   const mapUrl = buildStaticMapUrl({
-    center:
-      coordinates?.latitude != null && coordinates?.longitude != null
-        ? `${coordinates.latitude},${coordinates.longitude}`
-        : resolvedAddress,
+    center: coordinates,
     markerLabel: resolvedVenueName,
   });
 

@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, View, Text, Image, Dimensions } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
-import { buildStaticMapUrl } from "../../../../../lib/google-maps";
+import { buildStaticMapUrl, forwardGeocode } from "../../../../../lib/mapbox";
 
 const { width } = Dimensions.get("window");
 
@@ -19,8 +19,28 @@ const amenityIcon = (name) => {
 
 const HotelOverviewContent = ({ hotel }) => {
   const address = hotel?.address || hotel?.location || hotel?.locationText || "";
+  const [mapCenter, setMapCenter] = React.useState(
+    hotel?.latitude != null && hotel?.longitude != null
+      ? { latitude: Number(hotel.latitude), longitude: Number(hotel.longitude) }
+      : null,
+  );
+
+  React.useEffect(() => {
+    let active = true;
+    if (hotel?.latitude != null && hotel?.longitude != null) {
+      setMapCenter({ latitude: Number(hotel.latitude), longitude: Number(hotel.longitude) });
+      return () => { active = false; };
+    }
+    if (address) {
+      forwardGeocode(address).then((coordinates) => {
+        if (active) setMapCenter(coordinates);
+      });
+    }
+    return () => { active = false; };
+  }, [address, hotel?.latitude, hotel?.longitude]);
+
   const mapUrl = buildStaticMapUrl({
-    center: address,
+    center: mapCenter,
     markerLabel: "G",
   });
 

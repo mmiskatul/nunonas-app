@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import RNMapbox from "@rnmapbox/maps";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
@@ -25,8 +25,9 @@ import {
 import {
   buildDirectionsUrl,
   getDrivingRoute,
+  MAPBOX_ACCESS_TOKEN,
   reverseGeocode,
-} from "../lib/google-maps";
+} from "../lib/mapbox";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
@@ -34,6 +35,7 @@ import { listNearbyOffers } from "../lib/nearby-offers";
 const { width, height } = Dimensions.get("window");
 const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
 const DEFAULT_ADDRESS = "Location unavailable";
+RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 type BookingState = { loading: boolean; code: string; status: string };
 type CloudConfig = {
   id: number;
@@ -111,7 +113,7 @@ const CLOUDS_CONFIG: CloudConfig[] = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
@@ -143,15 +145,11 @@ export default function MapScreen() {
         }
 
         setMarkerCoords({ latitude: coords.latitude, longitude: coords.longitude });
-        mapRef.current?.animateToRegion(
-          {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            latitudeDelta: 0.03,
-            longitudeDelta: 0.03,
-          },
-          500
-        );
+        mapRef.current?.setCamera({
+          centerCoordinate: [coords.longitude, coords.latitude],
+          zoomLevel: 13,
+          animationDuration: 500,
+        });
 
         const address = await reverseGeocode(coords.latitude, coords.longitude);
         if (address) {
@@ -415,47 +413,66 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
-        <MapView
-          ref={mapRef}
-          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        <RNMapbox.MapView
           style={StyleSheet.absoluteFillObject}
-          initialRegion={{
-            latitude: markerCoords.latitude,
-            longitude: markerCoords.longitude,
-            latitudeDelta: 0.03,
-            longitudeDelta: 0.03,
-          }}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          onPress={() => setSelectedEvent(null)}
+          styleURL={RNMapbox.StyleURL.Street}
         >
+          <RNMapbox.Camera
+            ref={mapRef}
+            defaultSettings={{
+              centerCoordinate: [markerCoords.longitude, markerCoords.latitude],
+              zoomLevel: 13,
+            }}
+          />
+          <RNMapbox.UserLocation visible />
           {routeInfo?.coordinates?.length ? (
-            <Polyline
-              coordinates={routeInfo.coordinates}
-              strokeColor="#2563eb"
-              strokeWidth={5}
-              lineCap="round"
-              lineJoin="round"
-            />
+            <RNMapbox.ShapeSource
+              id="selected-event-route"
+              shape={{
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: routeInfo.coordinates.map((coordinate) => [
+                    coordinate.longitude,
+                    coordinate.latitude,
+                  ]),
+                },
+              }}
+            >
+              <RNMapbox.LineLayer
+                id="selected-event-route-line"
+                style={{ lineColor: "#2563eb", lineWidth: 5, lineCap: "round", lineJoin: "round" }}
+              />
+            </RNMapbox.ShapeSource>
           ) : null}
 
           {nearbyEvents.map((offer) => (
-            <Marker
+            <RNMapbox.PointAnnotation
               key={String(offer.id)}
-              coordinate={{ latitude: offer.latitude, longitude: offer.longitude }}
+              id={`event-${offer.id}`}
+              coordinate={[offer.longitude, offer.latitude]}
               anchor={{ x: 0.5, y: 1 }}
-              pinColor="#dc2626"
-              title={offer.title}
-              description={offer.locationLabel}
-              onPress={() => setSelectedEvent(offer)}
-              // Keep the custom label/dot rendered on Android as well. With
-              // this disabled, some native map versions cache the marker
-              // before the event label is painted and show nothing useful.
-              tracksViewChanges={true}
-              accessibilityLabel={`Event location: ${offer.title}`}
-            />
+              onSelected={() => setSelectedEvent(offer)}
+            >
+              <View
+                style={[
+                  styles.eventMarkerRing,
+                  selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
+                ]}
+                accessibilityLabel={`Event location: ${offer.title}`}
+              >
+                {offer.imageUrl ? (
+                  <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
+                ) : (
+                  <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
+                    <Ionicons name="calendar" size={18} color="#ffffff" />
+                  </View>
+                )}
+              </View>
+            </RNMapbox.PointAnnotation>
           ))}
-        </MapView>
+        </RNMapbox.MapView>
 
         {!animationComplete && (
           <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
@@ -676,6 +693,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.COLORS.white,
+  },
+  eventMarkerRing: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    backgroundColor: "#ffffff",
+    padding: 2,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 7,
+    elevation: 6,
+  },
+  eventMarkerRingActive: {
+    borderColor: theme.COLORS.primary,
+    transform: [{ scale: 1.12 }],
+  },
+  eventMarkerImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 23,
+  },
+  eventMarkerFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.primary,
   },
   cloudOverlay: {
     ...StyleSheet.absoluteFillObject,

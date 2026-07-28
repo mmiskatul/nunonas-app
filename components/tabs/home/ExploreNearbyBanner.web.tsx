@@ -16,11 +16,12 @@ import {
   buildDirectionsUrl,
   getDrivingRoute,
   reverseGeocode,
-} from "../../../lib/google-maps";
+} from "../../../lib/mapbox";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
+import MapboxWebMap from "../../ui/MapboxWebMap";
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -153,13 +154,12 @@ const ExploreNearbyBanner = () => {
       <View style={styles.bannerCard}>
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
-            <Ionicons name="desktop-outline" size={16} color="#1d4ed8" />
-            <Text style={styles.heroBadgeText}>Web Map Preview</Text>
+            <Ionicons name="map-outline" size={16} color="#1d4ed8" />
+            <Text style={styles.heroBadgeText}>Mapbox nearby map</Text>
           </View>
           <Text style={styles.title}>Explore Nearby Offers</Text>
           <Text style={styles.description}>
-            Native map preview is disabled on web, but nearby offers, distance lookup, and
-            directions still work.
+            Select an event thumbnail on the live map to see its details and driving distance.
           </Text>
         </View>
 
@@ -173,6 +173,25 @@ const ExploreNearbyBanner = () => {
             <View style={styles.locationCard}>
               <Text style={styles.locationLabel}>Current area</Text>
               <Text style={styles.locationText}>{address}</Text>
+            </View>
+
+            <View style={styles.mapPreview}>
+              <MapboxWebMap
+                center={gpsCoords}
+                markers={offers.map((offer) => ({
+                  id: String(offer.id),
+                  title: offer.title,
+                  latitude: offer.latitude,
+                  longitude: offer.longitude,
+                  imageUrl: offer.imageUrl,
+                }))}
+                selectedId={selectedOffer?.id ? String(selectedOffer.id) : null}
+                onMarkerPress={(marker) => {
+                  const offer = offers.find((item) => String(item.id) === marker.id);
+                  if (offer) setSelectedOffer(offer);
+                }}
+                height={230}
+              />
             </View>
 
             {selectedOffer ? (
@@ -302,6 +321,13 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: "#dbeafe",
+  },
+  mapPreview: {
+    height: 230,
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
   },
   locationLabel: {
     fontSize: 11,
