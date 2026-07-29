@@ -19,8 +19,9 @@ export default function EventMapWeb({ events: suppliedEvents, loading: suppliedL
   const [location, setLocation] = useState<GeoCoordinates | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(true);
   const events = suppliedEvents ?? fetchedEvents;
-  const displayLoading = suppliedLoading ?? loading;
+  const displayLoading = Boolean((suppliedLoading ?? loading) || locationLoading);
   const [error, setError] = useState("");
   const filteredEvents = useMemo(() => filterMapEvents(attachEventDistances(events, location), activeFilters), [activeFilters, events, location]);
   const selected = filteredEvents.find((event) => String(event.id) === selectedId) ?? null;
@@ -30,7 +31,7 @@ export default function EventMapWeb({ events: suppliedEvents, loading: suppliedL
     return latitude != null && longitude != null ? [{ event, latitude, longitude }] : [];
   }), [filteredEvents, location]);
   const load = useCallback(async () => {
-    setLoading(true); setError("");
+    setLoading(true); setLocationLoading(true); setError("");
     try {
       const [eventsResult, locationResult] = await Promise.allSettled([
         listEvents<CustomerMapEventsResponse>({ limit: 100 }),
@@ -52,7 +53,7 @@ export default function EventMapWeb({ events: suppliedEvents, loading: suppliedL
     } catch (value: unknown) {
       setError(value instanceof Error ? value.message : "Events could not be loaded.");
       if (!isExpectedLocationError(value)) console.error("Event map failed:", value);
-    } finally { setLoading(false); }
+    } finally { setLoading(false); setLocationLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
   if (!location) return <View style={styles.state}>{displayLoading ? <><ActivityIndicator size="large" color={theme.COLORS.primary} /><Text style={styles.text}>Finding your current location…</Text></> : <><Ionicons name="location-outline" size={38} color={theme.COLORS.primary} /><Text style={styles.title}>Event map unavailable</Text><Text style={styles.text}>{error}</Text><TouchableOpacity onPress={() => void load()}><Text style={styles.retry}>Try again</Text></TouchableOpacity></>}</View>;
