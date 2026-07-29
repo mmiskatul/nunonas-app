@@ -81,10 +81,6 @@ function toNumber(value: number | string | null | undefined): number | null {
   return null;
 }
 
-function normalizeBookingMode(value?: string | null): "simple" | "detailed" {
-  return value === "detailed" ? "detailed" : "simple";
-}
-
 export function normalizeMapEvent(item: CustomerMapEventPayload = {}): NormalizedMapEvent {
   const distanceValue = toNumber(item.distance_km) ?? item.distanceKm ?? null;
   const location = item.location ?? item.venue ?? "Venue available";
@@ -124,7 +120,6 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     reviewsCount: item.reviews_count ?? item.reviewsCount ?? null,
     latitude: toNumber(item.latitude),
     longitude: toNumber(item.longitude),
-    bookingMode: normalizeBookingMode(item.booking_mode ?? item.bookingMode),
     canBookOnMap: Boolean(item.can_book_on_map ?? item.canBookOnMap),
     currentBookingStatus: item.current_booking_status ?? item.currentBookingStatus ?? "",
     currentBookingCode: item.current_booking_code ?? item.currentBookingCode ?? "",

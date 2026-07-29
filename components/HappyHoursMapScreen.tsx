@@ -355,7 +355,7 @@ export default function MapScreen() {
     if (!eventDetailsId || bookingState.loading) {
       return;
     }
-    if (!targetEvent?.canBookOnMap || targetEvent?.bookingMode !== "simple") {
+    if (!targetEvent?.canBookOnMap) {
       openEventDetails();
       return;
     }
@@ -413,7 +413,6 @@ export default function MapScreen() {
       ? resolvedBookingStatus
       : "Not booked yet";
   const canShowInlineBooking =
-    cardEvent?.bookingMode === "simple" &&
     cardEvent?.canBookOnMap &&
     !cardEvent?.isSoldOut &&
     !resolvedBookingCode;

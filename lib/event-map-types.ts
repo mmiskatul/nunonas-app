@@ -1,5 +1,3 @@
-export type BookingMode = "simple" | "detailed";
-
 export type GeoCoordinates = {
   latitude: number;
   longitude: number;
@@ -61,8 +59,6 @@ export type CustomerMapEventPayload = {
   reviewsCount?: number | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
-  booking_mode?: string;
-  bookingMode?: BookingMode;
   can_book_on_map?: boolean;
   canBookOnMap?: boolean;
   current_booking_status?: string | null;
@@ -112,7 +108,6 @@ export type NormalizedMapEvent = {
   reviewsCount: number | null;
   latitude: number | null;
   longitude: number | null;
-  bookingMode: BookingMode;
   canBookOnMap: boolean;
   currentBookingStatus: string;
   currentBookingCode: string;
