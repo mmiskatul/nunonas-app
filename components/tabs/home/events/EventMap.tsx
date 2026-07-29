@@ -22,7 +22,6 @@ export default function EventMap({ events: suppliedEvents, loading: suppliedLoad
   }, [suppliedEvents]);
   const events = suppliedEvents ?? fetchedEvents;
   const items = useMemo<DiscoveryMapItem[]>(() => events.flatMap((event) => {
-    if (event.latitude == null || event.longitude == null) return [];
     return [{ id: String(event.id), title: event.title, kind: "event", latitude: event.latitude, longitude: event.longitude, location: event.location, rating: event.rating, isOpenNow: event.isOpenNow, hasOffer: Boolean(event.offerText), nearMetro: /\b(metro|station|subway|rail)\b/i.test(`${event.venue} ${event.address} ${event.location}`), detailRoute: `/home/events/${event.id}` }];
   }), [events]);
   return <DiscoveryMap items={items} loading={suppliedEvents ? suppliedLoading : loading} filters={activeFilters} />;

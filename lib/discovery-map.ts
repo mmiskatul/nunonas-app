@@ -7,8 +7,8 @@ export type DiscoveryMapItem = {
   id: string;
   title: string;
   kind: DiscoveryKind;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   location: string;
   imageUrl?: string;
   rating?: number | null;
@@ -19,7 +19,8 @@ export type DiscoveryMapItem = {
   detailRoute: string;
 };
 
-export function distanceKm(origin: GeoCoordinates, item: DiscoveryMapItem): number {
+export function distanceKm(origin: GeoCoordinates, item: DiscoveryMapItem): number | null {
+  if (item.latitude == null || item.longitude == null) return null;
   const radians = (value: number) => (value * Math.PI) / 180;
   const dLat = radians(item.latitude - origin.latitude);
   const dLng = radians(item.longitude - origin.longitude);
