@@ -12,6 +12,7 @@ import SpaCard from "../../../../components/tabs/home/spa/SpaCard";
 import CategoryMap from "../../../../components/tabs/home/CategoryMap";
 import { listSpas } from "../../../../lib/customer-api";
 import { normalizeSpa, getErrorMessage } from "../../../../lib/provider-utils";
+import MapFilterChips, { toggleMapFilter, type MapFilterKey } from "../../../../components/ui/MapFilterChips";
 
 export default function SpaScreen() {
   const [spas, setSpas] = useState([]);
@@ -19,6 +20,7 @@ export default function SpaScreen() {
   const [error, setError] = useState("");
   const [view, setView] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
+  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
 
   const loadSpas = useCallback(async () => {
     try {
@@ -52,7 +54,14 @@ export default function SpaScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <SpaSearch value={searchQuery} onChangeText={setSearchQuery} />
         <SpaViewToggle count={spas.length} view={view} onChange={setView} />
-        {view === "map" ? <CategoryMap items={spas} loading={loading} kind="spa" /> : null}
+        {view === "map" ? <View style={styles.mapFilters}>
+          <MapFilterChips
+            active={mapFilters}
+            locked={["near-me"]}
+            onToggle={(filter) => setMapFilters((current) => toggleMapFilter(current, filter))}
+          />
+        </View> : null}
+        {view === "map" ? <CategoryMap items={spas} loading={loading} kind="spa" activeFilters={mapFilters} /> : null}
         {view === "list" ? <SpaFilters /> : null}
 
         {view === "list" ? <View style={styles.list}>
@@ -76,6 +85,9 @@ const styles = StyleSheet.create({
   list: {
     marginTop: 5,
     paddingBottom: 20,
+  },
+  mapFilters: {
+    marginTop: 12,
   },
   error: {
     textAlign: "center",
