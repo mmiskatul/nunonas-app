@@ -4,7 +4,7 @@ import { StyleSheet, View, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const HotelSearch = () => {
+const HotelSearch = ({ value = "", onChangeText }) => {
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
@@ -14,6 +14,8 @@ const HotelSearch = () => {
           color={theme.COLORS.textSecondary}
         />
         <TextInput
+          value={value}
+          onChangeText={onChangeText}
           placeholder="Search hotels or locations..."
           placeholderTextColor={theme.COLORS.textTertiary}
           style={styles.input}

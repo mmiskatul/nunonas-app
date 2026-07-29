@@ -180,7 +180,7 @@ export default function EventsScreen() {
           }
         />
 
-        {activeTab === "Map" ? <EventMap /> : <View style={styles.list}>
+        {activeTab === "Map" ? <EventMap events={filteredEvents} loading={loading} /> : <View style={styles.list}>
           {loading ? (
             <View style={styles.centerState}>
               <ActivityIndicator color={theme.COLORS.primary} />

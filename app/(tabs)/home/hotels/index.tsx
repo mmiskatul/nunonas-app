@@ -17,12 +17,13 @@ const HotelScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [view, setView] = useState("list");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     async function fetchHotels() {
       try {
         setError("");
-        const res = await listHotels({ nearby: true });
+        const res = await listHotels({ nearby: false, limit: 100, ...(searchQuery ? { search: searchQuery } : {}) });
         setHotels(res.items || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to load hotels right now.");
@@ -32,12 +33,12 @@ const HotelScreen = () => {
       }
     }
     fetchHotels();
-  }, []);
+  }, [searchQuery]);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <HotelSearch />
+        <HotelSearch value={searchQuery} onChangeText={setSearchQuery} />
         <View style={styles.headerRow}>
           <HotelViewToggle view={view} onChange={setView} />
           <Text style={styles.resultsCount}>{loading ? "..." : `${hotels.length} Hotels`}</Text>

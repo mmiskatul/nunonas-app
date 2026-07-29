@@ -18,10 +18,11 @@ export default function SpaScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [view, setView] = useState("list");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadSpas = useCallback(async () => {
     try {
-      const payload = await listSpas({ limit: 50, nearby: true });
+      const payload = await listSpas({ limit: 50, nearby: false, ...(searchQuery ? { search: searchQuery } : {}) });
       const items = payload?.items ?? payload?.data ?? payload ?? [];
       setSpas(Array.isArray(items) ? items.map((item) => {
         const spa = normalizeSpa(item);
@@ -42,14 +43,14 @@ export default function SpaScreen() {
       setError(getErrorMessage(loadError, "Could not load spas."));
       setSpas([]);
     } finally { setLoading(false); }
-  }, []);
+  }, [searchQuery]);
 
-  useEffect(() => { void loadSpas(); }, [loadSpas]);
+  useEffect(() => { const timer = setTimeout(() => void loadSpas(), searchQuery ? 250 : 0); return () => clearTimeout(timer); }, [loadSpas, searchQuery]);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <SpaSearch />
+        <SpaSearch value={searchQuery} onChangeText={setSearchQuery} />
         <SpaViewToggle count={spas.length} view={view} onChange={setView} />
         {view === "map" ? <CategoryMap items={spas} loading={loading} kind="spa" /> : null}
         {view === "list" ? <SpaFilters /> : null}

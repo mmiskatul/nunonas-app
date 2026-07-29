@@ -4,12 +4,14 @@ import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const SpaSearch = () => {
+const SpaSearch = ({ value = "", onChangeText }) => {
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color={theme.COLORS.textSecondary} />
         <TextInput
+          value={value}
+          onChangeText={onChangeText}
           placeholder="Search Spa..."
           placeholderTextColor={theme.COLORS.textSecondary}
           style={styles.input}
