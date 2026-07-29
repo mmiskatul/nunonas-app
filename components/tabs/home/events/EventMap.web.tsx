@@ -8,10 +8,12 @@ import { normalizeMapEvent } from "../../../../lib/event-map-utils";
 import type { CustomerMapEventPayload, CustomerMapEventsResponse, GeoCoordinates, NormalizedMapEvent } from "../../../../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../../../../lib/location";
 import GoogleWebMap from "../../../ui/GoogleWebMap";
+import type { MapFilterKey } from "../../../ui/MapFilterChips";
+import { attachEventDistances, filterMapEvents } from "../../../../lib/map-filtering";
 
-type Props = { events?: NormalizedMapEvent[]; loading?: boolean };
+type Props = { events?: NormalizedMapEvent[]; loading?: boolean; activeFilters?: MapFilterKey[] };
 
-export default function EventMapWeb({ events: suppliedEvents, loading: suppliedLoading }: Props = {}) {
+export default function EventMapWeb({ events: suppliedEvents, loading: suppliedLoading, activeFilters = ["near-me"] }: Props = {}) {
   const router = useRouter();
   const [fetchedEvents, setFetchedEvents] = useState<NormalizedMapEvent[]>([]);
   const [location, setLocation] = useState<GeoCoordinates | null>(null);
@@ -20,12 +22,13 @@ export default function EventMapWeb({ events: suppliedEvents, loading: suppliedL
   const events = suppliedEvents ?? fetchedEvents;
   const displayLoading = suppliedLoading ?? loading;
   const [error, setError] = useState("");
-  const selected = events.find((event) => String(event.id) === selectedId) ?? null;
-  const mappedEvents = useMemo(() => events.flatMap((event) => {
+  const filteredEvents = useMemo(() => filterMapEvents(attachEventDistances(events, location), activeFilters), [activeFilters, events, location]);
+  const selected = filteredEvents.find((event) => String(event.id) === selectedId) ?? null;
+  const mappedEvents = useMemo(() => filteredEvents.flatMap((event) => {
     const latitude = event.latitude ?? location?.latitude;
     const longitude = event.longitude ?? location?.longitude;
     return latitude != null && longitude != null ? [{ event, latitude, longitude }] : [];
-  }), [events, location]);
+  }), [filteredEvents, location]);
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {

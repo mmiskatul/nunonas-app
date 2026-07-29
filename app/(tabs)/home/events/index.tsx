@@ -17,6 +17,7 @@ import EventFilterToggle from "../../../../components/tabs/home/events/EventFilt
 import CategoryFilters from "../../../../components/tabs/home/events/CategoryFilters";
 import EventCard from "../../../../components/tabs/home/events/EventCard";
 import EventMap from "../../../../components/tabs/home/events/EventMap";
+import MapFilterChips, { toggleMapFilter, type MapFilterKey } from "../../../../components/ui/MapFilterChips";
 
 const EVENT_CATEGORIES = [
   "All",
@@ -115,6 +116,7 @@ export default function EventsScreen() {
   const [activeTab, setActiveTab] = useState<"List" | "Map">("List");
   const [activeCategory, setActiveCategory] =
     useState<EventCategory>("All");
+  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [events, setEvents] = useState<NormalizedMapEvent[]>([]);
   const [error, setError] = useState("");
 
@@ -167,6 +169,17 @@ export default function EventsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <EventSearchBar value={searchQuery} onChangeText={setSearchQuery} />
+        {activeTab === "Map" ? (
+          <View style={styles.mapFilters}>
+            <MapFilterChips
+              active={mapFilters}
+              locked={["near-me"]}
+              onToggle={(filter) =>
+                setMapFilters((current) => toggleMapFilter(current, filter))
+              }
+            />
+          </View>
+        ) : null}
         <EventFilterToggle
           eventCount={filteredEvents.length}
           activeTab={activeTab}
@@ -180,7 +193,7 @@ export default function EventsScreen() {
           }
         />
 
-        {activeTab === "Map" ? <EventMap events={filteredEvents} loading={loading} /> : <View style={styles.list}>
+        {activeTab === "Map" ? <EventMap events={filteredEvents} loading={loading} activeFilters={mapFilters} /> : <View style={styles.list}>
           {loading ? (
             <View style={styles.centerState}>
               <ActivityIndicator color={theme.COLORS.primary} />
@@ -210,6 +223,9 @@ const styles = StyleSheet.create({
   list: {
     paddingTop: 5,
     paddingBottom: 20,
+  },
+  mapFilters: {
+    marginTop: 12,
   },
   centerState: {
     paddingHorizontal: 20,
