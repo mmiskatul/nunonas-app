@@ -19,6 +19,7 @@ export type ProviderPayload = {
   location?: string | null;
   address?: string | null;
   city?: string | null;
+  profile_image_url?: string | null;
   cover_image_url?: string | null;
   image_url?: string | null;
   image?: string | null;
@@ -65,6 +66,7 @@ export type NormalizedRestaurant = {
   priceRange: string;
   distanceText: string;
   locationText: string;
+  profileImageUrl: string;
   imageUrl: string;
   description: string;
   amenities: string[];
@@ -82,6 +84,7 @@ export type NormalizedHotel = {
   priceText: string;
   priceRange: string;
   locationText: string;
+  profileImageUrl: string;
   imageUrl: string;
   statusText: string;
   description: string;
@@ -104,6 +107,7 @@ export type NormalizedSpa = {
   typeText: string;
   distanceText: string;
   locationText: string;
+  profileImageUrl: string;
   imageUrl: string;
   description: string;
   amenities: string[];

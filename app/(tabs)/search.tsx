@@ -24,6 +24,7 @@ const CATEGORY_DEFINITIONS = [
   {
     id: "restaurants",
     title: "Restaurants",
+    route: "/home/dining",
     count: "Loading...",
     iconName: "restaurant",
     iconColor: "#ef4444",
@@ -32,6 +33,7 @@ const CATEGORY_DEFINITIONS = [
   {
     id: "events",
     title: "Events",
+    route: "/home/events",
     count: "Loading...",
     iconName: "calendar",
     iconColor: "#a855f7",
@@ -40,6 +42,7 @@ const CATEGORY_DEFINITIONS = [
   {
     id: "spas",
     title: "Spas",
+    route: "/home/spa",
     count: "Loading...",
     iconName: "leaf",
     iconColor: "#ec4899",
@@ -48,6 +51,7 @@ const CATEGORY_DEFINITIONS = [
   {
     id: "hotels",
     title: "Hotels",
+    route: "/home/hotels",
     count: "Loading...",
     iconName: "bed",
     iconColor: "#3b82f6",
@@ -191,6 +195,7 @@ export default function SearchScreen() {
               iconName={category.iconName}
               iconColor={category.iconColor}
               iconBgColor={category.iconBgColor}
+              onPress={() => router.push(category.route)}
             />
           ))}
         </View>

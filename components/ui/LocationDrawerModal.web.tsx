@@ -18,7 +18,7 @@ import MapboxWebMap from "./MapboxWebMap";
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
   const [address, setAddress] = useState(currentLocation || "Location unavailable");
-  const [coordinates, setCoordinates] = useState({ latitude: 25.2854, longitude: 51.531 });
+  const [coordinates, setCoordinates] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -65,7 +65,20 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
 
           <View style={styles.card}>
             <View style={styles.preview}>
-              <MapboxWebMap center={coordinates} height={230} zoomLevel={14} />
+              {coordinates ? (
+                <MapboxWebMap center={coordinates} height={230} zoomLevel={14} />
+              ) : (
+                <View style={styles.mapPlaceholder}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color={theme.COLORS.primary} />
+                  ) : (
+                    <>
+                      <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
+                      <Text style={styles.locationUnavailableText}>Enable location to preview your area.</Text>
+                    </>
+                  )}
+                </View>
+              )}
             </View>
 
             <View style={styles.footer}>
@@ -142,6 +155,19 @@ const styles = StyleSheet.create({
     height: 230,
     backgroundColor: "#eff6ff",
     overflow: "hidden",
+  },
+  mapPlaceholder: {
+    flex: 1,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationUnavailableText: {
+    marginTop: 8,
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   previewTitle: {
     fontSize: 16,

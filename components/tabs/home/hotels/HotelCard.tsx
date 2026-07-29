@@ -62,6 +62,11 @@ const HotelCard = ({ hotel }) => {
         <TouchableOpacity style={styles.favoriteBtn}>
           <Ionicons name="heart-outline" size={20} color="white" />
         </TouchableOpacity>
+        {hotel.profile_image_url ? (
+          <View style={styles.profileImageWrap}>
+            <Image source={{ uri: hotel.profile_image_url }} style={styles.profileImage} />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.details}>
@@ -138,6 +143,22 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  profileImageWrap: {
+    position: "absolute",
+    right: 14,
+    bottom: 12,
+    width: 58,
+    height: 58,
+    padding: 2,
+    borderRadius: 20,
+    backgroundColor: theme.COLORS.white,
+    ...theme.SHADOWS.card,
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 17,
   },
   badge: {
     position: "absolute",

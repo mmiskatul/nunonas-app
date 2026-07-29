@@ -37,7 +37,7 @@ function getDistanceLabel(offer, routeInfo) {
 
 const ExploreNearbyBanner = () => {
   const router = useRouter();
-  const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.531 });
+  const [gpsCoords, setGpsCoords] = useState(null);
   const [address, setAddress] = useState("Location unavailable");
   const [loading, setLoading] = useState(true);
   const [offersLoading, setOffersLoading] = useState(true);
@@ -99,7 +99,7 @@ const ExploreNearbyBanner = () => {
     let cancelled = false;
 
     async function loadRoute() {
-      if (!selectedOffer) {
+      if (!gpsCoords || !selectedOffer) {
         setRouteInfo(null);
         return;
       }
@@ -119,7 +119,7 @@ const ExploreNearbyBanner = () => {
     return () => {
       cancelled = true;
     };
-  }, [gpsCoords.latitude, gpsCoords.longitude, selectedOffer]);
+  }, [gpsCoords, selectedOffer]);
 
   const openMap = () => {
     const params = selectedOffer?.id ? { offerId: selectedOffer.id } : undefined;
@@ -127,7 +127,7 @@ const ExploreNearbyBanner = () => {
   };
 
   const openDirections = async () => {
-    if (!selectedOffer) {
+    if (!gpsCoords || !selectedOffer) {
       openMap();
       return;
     }
@@ -167,6 +167,11 @@ const ExploreNearbyBanner = () => {
           <View style={styles.loadingState}>
             <ActivityIndicator size="small" color={theme.COLORS.primary} />
             <Text style={styles.loadingText}>Loading nearby offers...</Text>
+          </View>
+        ) : !gpsCoords ? (
+          <View style={styles.loadingState}>
+            <Ionicons name="location-outline" size={30} color={theme.COLORS.primary} />
+            <Text style={styles.loadingText}>Enable location to view nearby events.</Text>
           </View>
         ) : (
           <>

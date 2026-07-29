@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -33,7 +33,6 @@ import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
 
 const { width, height } = Dimensions.get("window");
-const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
 const DEFAULT_ADDRESS = "Location unavailable";
 RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 type BookingState = { loading: boolean; code: string; status: string };
@@ -118,7 +117,9 @@ export default function MapScreen() {
   const cloudOpacity = useRef(new Animated.Value(0)).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
 
-  const [markerCoords, setMarkerCoords] = useState<GeoCoordinates>(DEFAULT_COORDS);
+  const [markerCoords, setMarkerCoords] = useState<GeoCoordinates | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState("");
   const [addressText, setAddressText] = useState(DEFAULT_ADDRESS);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
@@ -134,33 +135,36 @@ export default function MapScreen() {
     status: "",
   });
 
+  const loadCurrentLocation = useCallback(async () => {
+    setLocationLoading(true);
+    setLocationError("");
+    try {
+      const coords = await getCurrentCoords();
+      if (!coords) {
+        setLocationError("Turn on location access to open the nearby event map.");
+        return;
+      }
+
+      const currentCoords = { latitude: coords.latitude, longitude: coords.longitude };
+      setMarkerCoords(currentCoords);
+      setLocationLoading(false);
+
+      const address = await reverseGeocode(coords.latitude, coords.longitude);
+      if (address) {
+        setAddressText(address);
+      }
+    } catch (error: unknown) {
+      setLocationError("Your current location could not be loaded. Please try again.");
+      if (!isExpectedLocationError(error)) {
+        console.error("Error fetching location: ", error);
+      }
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     startTransitionAnimation();
-
-    async function initLocation() {
-      try {
-        const coords = await getCurrentCoords();
-        if (!coords) {
-          return;
-        }
-
-        setMarkerCoords({ latitude: coords.latitude, longitude: coords.longitude });
-        mapRef.current?.setCamera({
-          centerCoordinate: [coords.longitude, coords.latitude],
-          zoomLevel: 13,
-          animationDuration: 500,
-        });
-
-        const address = await reverseGeocode(coords.latitude, coords.longitude);
-        if (address) {
-          setAddressText(address);
-        }
-      } catch (error: unknown) {
-        if (!isExpectedLocationError(error)) {
-          console.error("Error fetching location: ", error);
-        }
-      }
-    }
 
     async function loadOffers() {
       try {
@@ -177,9 +181,9 @@ export default function MapScreen() {
       }
     }
 
-    initLocation();
+    void loadCurrentLocation();
     loadOffers();
-  }, []);
+  }, [loadCurrentLocation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,7 +248,7 @@ export default function MapScreen() {
     let cancelled = false;
 
     async function loadRoute() {
-      if (!selectedEvent?.id) {
+      if (!markerCoords || !selectedEvent?.id) {
         setRouteInfo(null);
         return;
       }
@@ -269,7 +273,7 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [markerCoords.latitude, markerCoords.longitude, selectedEvent, selectedEventDetails]);
+  }, [markerCoords, selectedEvent, selectedEventDetails]);
 
   const startTransitionAnimation = () => {
     cloudOpacity.setValue(1);
@@ -301,7 +305,7 @@ export default function MapScreen() {
 
   const openDirections = async () => {
     const targetEvent = selectedEventDetails ?? selectedEvent;
-    if (targetEvent?.latitude == null || targetEvent?.longitude == null) {
+    if (!markerCoords || targetEvent?.latitude == null || targetEvent?.longitude == null) {
       return;
     }
 
@@ -413,66 +417,89 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
-        <RNMapbox.MapView
-          style={StyleSheet.absoluteFillObject}
-          styleURL={RNMapbox.StyleURL.Street}
-        >
-          <RNMapbox.Camera
-            ref={mapRef}
-            defaultSettings={{
-              centerCoordinate: [markerCoords.longitude, markerCoords.latitude],
-              zoomLevel: 13,
-            }}
-          />
-          <RNMapbox.UserLocation visible />
-          {routeInfo?.coordinates?.length ? (
-            <RNMapbox.ShapeSource
-              id="selected-event-route"
-              shape={{
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "LineString",
-                  coordinates: routeInfo.coordinates.map((coordinate) => [
-                    coordinate.longitude,
-                    coordinate.latitude,
-                  ]),
-                },
+        {markerCoords ? (
+          <RNMapbox.MapView
+            style={StyleSheet.absoluteFillObject}
+            styleURL={RNMapbox.StyleURL.Street}
+          >
+            <RNMapbox.Camera
+              ref={mapRef}
+              defaultSettings={{
+                centerCoordinate: [markerCoords.longitude, markerCoords.latitude],
+                zoomLevel: 13,
               }}
-            >
-              <RNMapbox.LineLayer
-                id="selected-event-route-line"
-                style={{ lineColor: "#2563eb", lineWidth: 5, lineCap: "round", lineJoin: "round" }}
-              />
-            </RNMapbox.ShapeSource>
-          ) : null}
-
-          {nearbyEvents.map((offer) => (
-            <RNMapbox.PointAnnotation
-              key={String(offer.id)}
-              id={`event-${offer.id}`}
-              coordinate={[offer.longitude, offer.latitude]}
-              anchor={{ x: 0.5, y: 1 }}
-              onSelected={() => setSelectedEvent(offer)}
-            >
-              <View
-                style={[
-                  styles.eventMarkerRing,
-                  selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
-                ]}
-                accessibilityLabel={`Event location: ${offer.title}`}
+            />
+            <RNMapbox.UserLocation visible />
+            {routeInfo?.coordinates?.length ? (
+              <RNMapbox.ShapeSource
+                id="selected-event-route"
+                shape={{
+                  type: "Feature",
+                  properties: {},
+                  geometry: {
+                    type: "LineString",
+                    coordinates: routeInfo.coordinates.map((coordinate) => [
+                      coordinate.longitude,
+                      coordinate.latitude,
+                    ]),
+                  },
+                }}
               >
-                {offer.imageUrl ? (
-                  <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
-                ) : (
-                  <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
-                    <Ionicons name="calendar" size={18} color="#ffffff" />
-                  </View>
-                )}
-              </View>
-            </RNMapbox.PointAnnotation>
-          ))}
-        </RNMapbox.MapView>
+                <RNMapbox.LineLayer
+                  id="selected-event-route-line"
+                  style={{ lineColor: "#2563eb", lineWidth: 5, lineCap: "round", lineJoin: "round" }}
+                />
+              </RNMapbox.ShapeSource>
+            ) : null}
+
+            {nearbyEvents.map((offer) => (
+              <RNMapbox.PointAnnotation
+                key={String(offer.id)}
+                id={`event-${offer.id}`}
+                coordinate={[offer.longitude, offer.latitude]}
+                anchor={{ x: 0.5, y: 1 }}
+                onSelected={() => setSelectedEvent(offer)}
+              >
+                <View
+                  style={[
+                    styles.eventMarkerRing,
+                    selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
+                  ]}
+                  accessibilityLabel={`Event location: ${offer.title}`}
+                >
+                  {offer.imageUrl ? (
+                    <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
+                  ) : (
+                    <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
+                      <Ionicons name="calendar" size={18} color="#ffffff" />
+                    </View>
+                  )}
+                </View>
+              </RNMapbox.PointAnnotation>
+            ))}
+          </RNMapbox.MapView>
+        ) : (
+          <View style={styles.locationLoadingState}>
+            {locationLoading ? (
+              <>
+                <ActivityIndicator size="large" color={theme.COLORS.primary} />
+                <Text style={styles.locationLoadingTitle}>Finding your current location…</Text>
+                <Text style={styles.locationLoadingText}>
+                  The map will open only after your real position is available.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="location-outline" size={36} color={theme.COLORS.primary} />
+                <Text style={styles.locationLoadingTitle}>Location needed</Text>
+                <Text style={styles.locationLoadingText}>{locationError}</Text>
+                <TouchableOpacity style={styles.locationRetryButton} onPress={() => void loadCurrentLocation()}>
+                  <Text style={styles.locationRetryText}>Try again</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
 
         {!animationComplete && (
           <Animated.View style={[styles.cloudOverlay, { opacity: cloudOpacity }]}>
@@ -693,6 +720,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.COLORS.white,
+  },
+  locationLoadingState: {
+    flex: 1,
+    paddingHorizontal: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff6ff",
+  },
+  locationLoadingTitle: {
+    marginTop: 14,
+    color: theme.COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  locationLoadingText: {
+    marginTop: 7,
+    color: theme.COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  locationRetryButton: {
+    marginTop: 18,
+    borderRadius: 14,
+    backgroundColor: theme.COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  locationRetryText: {
+    color: theme.COLORS.white,
+    fontSize: 13,
+    fontWeight: "800",
   },
   eventMarkerRing: {
     width: 54,

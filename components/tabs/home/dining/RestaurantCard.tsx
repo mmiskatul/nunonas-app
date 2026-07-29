@@ -57,6 +57,11 @@ const RestaurantCard = ({ restaurant }) => {
             <Text style={styles.badgeText}>{restaurant.badge}</Text>
           </View>
         )}
+        {restaurant.profile_image_url ? (
+          <View style={styles.profileImageWrap}>
+            <Image source={{ uri: restaurant.profile_image_url }} style={styles.profileImage} />
+          </View>
+        ) : null}
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.title}>{title}</Text>
@@ -120,6 +125,22 @@ const styles = StyleSheet.create({
   },
   imagePlaceholder: {
     backgroundColor: theme.COLORS.surface,
+  },
+  profileImageWrap: {
+    position: "absolute",
+    right: 14,
+    bottom: 12,
+    width: 58,
+    height: 58,
+    padding: 2,
+    borderRadius: 20,
+    backgroundColor: theme.COLORS.white,
+    ...theme.SHADOWS.card,
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 17,
   },
   badge: {
     position: "absolute",

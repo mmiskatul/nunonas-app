@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -28,14 +28,15 @@ import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/ev
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { listNearbyOffers } from "../lib/nearby-offers";
 import MapboxWebMap from "../components/ui/MapboxWebMap";
-const DEFAULT_COORDS: GeoCoordinates = { latitude: 25.2854, longitude: 51.531 };
 const DEFAULT_ADDRESS = "Location unavailable";
 type BookingState = { loading: boolean; code: string; status: string };
 
 export default function MapScreenWeb() {
   const router = useRouter();
   const { offerId, eventId } = useLocalSearchParams<{ offerId?: string | string[]; eventId?: string | string[] }>();
-  const [markerCoords, setMarkerCoords] = useState<GeoCoordinates>(DEFAULT_COORDS);
+  const [markerCoords, setMarkerCoords] = useState<GeoCoordinates | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState("");
   const [addressText, setAddressText] = useState(DEFAULT_ADDRESS);
   const [offersLoading, setOffersLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
@@ -50,26 +51,33 @@ export default function MapScreenWeb() {
     status: "",
   });
 
-  useEffect(() => {
-    async function initLocation() {
-      try {
-        const coords = await getCurrentCoords();
-        if (!coords) {
-          return;
-        }
-
-        setMarkerCoords({ latitude: coords.latitude, longitude: coords.longitude });
-        const address = await reverseGeocode(coords.latitude, coords.longitude);
-        if (address) {
-          setAddressText(address);
-        }
-      } catch (error: unknown) {
-        if (!isExpectedLocationError(error)) {
-          console.error("Error fetching location:", error);
-        }
+  const loadCurrentLocation = useCallback(async () => {
+    setLocationLoading(true);
+    setLocationError("");
+    try {
+      const coords = await getCurrentCoords();
+      if (!coords) {
+        setLocationError("Turn on location access to open the nearby event map.");
+        return;
       }
-    }
 
+      setMarkerCoords({ latitude: coords.latitude, longitude: coords.longitude });
+      setLocationLoading(false);
+      const address = await reverseGeocode(coords.latitude, coords.longitude);
+      if (address) {
+        setAddressText(address);
+      }
+    } catch (error: unknown) {
+      setLocationError("Your current location could not be loaded. Please try again.");
+      if (!isExpectedLocationError(error)) {
+        console.error("Error fetching location:", error);
+      }
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     async function loadOffers() {
       try {
         setOffersLoading(true);
@@ -88,9 +96,9 @@ export default function MapScreenWeb() {
       }
     }
 
-    initLocation();
+    void loadCurrentLocation();
     loadOffers();
-  }, [eventId, offerId]);
+  }, [eventId, loadCurrentLocation, offerId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +159,7 @@ export default function MapScreenWeb() {
     let cancelled = false;
 
     async function loadRoute() {
-      if (!selectedEvent?.id) {
+      if (!markerCoords || !selectedEvent?.id) {
         setRouteInfo(null);
         return;
       }
@@ -176,7 +184,7 @@ export default function MapScreenWeb() {
     return () => {
       cancelled = true;
     };
-  }, [markerCoords.latitude, markerCoords.longitude, selectedEvent, selectedEventDetails]);
+  }, [markerCoords, selectedEvent, selectedEventDetails]);
 
   const cardEvent = selectedEventDetails ?? selectedEvent;
   const resolvedBookingStatus = bookingState.status || cardEvent?.currentBookingStatus || "";
@@ -197,7 +205,7 @@ export default function MapScreenWeb() {
 
   const openDirections = async () => {
     const targetEvent = selectedEventDetails ?? selectedEvent;
-    if (targetEvent?.latitude == null || targetEvent?.longitude == null) {
+    if (!markerCoords || targetEvent?.latitude == null || targetEvent?.longitude == null) {
       return;
     }
 
@@ -293,28 +301,51 @@ export default function MapScreenWeb() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.mapShell}>
-          <MapboxWebMap
-            center={
-              selectedEvent?.latitude != null && selectedEvent?.longitude != null
-                ? { latitude: selectedEvent.latitude, longitude: selectedEvent.longitude }
-                : markerCoords
-            }
-            markers={nearbyEvents.map((event) => ({
-              id: String(event.id),
-              title: event.title,
-              latitude: event.latitude,
-              longitude: event.longitude,
-              imageUrl: event.imageUrl,
-            }))}
-            selectedId={selectedEvent?.id ? String(selectedEvent.id) : null}
-            onMarkerPress={(marker) => {
-              const event = nearbyEvents.find((item) => String(item.id) === marker.id);
-              if (event) setSelectedEvent(event);
-            }}
-            height={420}
-            zoomLevel={selectedEvent ? 14 : 12}
-            showCenterMarker={!selectedEvent}
-          />
+          {markerCoords ? (
+            <MapboxWebMap
+              center={
+                selectedEvent?.latitude != null && selectedEvent?.longitude != null
+                  ? { latitude: selectedEvent.latitude, longitude: selectedEvent.longitude }
+                  : markerCoords
+              }
+              markers={nearbyEvents.map((event) => ({
+                id: String(event.id),
+                title: event.title,
+                latitude: event.latitude,
+                longitude: event.longitude,
+                imageUrl: event.imageUrl,
+              }))}
+              selectedId={selectedEvent?.id ? String(selectedEvent.id) : null}
+              onMarkerPress={(marker) => {
+                const event = nearbyEvents.find((item) => String(item.id) === marker.id);
+                if (event) setSelectedEvent(event);
+              }}
+              height={420}
+              zoomLevel={selectedEvent ? 14 : 12}
+              showCenterMarker={!selectedEvent}
+            />
+          ) : (
+            <View style={styles.mapLocationState}>
+              {locationLoading ? (
+                <>
+                  <ActivityIndicator size="large" color={theme.COLORS.primary} />
+                  <Text style={styles.mapLocationTitle}>Finding your current location…</Text>
+                  <Text style={styles.mapLocationText}>
+                    The map will open only after your real position is available.
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="location-outline" size={36} color={theme.COLORS.primary} />
+                  <Text style={styles.mapLocationTitle}>Location needed</Text>
+                  <Text style={styles.mapLocationText}>{locationError}</Text>
+                  <TouchableOpacity style={styles.mapRetryButton} onPress={() => void loadCurrentLocation()}>
+                    <Text style={styles.mapRetryText}>Try again</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </View>
 
             <View style={styles.locationCard}>
@@ -526,6 +557,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.COLORS.border,
     backgroundColor: "#dbeafe",
+  },
+  mapLocationState: {
+    flex: 1,
+    paddingHorizontal: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff6ff",
+  },
+  mapLocationTitle: {
+    marginTop: 14,
+    color: theme.COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  mapLocationText: {
+    marginTop: 7,
+    color: theme.COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  mapRetryButton: {
+    marginTop: 18,
+    borderRadius: 14,
+    backgroundColor: theme.COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  mapRetryText: {
+    color: theme.COLORS.white,
+    fontSize: 13,
+    fontWeight: "800",
   },
   noticeCard: {
     backgroundColor: "#eff6ff",

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { Image, StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
 import type { NormalizedHotel } from "../../../../../lib/provider-types";
@@ -14,6 +14,9 @@ export default function HotelDetailsInfo({ hotel }: HotelDetailsInfoProps) {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
+        {hotel.profileImageUrl ? (
+          <Image source={{ uri: hotel.profileImageUrl }} style={styles.profileImage} />
+        ) : null}
         <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={styles.title}>{hotel.title}</Text>
           <View style={styles.locationRow}>
@@ -68,6 +71,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+  },
+  profileImage: {
+    width: 52,
+    height: 52,
+    marginRight: 12,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: theme.COLORS.border,
   },
   title: {
     fontSize: 24,

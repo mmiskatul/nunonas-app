@@ -24,7 +24,7 @@ RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
-  const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.5310 });
+  const [gpsCoords, setGpsCoords] = useState(null);
   const [address, setAddress] = useState(currentLocation || "Select a location");
   const [loading, setLoading] = useState(true);
 
@@ -106,6 +106,11 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                 {loading ? (
                   <View style={styles.mapPlaceholder}>
                     <ActivityIndicator size="small" color={theme.COLORS.primary} />
+                  </View>
+                ) : !gpsCoords ? (
+                  <View style={styles.mapPlaceholder}>
+                    <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
+                    <Text style={styles.locationUnavailableText}>Enable location to preview your area.</Text>
                   </View>
                 ) : (
                   <RNMapbox.MapView
@@ -242,6 +247,14 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     width: "100%",
+  },
+  locationUnavailableText: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   openMapBtn: {
     alignItems: "center",

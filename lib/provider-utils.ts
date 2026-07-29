@@ -56,6 +56,7 @@ export function normalizeRestaurant(payload: ProviderPayload = {}): NormalizedRe
     priceRange: payload.price_range ?? payload.priceRange ?? "$$$",
     distanceText: getDistanceText(toNumber(payload.distance_km) ?? payload.distance),
     locationText: getLocationText(payload),
+    profileImageUrl: payload.profile_image_url ?? "",
     imageUrl: payload.cover_image_url ?? payload.image_url ?? payload.image ?? "",
     description:
       payload.description ??
@@ -84,6 +85,7 @@ export function normalizeHotel(payload: ProviderPayload = {}): NormalizedHotel {
     priceText: price != null ? `${price}` : "0",
     priceRange: payload.price_range ?? payload.priceRange ?? "$$$",
     locationText,
+    profileImageUrl: payload.profile_image_url ?? "",
     imageUrl: payload.cover_image_url ?? payload.image_url ?? payload.image ?? "",
     statusText: payload.status ?? "Available",
     distanceKm: toNumber(payload.distance_km),
@@ -109,6 +111,7 @@ export function normalizeSpa(payload: ProviderPayload = {}): NormalizedSpa {
     typeText: payload.type ?? "Spa",
     distanceText: getDistanceText(toNumber(payload.distance_km) ?? payload.distance),
     locationText: getLocationText(payload),
+    profileImageUrl: payload.profile_image_url ?? "",
     imageUrl: payload.cover_image_url ?? payload.image_url ?? payload.image ?? "",
     description:
       payload.description ??

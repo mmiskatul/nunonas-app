@@ -1,12 +1,33 @@
-// @ts-nocheck
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { type ComponentProps } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import theme from "../../../constants/theme";
 
-const CategoryCard = ({ title, count, iconName, iconColor, iconBgColor }) => {
+type CategoryCardProps = {
+  title: string;
+  count: string;
+  iconName: ComponentProps<typeof Ionicons>["name"];
+  iconColor: string;
+  iconBgColor: string;
+  onPress?: () => void;
+};
+
+export default function CategoryCard({
+  title,
+  count,
+  iconName,
+  iconColor,
+  iconBgColor,
+  onPress,
+}: CategoryCardProps) {
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.container}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${count}`}
+      onPress={onPress}
+    >
       <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
         <Ionicons name={iconName} size={24} color={iconColor} />
       </View>
@@ -14,7 +35,7 @@ const CategoryCard = ({ title, count, iconName, iconColor, iconBgColor }) => {
       <Text style={styles.count}>{count}</Text>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -47,7 +68,3 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textSecondary,
   },
 });
-
-export default CategoryCard;
-
-

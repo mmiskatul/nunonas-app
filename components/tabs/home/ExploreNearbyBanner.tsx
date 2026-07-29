@@ -78,7 +78,7 @@ const ExploreNearbyBanner = () => {
   // Start collapsed: the compact map/footer is the default home view.
   // Tapping the top chevron opens the expanded offer panel.
   const [showMap, setShowMap] = useState(true);
-  const [gpsCoords, setGpsCoords] = useState({ latitude: 25.2854, longitude: 51.531 });
+  const [gpsCoords, setGpsCoords] = useState(null);
   const [address, setAddress] = useState("Location unavailable");
   const [loading, setLoading] = useState(true);
   const [offersLoading, setOffersLoading] = useState(true);
@@ -146,7 +146,7 @@ const ExploreNearbyBanner = () => {
     let cancelled = false;
 
     async function loadRoute() {
-      if (!selectedOffer) {
+      if (!gpsCoords || !selectedOffer) {
         setRouteInfo(null);
         return;
       }
@@ -166,7 +166,7 @@ const ExploreNearbyBanner = () => {
     return () => {
       cancelled = true;
     };
-  }, [gpsCoords.latitude, gpsCoords.longitude, selectedOffer]);
+  }, [gpsCoords, selectedOffer]);
 
   const openMap = () => {
     const params = selectedOffer?.id ? { offerId: selectedOffer.id } : undefined;
@@ -174,7 +174,7 @@ const ExploreNearbyBanner = () => {
   };
 
   const openDirections = async () => {
-    if (!selectedOffer) {
+    if (!gpsCoords || !selectedOffer) {
       openMap();
       return;
     }
@@ -209,6 +209,11 @@ const ExploreNearbyBanner = () => {
             {loading || offersLoading ? (
               <View style={styles.mapPlaceholder}>
                 <ActivityIndicator size="small" color={theme.COLORS.primary} />
+              </View>
+            ) : !gpsCoords ? (
+              <View style={styles.mapPlaceholder}>
+                <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
+                <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
               </View>
             ) : (
               <RNMapbox.MapView
@@ -282,6 +287,11 @@ const ExploreNearbyBanner = () => {
         {loading || offersLoading ? (
           <View style={styles.mapPlaceholder}>
             <ActivityIndicator size="small" color={theme.COLORS.primary} />
+          </View>
+        ) : !gpsCoords ? (
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
+            <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
           </View>
         ) : (
           <RNMapbox.MapView
@@ -585,6 +595,14 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     width: "100%",
+  },
+  locationUnavailableText: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   openMapBtn: {
     alignItems: "center",
