@@ -45,7 +45,6 @@ const NEARBY_MAP_ZOOM = 14;
 const SELECTED_EVENT_ZOOM = 15;
 const NEARBY_REGION_DELTA = 0.025;
 type BookingState = { loading: boolean; code: string; status: string };
-type MapFilter = "happy-hours" | "events";
 type CloudConfig = {
   id: number;
   size: number;
@@ -134,7 +133,6 @@ export default function MapScreen() {
   const [animationComplete, setAnimationComplete] = useState(false);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<MapFilter>("events");
   const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [showEventList, setShowEventList] = useState(false);
   const [offersLoading, setOffersLoading] = useState(true);
@@ -444,15 +442,13 @@ export default function MapScreen() {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-      return activeFilter === "happy-hours"
-        ? event.entityType === "happy_hour"
-        : event.entityType === "event";
+      return event.entityType === "event";
     });
     return filterMapEvents(
       attachEventDistances(matchingEvents, markerCoords),
       mapFilters,
     );
-  }, [activeFilter, mapFilters, markerCoords, nearbyEvents, searchQuery]);
+  }, [mapFilters, markerCoords, nearbyEvents, searchQuery]);
 
   useEffect(() => {
     if (
@@ -663,34 +659,9 @@ export default function MapScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryRow}
         >
-          <TouchableOpacity
-            style={[styles.categoryChip, activeFilter === "happy-hours" && styles.categoryChipActive]}
-            onPress={() => setActiveFilter("happy-hours")}
-          >
-            <Text style={[styles.categoryChipText, activeFilter === "happy-hours" && styles.categoryChipTextActive]}>
-              Happy Hours
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.categoryChip, activeFilter === "events" && styles.categoryChipActive]}
-            onPress={() => setActiveFilter("events")}
-          >
-            <Text style={[styles.categoryChipText, activeFilter === "events" && styles.categoryChipTextActive]}>
-              Events
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.categoryChip}
-            onPress={() => router.push("/home/dining")}
-          >
-            <Text style={styles.categoryChipText}>Restaurants</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.categoryChip}
-            onPress={() => router.push("/home/spa")}
-          >
-            <Text style={styles.categoryChipText}>Spa</Text>
-          </TouchableOpacity>
+          <View style={[styles.categoryChip, styles.categoryChipActive]}>
+            <Text style={[styles.categoryChipText, styles.categoryChipTextActive]}>Events</Text>
+          </View>
         </ScrollView>
         <MapFilterChips
           active={mapFilters}
@@ -724,7 +695,7 @@ export default function MapScreen() {
             <View style={styles.listHeader}>
               <View>
                 <Text style={styles.listTitle}>
-                  {activeFilter === "happy-hours" ? "Happy Hours" : "Nearby Events"}
+                  Nearby Events
                 </Text>
                 <Text style={styles.listSubtitle}>
                   {visibleEvents.length} {visibleEvents.length === 1 ? "place" : "places"} found

@@ -156,7 +156,7 @@ export default function EventsScreen() {
 
   const handleTabChange = (nextTab: "List" | "Map") => {
     if (nextTab === "Map") {
-      router.push("/map");
+      router.push("/home/events/map");
       return;
     }
     setActiveTab(nextTab);

@@ -38,7 +38,6 @@ const DEFAULT_ADDRESS = "Location unavailable";
 const NEARBY_MAP_ZOOM = 14;
 const SELECTED_EVENT_ZOOM = 15;
 type BookingState = { loading: boolean; code: string; status: string };
-type MapFilter = "happy-hours" | "events";
 
 export default function MapScreenWeb() {
   const router = useRouter();
@@ -50,7 +49,6 @@ export default function MapScreenWeb() {
   const [offersLoading, setOffersLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<MapFilter>("events");
   const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventDetails, setSelectedEventDetails] = useState<NormalizedMapEvent | null>(null);
@@ -99,13 +97,6 @@ export default function MapScreenWeb() {
         const initialEvent = selectedId
           ? items.find((item) => item.id === selectedId) ?? null
           : null;
-        if (initialEvent) {
-          setActiveFilter(
-            initialEvent.entityType === "happy_hour"
-              ? "happy-hours"
-              : "events",
-          );
-        }
         setSelectedEvent(initialEvent);
       } catch (error: unknown) {
         console.error("Error loading offers for web map:", error);
@@ -243,15 +234,13 @@ export default function MapScreenWeb() {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-      return activeFilter === "happy-hours"
-        ? event.entityType === "happy_hour"
-        : event.entityType === "event";
+      return event.entityType === "event";
     });
     return filterMapEvents(
       attachEventDistances(matchingEvents, markerCoords),
       mapFilters,
     );
-  }, [activeFilter, mapFilters, markerCoords, nearbyEvents, searchQuery]);
+  }, [mapFilters, markerCoords, nearbyEvents, searchQuery]);
 
   useEffect(() => {
     if (
@@ -384,28 +373,9 @@ export default function MapScreenWeb() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryRow}
         >
-          <TouchableOpacity
-            style={[styles.categoryChip, activeFilter === "happy-hours" && styles.categoryChipActive]}
-            onPress={() => setActiveFilter("happy-hours")}
-          >
-            <Text style={[styles.categoryChipText, activeFilter === "happy-hours" && styles.categoryChipTextActive]}>
-              Happy Hours
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.categoryChip, activeFilter === "events" && styles.categoryChipActive]}
-            onPress={() => setActiveFilter("events")}
-          >
-            <Text style={[styles.categoryChipText, activeFilter === "events" && styles.categoryChipTextActive]}>
-              Events
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryChip} onPress={() => router.push("/home/dining")}>
-            <Text style={styles.categoryChipText}>Restaurants</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryChip} onPress={() => router.push("/home/spa")}>
-            <Text style={styles.categoryChipText}>Spa</Text>
-          </TouchableOpacity>
+          <View style={[styles.categoryChip, styles.categoryChipActive]}>
+            <Text style={[styles.categoryChipText, styles.categoryChipTextActive]}>Events</Text>
+          </View>
         </ScrollView>
         <MapFilterChips
           active={mapFilters}
@@ -623,7 +593,7 @@ export default function MapScreenWeb() {
               <View style={styles.emptyStateCard}>
                 <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
                 <Text style={styles.emptyStateTitle}>
-                  Select {activeFilter === "happy-hours" ? "a Happy Hour" : "an event"}
+                  Select an event
                 </Text>
                 <Text style={styles.emptyStateText}>
                   Choose an item from the list to load its location, directions, and available actions.
