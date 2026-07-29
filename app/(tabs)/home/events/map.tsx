@@ -1,1 +1,1 @@
-export { default } from "../../../../components/HappyHoursMapScreen";
+export { default } from "../../../../components/tabs/home/events/EventMap";
