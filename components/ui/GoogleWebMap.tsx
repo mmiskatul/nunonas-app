@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { GrCafeteria } from "react-icons/gr";
-import { MdEventNote } from "react-icons/md";
+import { MdEventNote, MdHotel, MdSpa } from "react-icons/md";
 import { StyleSheet, Text, View } from "react-native";
 import theme from "../../constants/theme";
 import { GOOGLE_MAPS_API_KEY } from "../../lib/google-maps";
@@ -13,7 +13,7 @@ export type GoogleWebMarker = {
   latitude: number;
   longitude: number;
   imageUrl?: string | null;
-  kind?: "event" | "happy_hour" | "restaurant";
+  kind?: "event" | "happy_hour" | "restaurant" | "spa" | "hotel";
 };
 
 type Props = {
@@ -207,7 +207,7 @@ function createEventContent(
     transform: selected ? "scale(1.1)" : "scale(1)",
   });
   let iconRoot: Root | undefined;
-  if (marker.kind === "event") {
+  if (marker.kind === "event" || marker.kind === "spa" || marker.kind === "hotel") {
     const iconHost = document.createElement("span");
     Object.assign(iconHost.style, {
       display: "flex",
@@ -216,9 +216,8 @@ function createEventContent(
     });
     ring.appendChild(iconHost);
     iconRoot = createRoot(iconHost);
-    iconRoot.render(
-      <MdEventNote size={selected ? 29 : 25} aria-hidden />,
-    );
+    const Icon = marker.kind === "spa" ? MdSpa : marker.kind === "hotel" ? MdHotel : MdEventNote;
+    iconRoot.render(<Icon size={selected ? 29 : 25} aria-hidden />);
   } else if (marker.imageUrl) {
     const image = document.createElement("img");
     image.src = marker.imageUrl;

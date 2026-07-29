@@ -4,46 +4,45 @@ import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const HotelViewToggle = () => {
-  const [activeView, setActiveView] = useState("list");
+const HotelViewToggle = ({ view = "list", onChange }) => {
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.toggleBtn, activeView === "list" && styles.activeBtn]}
-        onPress={() => setActiveView("list")}
+        style={[styles.toggleBtn, view === "list" && styles.activeBtn]}
+        onPress={() => onChange?.("list")}
       >
         <Ionicons
           name="list"
           size={18}
           color={
-            activeView === "list"
+            view === "list"
               ? theme.COLORS.primary
               : theme.COLORS.textSecondary
           }
         />
         <Text
-          style={[styles.btnText, activeView === "list" && styles.activeText]}
+          style={[styles.btnText, view === "list" && styles.activeText]}
         >
           List
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.toggleBtn, activeView === "map" && styles.activeBtn]}
-        onPress={() => setActiveView("map")}
+        style={[styles.toggleBtn, view === "map" && styles.activeBtn]}
+        onPress={() => onChange?.("map")}
       >
         <Ionicons
           name="map"
           size={18}
           color={
-            activeView === "map"
+            view === "map"
               ? theme.COLORS.primary
               : theme.COLORS.textSecondary
           }
         />
         <Text
-          style={[styles.btnText, activeView === "map" && styles.activeText]}
+          style={[styles.btnText, view === "map" && styles.activeText]}
         >
           Map
         </Text>

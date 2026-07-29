@@ -9,6 +9,7 @@ import SpaSearch from "../../../../components/tabs/home/spa/SpaSearch";
 import SpaViewToggle from "../../../../components/tabs/home/spa/SpaViewToggle";
 import SpaFilters from "../../../../components/tabs/home/spa/SpaFilters";
 import SpaCard from "../../../../components/tabs/home/spa/SpaCard";
+import CategoryMap from "../../../../components/tabs/home/CategoryMap";
 import { listSpas } from "../../../../lib/customer-api";
 import { normalizeSpa, getErrorMessage } from "../../../../lib/provider-utils";
 
@@ -16,6 +17,7 @@ export default function SpaScreen() {
   const [spas, setSpas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [view, setView] = useState("list");
 
   const loadSpas = useCallback(async () => {
     try {
@@ -48,17 +50,18 @@ export default function SpaScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <SpaSearch />
-        <SpaViewToggle count={spas.length} />
-        <SpaFilters />
+        <SpaViewToggle count={spas.length} view={view} onChange={setView} />
+        {view === "map" ? <CategoryMap items={spas} loading={loading} kind="spa" /> : null}
+        {view === "list" ? <SpaFilters /> : null}
 
-        <View style={styles.list}>
+        {view === "list" ? <View style={styles.list}>
           {loading ? <ActivityIndicator size="large" color={theme.COLORS.primary} /> : null}
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {!loading && !error && spas.length === 0 ? <Text style={styles.error}>No spas available.</Text> : null}
           {spas.map((spa) => (
             <SpaCard key={spa.id} spa={spa} />
           ))}
-        </View>
+        </View> : null}
       </ScrollView>
     </SafeAreaView>
   );

@@ -4,15 +4,14 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const SpaViewToggle = ({ count = 25 }) => {
-  const [view, setView] = useState("list");
+const SpaViewToggle = ({ count = 25, view = "list", onChange }) => {
 
   return (
     <View style={styles.container}>
       <View style={styles.toggleGroup}>
         <TouchableOpacity
           style={[styles.toggleBtn, view === "list" && styles.activeBtn]}
-          onPress={() => setView("list")}
+          onPress={() => onChange?.("list")}
         >
           <Ionicons
             name="list"
@@ -29,7 +28,7 @@ const SpaViewToggle = ({ count = 25 }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggleBtn, view === "map" && styles.activeBtn]}
-          onPress={() => setView("map")}
+          onPress={() => onChange?.("map")}
         >
           <Ionicons
             name="map"
