@@ -276,7 +276,7 @@ function createRestaurantContent(
   const iconRoot = createRoot(iconHost);
   iconRoot.render(
     <MdRestaurant
-      size={selected ? 25 : 21}
+      size={selected ? 21 : 17}
       aria-hidden
       style={{ display: "block", overflow: "visible" }}
     />,
