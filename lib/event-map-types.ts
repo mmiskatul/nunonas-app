@@ -34,6 +34,7 @@ export type CustomerMapEventPayload = {
   event_type?: string;
   eventType?: string;
   event_date?: string;
+  end_date?: string;
   start_time?: string;
   end_time?: string;
   location?: string;
@@ -70,6 +71,8 @@ export type CustomerMapEventPayload = {
   isSoldOut?: boolean;
   remaining_capacity?: number | string | null;
   remainingCapacity?: number | null;
+  registration_deadline?: string | null;
+  registration_open?: boolean;
   is_open_now?: boolean;
   isOpenNow?: boolean;
   detail_route?: string | null;
@@ -87,6 +90,7 @@ export type NormalizedMapEvent = {
   date: string;
   time: string;
   eventDate: string | null;
+  eventEndDate: string | null;
   startTime: string | null;
   endTime: string | null;
   location: string;
@@ -112,6 +116,8 @@ export type NormalizedMapEvent = {
   currentBookingCode: string;
   isSoldOut: boolean;
   remainingCapacity: number | null;
+  registrationDeadline: string | null;
+  registrationOpen: boolean;
   isOpenNow: boolean;
   detailRoute: string | null;
 };

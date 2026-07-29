@@ -65,7 +65,9 @@ function isEventOpenNow(event: NormalizedMapEvent, now = new Date()): boolean {
   if (event.entityType === "happy_hour") return event.isOpenNow;
   if (!event.eventDate || !event.startTime || !event.endTime) return false;
   const start = new Date(`${event.eventDate}T${event.startTime.slice(0, 8)}`);
-  const end = new Date(`${event.eventDate}T${event.endTime.slice(0, 8)}`);
+  const end = new Date(
+    `${event.eventEndDate || event.eventDate}T${event.endTime.slice(0, 8)}`,
+  );
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
   return start.getTime() <= now.getTime() && end.getTime() >= now.getTime();
 }

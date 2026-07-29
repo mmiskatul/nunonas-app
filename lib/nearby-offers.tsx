@@ -1,16 +1,33 @@
 import { getMapEvents, getMapHappyHours } from "./customer-events";
 import { isEventNotExpired, normalizeMapEvent } from "./event-map-utils";
-import type { NormalizedMapEvent } from "./event-map-types";
+import type {
+  CustomerMapEventPayload,
+  NormalizedMapEvent,
+} from "./event-map-types";
+
+function itemsFromFeed(
+  response: PromiseSettledResult<{ items?: CustomerMapEventPayload[] }>,
+  entityType: "event" | "happy_hour",
+): CustomerMapEventPayload[] {
+  if (response.status !== "fulfilled" || !Array.isArray(response.value.items)) {
+    return [];
+  }
+
+  // The endpoint is authoritative. This prevents stale or malformed entity_type
+  // fields from moving an Event into the Happy Hours tab (or vice versa).
+  return response.value.items.map((item) => ({
+    ...item,
+    entity_type: entityType,
+    entityType,
+  }));
+}
 
 export async function listNearbyOffers(limit = 12): Promise<NormalizedMapEvent[]> {
   const responses = await Promise.allSettled([
     getMapEvents(limit),
     getMapHappyHours(limit),
   ]);
-  const payloads = responses.flatMap((response) =>
-    response.status === "fulfilled" ? [response.value] : [],
-  );
-  if (!payloads.length) {
+  if (responses.every((response) => response.status === "rejected")) {
     const failure = responses.find(
       (response) => response.status === "rejected",
     );
@@ -18,9 +35,10 @@ export async function listNearbyOffers(limit = 12): Promise<NormalizedMapEvent[]
       ? failure.reason
       : new Error("Nearby events and Happy Hours could not be loaded.");
   }
-  const items = payloads.flatMap((payload) =>
-    Array.isArray(payload.items) ? payload.items : [],
-  );
+  const items = [
+    ...itemsFromFeed(responses[0], "event"),
+    ...itemsFromFeed(responses[1], "happy_hour"),
+  ];
   const seen = new Set<string>();
 
   return items
@@ -34,7 +52,11 @@ export async function listNearbyOffers(limit = 12): Promise<NormalizedMapEvent[]
           item.latitude == null ||
           item.longitude == null ||
           (item.entityType !== "happy_hour" &&
-            !isEventNotExpired(item.eventDate, item.endTime))
+            !isEventNotExpired(
+              item.eventDate,
+              item.endTime,
+              item.eventEndDate,
+            ))
         ) {
           return false;
         }

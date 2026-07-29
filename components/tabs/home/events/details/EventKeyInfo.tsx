@@ -44,6 +44,16 @@ export default function EventKeyInfo({ event }: EventKeyInfoProps) {
         subtitle={event?.time || "8:00 PM - 2:00 AM"}
       />
 
+      {event.registrationDeadline ? (
+        <InfoItem
+          icon="time-outline"
+          title={`Registration ${event.registrationOpen ? "closes" : "closed"}`}
+          subtitle={new Date(
+            `${event.registrationDeadline.slice(0, 10)}T00:00:00`,
+          ).toLocaleDateString()}
+        />
+      ) : null}
+
       <InfoItem
         icon="location-outline"
         title={event?.location || "Event location unavailable"}

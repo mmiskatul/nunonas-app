@@ -17,6 +17,17 @@ export function formatEventDate(value?: string | null): string {
   });
 }
 
+export function formatEventDateRange(
+  startDate?: string | null,
+  endDate?: string | null,
+): string {
+  const start = formatEventDate(startDate);
+  if (!endDate || endDate === startDate) {
+    return start;
+  }
+  return `${start} - ${formatEventDate(endDate)}`;
+}
+
 export function formatEventTime(startTime?: string | null, endTime?: string | null): string {
   if (!startTime) {
     return "Time TBA";
@@ -43,12 +54,17 @@ export function getFirstQueryParam(value: string | string[] | undefined): string
   return value ?? null;
 }
 
-export function isEventNotExpired(eventDate?: string | null, endTime?: string | null): boolean {
-  if (!eventDate || !endTime) {
+export function isEventNotExpired(
+  eventDate?: string | null,
+  endTime?: string | null,
+  eventEndDate?: string | null,
+): boolean {
+  const finalDate = eventEndDate || eventDate;
+  if (!finalDate || !endTime) {
     return false;
   }
 
-  const end = new Date(`${eventDate}T${String(endTime).slice(0, 8)}`);
+  const end = new Date(`${finalDate}T${String(endTime).slice(0, 8)}`);
   return !Number.isNaN(end.getTime()) && end.getTime() >= Date.now();
 }
 
@@ -80,9 +96,10 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     id: item.id ?? item._id ?? "",
     entityType: item.entity_type ?? item.entityType ?? "event",
     title: item.title ?? item.name ?? "Untitled Event",
-    date: formatEventDate(item.event_date),
+    date: formatEventDateRange(item.event_date, item.end_date),
     time: formatEventTime(item.start_time, item.end_time),
     eventDate: item.event_date ?? null,
+    eventEndDate: item.end_date ?? item.event_date ?? null,
     startTime: item.start_time ?? null,
     endTime: item.end_time ?? null,
     location,
@@ -108,6 +125,8 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     currentBookingCode: item.current_booking_code ?? item.currentBookingCode ?? "",
     isSoldOut: Boolean(item.is_sold_out ?? item.isSoldOut),
     remainingCapacity,
+    registrationDeadline: item.registration_deadline ?? null,
+    registrationOpen: item.registration_open !== false,
     isOpenNow: Boolean(item.is_open_now ?? item.isOpenNow),
     detailRoute:
       item.detail_route ??

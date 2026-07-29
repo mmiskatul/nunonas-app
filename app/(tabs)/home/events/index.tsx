@@ -18,12 +18,104 @@ import EventFilterToggle from "../../../../components/tabs/home/events/EventFilt
 import CategoryFilters from "../../../../components/tabs/home/events/CategoryFilters";
 import EventCard from "../../../../components/tabs/home/events/EventCard";
 
+const EVENT_CATEGORIES = [
+  "All",
+  "Music",
+  "Nightlife",
+  "Comedy",
+  "Family",
+  "Culture",
+  "Sports",
+] as const;
+
+type EventCategory = (typeof EVENT_CATEGORIES)[number];
+
+const EVENT_CATEGORY_KEYWORDS: Record<
+  Exclude<EventCategory, "All">,
+  readonly string[]
+> = {
+  Music: [
+    "music",
+    "concert",
+    "festival",
+    "band",
+    "singer",
+    "live performance",
+    "dj",
+  ],
+  Nightlife: [
+    "nightlife",
+    "night club",
+    "nightclub",
+    "club",
+    "party",
+    "lounge",
+    "bar",
+    "gala",
+  ],
+  Comedy: ["comedy", "comedian", "stand-up", "standup"],
+  Family: [
+    "family",
+    "kids",
+    "children",
+    "child",
+    "birthday",
+    "wedding",
+  ],
+  Culture: [
+    "culture",
+    "cultural",
+    "art",
+    "exhibition",
+    "museum",
+    "theatre",
+    "theater",
+    "heritage",
+    "workshop",
+    "conference",
+  ],
+  Sports: [
+    "sport",
+    "football",
+    "soccer",
+    "cricket",
+    "basketball",
+    "tennis",
+    "fitness",
+    "race",
+    "marathon",
+    "tournament",
+  ],
+};
+
+function matchesEventCategory(
+  event: NormalizedMapEvent,
+  category: EventCategory,
+): boolean {
+  if (category === "All") return true;
+
+  const searchableText = [
+    event.eventType,
+    event.tag,
+    event.title,
+    event.description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase();
+
+  return EVENT_CATEGORY_KEYWORDS[category].some((keyword) =>
+    searchableText.includes(keyword),
+  );
+}
+
 export default function EventsScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"List" | "Map">("List");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] =
+    useState<EventCategory>("All");
   const [events, setEvents] = useState<NormalizedMapEvent[]>([]);
   const [error, setError] = useState("");
 
@@ -70,16 +162,10 @@ export default function EventsScreen() {
     setActiveTab(nextTab);
   };
 
-  const categories = useMemo(() => {
-    const dynamic = events
-      .map((item) => String(item.eventType || item.tag || "").trim())
-      .filter(Boolean);
-    return ["All", ...Array.from(new Set(dynamic))];
-  }, [events]);
-
   const filteredEvents = useMemo(() => {
-    return events
-      .filter((item) => activeCategory === "All" || item.eventType === activeCategory || item.tag === activeCategory);
+    return events.filter((event) =>
+      matchesEventCategory(event, activeCategory),
+    );
   }, [activeCategory, events]);
 
   return (
@@ -92,9 +178,11 @@ export default function EventsScreen() {
           onChangeTab={handleTabChange}
         />
         <CategoryFilters
-          categories={categories}
+          categories={[...EVENT_CATEGORIES]}
           activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
+          onSelectCategory={(category) =>
+            setActiveCategory(category as EventCategory)
+          }
         />
 
         <View style={styles.list}>

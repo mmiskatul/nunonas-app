@@ -35,6 +35,8 @@ import MapFilterChips, {
   type MapFilterKey,
 } from "./ui/MapFilterChips";
 const DEFAULT_ADDRESS = "Location unavailable";
+const NEARBY_MAP_ZOOM = 14;
+const SELECTED_EVENT_ZOOM = 15;
 type BookingState = { loading: boolean; code: string; status: string };
 type MapFilter = "happy-hours" | "events";
 
@@ -434,7 +436,9 @@ export default function MapScreenWeb() {
                 if (event) setSelectedEvent(event);
               }}
               height={420}
-              zoomLevel={selectedEvent ? 14 : 12}
+              zoomLevel={
+                selectedEvent ? SELECTED_EVENT_ZOOM : NEARBY_MAP_ZOOM
+              }
               showCenterMarker={!selectedEvent}
             />
           ) : (

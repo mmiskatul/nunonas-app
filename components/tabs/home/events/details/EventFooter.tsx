@@ -40,6 +40,8 @@ export default function EventFooter({
     ? "Booking..."
     : booking?.code
       ? `Booked ${booking.code}`
+      : !event.registrationOpen
+        ? "Registration closed"
       : "Book Ticket";
 
   return (
@@ -72,7 +74,7 @@ export default function EventFooter({
             <TouchableOpacity
               style={styles.stepperButton}
               onPress={() => onChangeQuantity?.(Math.max(1, quantity - 1))}
-              disabled={booking?.loading}
+              disabled={booking?.loading || !event.registrationOpen}
             >
               <Ionicons name="remove" size={16} color={theme.COLORS.textPrimary} />
             </TouchableOpacity>
@@ -80,7 +82,7 @@ export default function EventFooter({
             <TouchableOpacity
               style={styles.stepperButton}
               onPress={() => onChangeQuantity?.(Math.min(20, quantity + 1))}
-              disabled={booking?.loading}
+              disabled={booking?.loading || !event.registrationOpen}
             >
               <Ionicons name="add" size={16} color={theme.COLORS.textPrimary} />
             </TouchableOpacity>
@@ -88,10 +90,14 @@ export default function EventFooter({
         </View>
 
         <TouchableOpacity
-          style={[styles.bookButton, booking?.code ? styles.bookedButton : null]}
+          style={[
+            styles.bookButton,
+            booking?.code ? styles.bookedButton : null,
+            !event.registrationOpen ? styles.disabledButton : null,
+          ]}
           onPress={onBook}
           activeOpacity={0.85}
-          disabled={booking?.loading}
+          disabled={booking?.loading || !event.registrationOpen}
         >
           {booking?.loading ? (
             <ActivityIndicator color={theme.COLORS.white} size="small" />
@@ -206,6 +212,9 @@ const styles = StyleSheet.create({
   },
   bookedButton: {
     backgroundColor: "#16a34a",
+  },
+  disabledButton: {
+    backgroundColor: "#94a3b8",
   },
   bookButtonText: {
     color: theme.COLORS.white,

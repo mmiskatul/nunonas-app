@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import Svg, { Path } from "react-native-svg";
 import theme from "../../../../constants/theme";
 import { getCurrentCoords, isExpectedLocationError } from "../../../../lib/location";
 import {
@@ -29,6 +30,21 @@ type Props = {
   loading: boolean;
   activeFilters: MapFilterKey[];
 };
+
+function CafeteriaPinIcon({ size = 17 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 1v7c0 1.66-1.35 3-3 3H6a3 3 0 0 1-3-3V1m3 6V1m3 6V1M6 11v10.5A1.5 1.5 0 0 0 7.5 23 1.5 1.5 0 0 0 9 21.5V11m6 7v3.5a1.5 1.5 0 0 0 3 0V15s3 0 3-3c0-3 0-2 0-5s-2-5-6-5v16Z"
+        fill="none"
+        stroke={theme.COLORS.primary}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 export default function RestaurantMap({
   restaurants,
@@ -185,7 +201,7 @@ export default function RestaurantMap({
                 style={[styles.marker, selected && styles.markerSelected]}
                 accessibilityLabel={`Restaurant: ${restaurant.title}`}
               >
-                <Ionicons name="restaurant" size={17} color="#ffffff" />
+                <CafeteriaPinIcon size={selected ? 18 : 16} />
               </View>
             </Marker>
           );
@@ -304,14 +320,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   marker: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 3,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 2,
     borderColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.COLORS.primary,
+    backgroundColor: "#ffffff",
     shadowColor: "#0f172a",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
@@ -319,8 +335,8 @@ const styles = StyleSheet.create({
     elevation: 7,
   },
   markerSelected: {
-    transform: [{ scale: 1.18 }],
-    borderColor: "#bfdbfe",
+    transform: [{ scale: 1.12 }],
+    borderColor: theme.COLORS.primary,
   },
   mapControls: {
     position: "absolute",

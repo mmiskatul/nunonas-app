@@ -30,7 +30,6 @@ import {
 import {
   buildDirectionsUrl,
   getDrivingRoute,
-  reverseGeocode,
 } from "../lib/google-maps";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
@@ -42,7 +41,9 @@ import MapFilterChips, {
 } from "./ui/MapFilterChips";
 
 const { width, height } = Dimensions.get("window");
-const DEFAULT_ADDRESS = "Location unavailable";
+const NEARBY_MAP_ZOOM = 14;
+const SELECTED_EVENT_ZOOM = 15;
+const NEARBY_REGION_DELTA = 0.025;
 type BookingState = { loading: boolean; code: string; status: string };
 type MapFilter = "happy-hours" | "events";
 type CloudConfig = {
@@ -130,7 +131,6 @@ export default function MapScreen() {
   const [markerCoords, setMarkerCoords] = useState<GeoCoordinates | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState("");
-  const [addressText, setAddressText] = useState(DEFAULT_ADDRESS);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,11 +162,6 @@ export default function MapScreen() {
       const currentCoords = { latitude: coords.latitude, longitude: coords.longitude };
       setMarkerCoords(currentCoords);
       setLocationLoading(false);
-
-      const address = await reverseGeocode(coords.latitude, coords.longitude);
-      if (address) {
-        setAddressText(address);
-      }
     } catch (error: unknown) {
       setLocationError("Your current location could not be loaded. Please try again.");
       if (!isExpectedLocationError(error)) {
@@ -478,7 +473,7 @@ export default function MapScreen() {
         latitude: Number(event.latitude),
         longitude: Number(event.longitude),
       },
-      zoom: 14,
+      zoom: SELECTED_EVENT_ZOOM,
     }, { duration: 500 });
   };
 
@@ -486,7 +481,7 @@ export default function MapScreen() {
     if (!markerCoords) return;
     mapRef.current?.animateCamera({
       center: markerCoords,
-      zoom: 13,
+      zoom: NEARBY_MAP_ZOOM,
     }, { duration: 500 });
   };
 
@@ -501,8 +496,8 @@ export default function MapScreen() {
             initialRegion={{
               latitude: markerCoords.latitude,
               longitude: markerCoords.longitude,
-              latitudeDelta: 0.08,
-              longitudeDelta: 0.08,
+              latitudeDelta: NEARBY_REGION_DELTA,
+              longitudeDelta: NEARBY_REGION_DELTA,
             }}
             showsUserLocation
             showsMyLocationButton={false}
@@ -707,7 +702,7 @@ export default function MapScreen() {
       <TouchableOpacity
         style={[
           styles.listViewButton,
-          { bottom: Math.max(insets.bottom, 16) + (cardEvent || showEventList ? height * 0.5 : 128) },
+          { bottom: Math.max(insets.bottom, 16) + (cardEvent || showEventList ? height * 0.5 : 8) },
         ]}
         onPress={() => setShowEventList((current) => !current)}
       >
@@ -715,13 +710,9 @@ export default function MapScreen() {
         <Text style={styles.listViewButtonText}>{showEventList ? "Map View" : "List View"}</Text>
       </TouchableOpacity>
 
-      <View style={[styles.bottomCard, { bottom: Math.max(insets.bottom, 16) + 8 }]}>
-        {offersLoading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator size="small" color="#2563eb" />
-            <Text style={styles.loadingText}>Loading nearby events...</Text>
-          </View>
-        ) : showEventList ? (
+      {showEventList || cardEvent ? (
+        <View style={[styles.bottomCard, { bottom: Math.max(insets.bottom, 16) + 8 }]}>
+        {showEventList ? (
           <View>
             <View style={styles.listHeader}>
               <View>
@@ -918,23 +909,9 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           </ScrollView>
-        ) : (
-          <>
-            <View style={styles.locationInfo}>
-              <Ionicons name="location" size={24} color={theme.COLORS.primary} />
-              <View style={styles.textContainer}>
-                <Text style={styles.locationTitle}>Nearby Events</Text>
-                <Text style={styles.locationSubtitle} numberOfLines={2}>
-                  {addressText}
-                </Text>
-                <Text style={styles.locationHint}>
-                  All events are shown on the map. Tap any event pin to load its route and directions.
-                </Text>
-              </View>
-            </View>
-          </>
-        )}
-      </View>
+        ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1285,12 +1262,6 @@ const styles = StyleSheet.create({
   cardScrollContent: {
     paddingBottom: 4,
   },
-  locationInfo: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 20,
-  },
   offerHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1322,16 +1293,6 @@ const styles = StyleSheet.create({
     borderRadius: 31,
     backgroundColor: "#cbd5e1",
   },
-  textContainer: {
-    flex: 1,
-  },
-  locationTitle: {
-    fontSize: 14,
-    color: theme.COLORS.textSecondary,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
   offerTitle: {
     fontSize: 18,
     color: theme.COLORS.textPrimary,
@@ -1342,12 +1303,6 @@ const styles = StyleSheet.create({
     color: theme.COLORS.primary,
     fontWeight: "700",
     marginTop: 2,
-  },
-  locationSubtitle: {
-    fontSize: 15,
-    color: theme.COLORS.textPrimary,
-    fontWeight: "700",
-    marginTop: 4,
   },
   routeSummaryCard: {
     marginTop: 14,
@@ -1374,12 +1329,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: theme.COLORS.textSecondary,
-  },
-  locationHint: {
-    fontSize: 13,
-    color: theme.COLORS.textSecondary,
-    marginTop: 8,
-    lineHeight: 18,
   },
   infoGrid: {
     flexDirection: "row",

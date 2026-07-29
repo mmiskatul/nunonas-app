@@ -43,16 +43,17 @@ export default function DiningScreen() {
   const fetchRestaurants = useCallback(async () => {
     try {
       setError("");
+      const mapMode = view === "map";
       const response = await listRestaurants<RestaurantResponse>({
         limit: 100,
         skip: 0,
-        // The map calculates "Near me" from the device's current coordinates.
-        // Fetch the published set so a stale server-side location cannot hide pins.
+        // List mode shows the complete searchable catalogue. Map mode applies
+        // map-only filters after foreground location permission is granted.
         nearby: false,
         ...(searchQuery ? { search: searchQuery } : {}),
-        ...(mapFilters.includes("open-now") ? { open_now: true } : {}),
-        ...(mapFilters.includes("top-rated") ? { top_rated: true } : {}),
-        ...(mapFilters.includes("offers") ? { offers: true } : {}),
+        ...(mapMode && mapFilters.includes("open-now") ? { open_now: true } : {}),
+        ...(mapMode && mapFilters.includes("top-rated") ? { top_rated: true } : {}),
+        ...(mapMode && mapFilters.includes("offers") ? { offers: true } : {}),
       });
       const items = Array.isArray(response) ? response : response.items ?? [];
       setRestaurants(items);
@@ -70,7 +71,7 @@ export default function DiningScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [mapFilters, searchQuery]);
+  }, [mapFilters, searchQuery, view]);
 
   useEffect(() => {
     setLoading(true);
@@ -96,6 +97,7 @@ export default function DiningScreen() {
         <View style={styles.mapFilters}>
           <MapFilterChips
             active={mapFilters}
+            locked={["near-me"]}
             onToggle={(filter) =>
               setMapFilters((current) => toggleMapFilter(current, filter))
             }

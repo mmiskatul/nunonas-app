@@ -20,6 +20,7 @@ type Props = {
   active: MapFilterKey[];
   onToggle: (filter: MapFilterKey) => void;
   showLabel?: boolean;
+  locked?: MapFilterKey[];
 };
 
 const FILTERS: Array<{
@@ -38,6 +39,7 @@ export default function MapFilterChips({
   active,
   onToggle,
   showLabel = true,
+  locked = [],
 }: Props) {
   return (
     <View style={styles.wrapper}>
@@ -49,13 +51,16 @@ export default function MapFilterChips({
       >
         {FILTERS.map((filter) => {
           const selected = active.includes(filter.key);
+          const disabled = locked.includes(filter.key);
           return (
             <TouchableOpacity
               key={filter.key}
               style={[styles.chip, selected && styles.chipSelected]}
-              onPress={() => onToggle(filter.key)}
+              onPress={() => {
+                if (!disabled) onToggle(filter.key);
+              }}
               accessibilityRole="button"
-              accessibilityState={{ selected }}
+              accessibilityState={{ selected, disabled }}
               accessibilityLabel={`Filter by ${filter.label}`}
             >
               <Ionicons

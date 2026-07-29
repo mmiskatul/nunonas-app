@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { GrCafeteria } from "react-icons/gr";
 import { StyleSheet, Text, View } from "react-native";
 import theme from "../../constants/theme";
 import { GOOGLE_MAPS_API_KEY } from "../../lib/google-maps";
@@ -221,19 +223,19 @@ function createEventContent(
 function createRestaurantContent(
   marker: GoogleWebMarker,
   selected: boolean,
-): HTMLButtonElement {
+): { button: HTMLButtonElement; iconRoot: Root } {
   const button = document.createElement("button");
   button.type = "button";
   button.title = marker.title;
   button.setAttribute("aria-label", `Restaurant: ${marker.title}`);
   Object.assign(button.style, {
-    width: selected ? "44px" : "38px",
-    height: selected ? "44px" : "38px",
-    padding: "8px",
+    width: selected ? "40px" : "34px",
+    height: selected ? "40px" : "34px",
+    padding: "7px",
     borderRadius: "50%",
-    border: `3px solid ${selected ? "#bfdbfe" : "#ffffff"}`,
-    background: theme.COLORS.primary,
-    color: "#ffffff",
+    border: `2px solid ${selected ? theme.COLORS.primary : "#ffffff"}`,
+    background: "#ffffff",
+    color: theme.COLORS.primary,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -241,15 +243,18 @@ function createRestaurantContent(
     boxShadow: "0 4px 12px rgba(15,23,42,0.32)",
     transition: "width 150ms ease, height 150ms ease, border-color 150ms ease",
   });
-  button.innerHTML = [
-    '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"',
-    ' fill="none" stroke="currentColor" stroke-width="2.2"',
-    ' stroke-linecap="round" stroke-linejoin="round">',
-    '<path d="M7 3v7M4.5 3v4.5A2.5 2.5 0 0 0 7 10M9.5 3v4.5A2.5 2.5 0 0 1 7 10v11"/>',
-    '<path d="M15 3v8h4V3c-2.6 1.1-4 3.7-4 8Zm4 8v10"/>',
-    "</svg>",
-  ].join("");
-  return button;
+  const iconHost = document.createElement("span");
+  Object.assign(iconHost.style, {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  });
+  button.appendChild(iconHost);
+  const iconRoot = createRoot(iconHost);
+  iconRoot.render(
+    <GrCafeteria size={selected ? 20 : 17} aria-hidden />,
+  );
+  return { button, iconRoot };
 }
 
 export default function GoogleWebMap({
@@ -279,6 +284,7 @@ export default function GoogleWebMap({
     if (!element || !GOOGLE_MAPS_API_KEY) return;
     let cancelled = false;
     const markerInstances: AdvancedMarkerInstance[] = [];
+    const markerIconRoots: Root[] = [];
 
     void loadGoogleMaps()
       .then((googleMaps) => {
@@ -313,11 +319,13 @@ export default function GoogleWebMap({
             gmpClickable: true,
             zIndex: selected ? 3 : 2,
           });
-          advancedMarker.appendChild(
-            marker.kind === "restaurant"
-              ? createRestaurantContent(marker, selected)
-              : createEventContent(marker, selected),
-          );
+          if (marker.kind === "restaurant") {
+            const content = createRestaurantContent(marker, selected);
+            markerIconRoots.push(content.iconRoot);
+            advancedMarker.appendChild(content.button);
+          } else {
+            advancedMarker.appendChild(createEventContent(marker, selected));
+          }
           advancedMarker.addListener("click", () => onMarkerPress?.(marker));
           markerInstances.push(advancedMarker);
         });
@@ -332,6 +340,7 @@ export default function GoogleWebMap({
 
     return () => {
       cancelled = true;
+      markerIconRoots.forEach((root) => root.unmount());
       markerInstances.forEach((marker) => {
         window.google?.maps?.event?.clearInstanceListeners(marker);
         marker.map = null;
