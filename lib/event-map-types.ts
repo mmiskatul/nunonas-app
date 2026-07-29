@@ -70,6 +70,8 @@ export type CustomerMapEventPayload = {
   isSoldOut?: boolean;
   remaining_capacity?: number | string | null;
   remainingCapacity?: number | null;
+  is_open_now?: boolean;
+  isOpenNow?: boolean;
   detail_route?: string | null;
   detailRoute?: string | null;
 };
@@ -92,6 +94,7 @@ export type NormalizedMapEvent = {
   venue: string;
   address: string;
   tag: string;
+  offerText: string;
   eventType: string;
   imageUrl: string;
   description: string;
@@ -109,5 +112,6 @@ export type NormalizedMapEvent = {
   currentBookingCode: string;
   isSoldOut: boolean;
   remainingCapacity: number | null;
+  isOpenNow: boolean;
   detailRoute: string | null;
 };

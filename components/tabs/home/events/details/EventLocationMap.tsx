@@ -6,7 +6,7 @@ import {
   buildDirectionsUrl,
   buildPlaceUrl,
   buildStaticMapUrl,
-} from "../../../../../lib/mapbox";
+} from "../../../../../lib/google-maps";
 import type { GeoCoordinates } from "../../../../../lib/event-map-types";
 
 type EventLocationMapProps = {

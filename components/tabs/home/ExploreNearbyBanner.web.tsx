@@ -16,12 +16,12 @@ import {
   buildDirectionsUrl,
   getDrivingRoute,
   reverseGeocode,
-} from "../../../lib/mapbox";
+} from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
-import MapboxWebMap from "../../ui/MapboxWebMap";
+import GoogleWebMap from "../../ui/GoogleWebMap";
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -155,7 +155,7 @@ const ExploreNearbyBanner = () => {
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
             <Ionicons name="map-outline" size={16} color="#1d4ed8" />
-            <Text style={styles.heroBadgeText}>Mapbox nearby map</Text>
+            <Text style={styles.heroBadgeText}>Live nearby map</Text>
           </View>
           <Text style={styles.title}>Explore Nearby Offers</Text>
           <Text style={styles.description}>
@@ -181,7 +181,7 @@ const ExploreNearbyBanner = () => {
             </View>
 
             <View style={styles.mapPreview}>
-              <MapboxWebMap
+              <GoogleWebMap
                 center={gpsCoords}
                 markers={offers.map((offer) => ({
                   id: String(offer.id),

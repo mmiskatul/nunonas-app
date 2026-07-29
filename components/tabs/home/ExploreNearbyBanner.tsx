@@ -12,21 +12,19 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import RNMapbox from "@rnmapbox/maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../../constants/theme";
 import {
   buildDirectionsUrl,
   getDrivingRoute,
-  MAPBOX_ACCESS_TOKEN,
   reverseGeocode,
-} from "../../../lib/mapbox";
+} from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { listNearbyOffers } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 
 const { width } = Dimensions.get("window");
-RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 function getDistanceLabel(offer, routeInfo) {
   if (routeInfo?.distanceText) {
@@ -48,10 +46,15 @@ function getCardLabel(item) {
 
 function OfferMarker({ offer, onPress, active }) {
   return (
-    <RNMapbox.PointAnnotation
-      id={`nearby-event-${offer.id}`}
-      coordinate={[offer.longitude, offer.latitude]}
-      onSelected={onPress}
+    <Marker
+      identifier={`nearby-event-${offer.id}`}
+      coordinate={{
+        latitude: Number(offer.latitude),
+        longitude: Number(offer.longitude),
+      }}
+      anchor={{ x: 0.5, y: 1 }}
+      onPress={onPress}
+      zIndex={active ? 2 : 1}
     >
       <View style={styles.markerWrap}>
         <View style={[styles.markerTitleChip, active && styles.markerTitleChipActive]}>
@@ -78,7 +81,7 @@ function OfferMarker({ offer, onPress, active }) {
           </Text>
         </View>
       </View>
-    </RNMapbox.PointAnnotation>
+    </Marker>
   );
 }
 
@@ -225,17 +228,20 @@ const ExploreNearbyBanner = () => {
                 <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
               </View>
             ) : (
-              <RNMapbox.MapView
+              <MapView
                 style={styles.staticMap}
-                styleURL={RNMapbox.StyleURL.Street}
+                provider={PROVIDER_GOOGLE}
+                initialRegion={{
+                  latitude: gpsCoords.latitude,
+                  longitude: gpsCoords.longitude,
+                  latitudeDelta: 0.08,
+                  longitudeDelta: 0.08,
+                }}
+                showsUserLocation
+                showsMyLocationButton={false}
+                toolbarEnabled={false}
+                mapPadding={{ top: 70, right: 10, bottom: 20, left: 10 }}
               >
-                <RNMapbox.Camera
-                  defaultSettings={{
-                    centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
-                    zoomLevel: 13,
-                  }}
-                />
-                <RNMapbox.UserLocation visible />
                 {markerOffers.map((offer) => (
                   <OfferMarker
                     key={offer.id}
@@ -244,7 +250,7 @@ const ExploreNearbyBanner = () => {
                     onPress={() => setSelectedOffer(offer)}
                   />
                 ))}
-              </RNMapbox.MapView>
+              </MapView>
             )}
 
             <TouchableOpacity
@@ -303,17 +309,20 @@ const ExploreNearbyBanner = () => {
             <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
           </View>
         ) : (
-          <RNMapbox.MapView
+          <MapView
             style={StyleSheet.absoluteFillObject}
-            styleURL={RNMapbox.StyleURL.Street}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={{
+              latitude: gpsCoords.latitude,
+              longitude: gpsCoords.longitude,
+              latitudeDelta: 0.08,
+              longitudeDelta: 0.08,
+            }}
+            showsUserLocation
+            showsMyLocationButton={false}
+            toolbarEnabled={false}
+            mapPadding={{ top: 70, right: 10, bottom: 20, left: 10 }}
           >
-            <RNMapbox.Camera
-              defaultSettings={{
-                centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
-                zoomLevel: 13,
-              }}
-            />
-            <RNMapbox.UserLocation visible />
             {markerOffers.map((offer) => (
               <OfferMarker
                 key={offer.id}
@@ -322,7 +331,7 @@ const ExploreNearbyBanner = () => {
                 onPress={() => setSelectedOffer(offer)}
               />
             ))}
-          </RNMapbox.MapView>
+          </MapView>
         )}
 
         <TouchableOpacity

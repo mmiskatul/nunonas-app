@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -6,16 +6,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  Platform,
   Animated,
   Image,
   Linking,
   Alert,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
-import RNMapbox from "@rnmapbox/maps";
+import MapView, {
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
 import {
@@ -25,17 +30,21 @@ import {
 import {
   buildDirectionsUrl,
   getDrivingRoute,
-  MAPBOX_ACCESS_TOKEN,
   reverseGeocode,
-} from "../lib/mapbox";
+} from "../lib/google-maps";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
+import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
 import { listNearbyOffers } from "../lib/nearby-offers";
+import MapFilterChips, {
+  toggleMapFilter,
+  type MapFilterKey,
+} from "./ui/MapFilterChips";
 
 const { width, height } = Dimensions.get("window");
 const DEFAULT_ADDRESS = "Location unavailable";
-RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 type BookingState = { loading: boolean; code: string; status: string };
+type MapFilter = "happy-hours" | "events";
 type CloudConfig = {
   id: number;
   size: number;
@@ -112,7 +121,8 @@ const CLOUDS_CONFIG: CloudConfig[] = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef<any>(null);
+  const insets = useSafeAreaInsets();
+  const mapRef = useRef<MapView | null>(null);
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
@@ -123,6 +133,10 @@ export default function MapScreen() {
   const [addressText, setAddressText] = useState(DEFAULT_ADDRESS);
   const [animationComplete, setAnimationComplete] = useState(false);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<MapFilter>("events");
+  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
+  const [showEventList, setShowEventList] = useState(false);
   const [offersLoading, setOffersLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventDetails, setSelectedEventDetails] = useState<NormalizedMapEvent | null>(null);
@@ -204,6 +218,9 @@ export default function MapScreen() {
           code: selectedEvent.currentBookingCode ?? "",
           status: selectedEvent.currentBookingStatus ?? "",
         });
+        if (selectedEvent.entityType === "happy_hour") {
+          return;
+        }
         const eventPayload = await getEvent(selectedEvent.id);
         if (cancelled) {
           return;
@@ -332,7 +349,7 @@ export default function MapScreen() {
       router.push(detailRoute);
       return;
     }
-    if (eventDetailsId) {
+    if (eventDetailsId && selectedEvent?.entityType !== "happy_hour") {
       router.push(`/home/events/${eventDetailsId}`);
     }
   };
@@ -393,6 +410,10 @@ export default function MapScreen() {
   const resolvedBookingCode = bookingState.code || cardEvent?.currentBookingCode || "";
   const resolvedBookingStatusText = resolvedBookingCode
     ? `${resolvedBookingStatus || "confirmed"} - ${resolvedBookingCode}`
+    : cardEvent?.entityType === "happy_hour"
+      ? cardEvent.isOpenNow
+        ? "Live now"
+        : "Scheduled"
     : resolvedBookingStatus
       ? resolvedBookingStatus
       : "Not booked yet";
@@ -413,52 +434,102 @@ export default function MapScreen() {
       : canShowInlineBooking
         ? "Book Now"
         : "Open Details";
+  const visibleEvents = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const matchingEvents = nearbyEvents.filter((event) => {
+      const searchableText = [
+        event.title,
+        event.eventType,
+        event.tag,
+        event.venue,
+        event.address,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
+        return false;
+      }
+      return activeFilter === "happy-hours"
+        ? event.entityType === "happy_hour"
+        : event.entityType === "event";
+    });
+    return filterMapEvents(
+      attachEventDistances(matchingEvents, markerCoords),
+      mapFilters,
+    );
+  }, [activeFilter, mapFilters, markerCoords, nearbyEvents, searchQuery]);
+
+  useEffect(() => {
+    if (
+      selectedEvent &&
+      !visibleEvents.some((event) => event.id === selectedEvent.id)
+    ) {
+      setSelectedEvent(null);
+      setShowEventList(true);
+    }
+  }, [selectedEvent, visibleEvents]);
+
+  const selectMapEvent = (event: NormalizedMapEvent) => {
+    setSelectedEvent(event);
+    setShowEventList(false);
+    mapRef.current?.animateCamera({
+      center: {
+        latitude: Number(event.latitude),
+        longitude: Number(event.longitude),
+      },
+      zoom: 14,
+    }, { duration: 500 });
+  };
+
+  const recenterMap = () => {
+    if (!markerCoords) return;
+    mapRef.current?.animateCamera({
+      center: markerCoords,
+      zoom: 13,
+    }, { duration: 500 });
+  };
 
   return (
     <View style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
         {markerCoords ? (
-          <RNMapbox.MapView
+          <MapView
+            ref={mapRef}
             style={StyleSheet.absoluteFillObject}
-            styleURL={RNMapbox.StyleURL.Street}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={{
+              latitude: markerCoords.latitude,
+              longitude: markerCoords.longitude,
+              latitudeDelta: 0.08,
+              longitudeDelta: 0.08,
+            }}
+            showsUserLocation
+            showsMyLocationButton={false}
+            toolbarEnabled={false}
+            mapPadding={{ top: 240, right: 20, bottom: 180, left: 20 }}
           >
-            <RNMapbox.Camera
-              ref={mapRef}
-              defaultSettings={{
-                centerCoordinate: [markerCoords.longitude, markerCoords.latitude],
-                zoomLevel: 13,
-              }}
-            />
-            <RNMapbox.UserLocation visible />
             {routeInfo?.coordinates?.length ? (
-              <RNMapbox.ShapeSource
-                id="selected-event-route"
-                shape={{
-                  type: "Feature",
-                  properties: {},
-                  geometry: {
-                    type: "LineString",
-                    coordinates: routeInfo.coordinates.map((coordinate) => [
-                      coordinate.longitude,
-                      coordinate.latitude,
-                    ]),
-                  },
-                }}
-              >
-                <RNMapbox.LineLayer
-                  id="selected-event-route-line"
-                  style={{ lineColor: "#2563eb", lineWidth: 5, lineCap: "round", lineJoin: "round" }}
-                />
-              </RNMapbox.ShapeSource>
+              <Polyline
+                coordinates={routeInfo.coordinates}
+                strokeColor="#2563eb"
+                strokeWidth={5}
+                lineCap="round"
+                lineJoin="round"
+              />
             ) : null}
 
-            {nearbyEvents.map((offer) => (
-              <RNMapbox.PointAnnotation
+            {visibleEvents.map((offer) => (
+              <Marker
                 key={String(offer.id)}
-                id={`event-${offer.id}`}
-                coordinate={[offer.longitude, offer.latitude]}
+                identifier={`event-${offer.id}`}
+                coordinate={{
+                  latitude: Number(offer.latitude),
+                  longitude: Number(offer.longitude),
+                }}
                 anchor={{ x: 0.5, y: 1 }}
-                onSelected={() => setSelectedEvent(offer)}
+                onPress={() => selectMapEvent(offer)}
+                zIndex={selectedEvent?.id === offer.id ? 2 : 1}
               >
                 <View
                   style={styles.eventMarkerWrap}
@@ -496,9 +567,9 @@ export default function MapScreen() {
                     )}
                   </View>
                 </View>
-              </RNMapbox.PointAnnotation>
+              </Marker>
             ))}
-          </RNMapbox.MapView>
+          </MapView>
         ) : (
           <View style={styles.locationLoadingState}>
             {locationLoading ? (
@@ -556,19 +627,148 @@ export default function MapScreen() {
         )}
       </View>
 
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Nearby Events Map</Text>
-        <View style={{ width: 44 }} />
+      <View style={[styles.mapHeader, { top: Math.max(insets.top, 12) + 8 }]}>
+        <View style={styles.searchRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={22} color={theme.COLORS.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={20} color={theme.COLORS.textSecondary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search events or areas"
+              placeholderTextColor="#94a3b8"
+              style={styles.searchInput}
+              returnKeyType="search"
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={19} color="#94a3b8" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowEventList((current) => !current)}
+          >
+            <Ionicons name="options-outline" size={21} color={theme.COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
+          <TouchableOpacity
+            style={[styles.categoryChip, activeFilter === "happy-hours" && styles.categoryChipActive]}
+            onPress={() => setActiveFilter("happy-hours")}
+          >
+            <Text style={[styles.categoryChipText, activeFilter === "happy-hours" && styles.categoryChipTextActive]}>
+              Happy Hours
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.categoryChip, activeFilter === "events" && styles.categoryChipActive]}
+            onPress={() => setActiveFilter("events")}
+          >
+            <Text style={[styles.categoryChipText, activeFilter === "events" && styles.categoryChipTextActive]}>
+              Events
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.categoryChip}
+            onPress={() => router.push("/home/dining")}
+          >
+            <Text style={styles.categoryChipText}>Restaurants</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.categoryChip}
+            onPress={() => router.push("/home/spa")}
+          >
+            <Text style={styles.categoryChipText}>Spa</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <MapFilterChips
+          active={mapFilters}
+          onToggle={(filter) =>
+            setMapFilters((current) => toggleMapFilter(current, filter))
+          }
+        />
       </View>
 
-      <View style={styles.bottomCard}>
+      <View style={[styles.mapActions, { top: Math.max(insets.top, 12) + 220 }]}>
+        <TouchableOpacity style={styles.mapActionButton} onPress={recenterMap}>
+          <Ionicons name="locate" size={21} color={theme.COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.listViewButton,
+          { bottom: Math.max(insets.bottom, 16) + (cardEvent || showEventList ? height * 0.5 : 128) },
+        ]}
+        onPress={() => setShowEventList((current) => !current)}
+      >
+        <Ionicons name={showEventList ? "map-outline" : "list"} size={20} color="#ffffff" />
+        <Text style={styles.listViewButtonText}>{showEventList ? "Map View" : "List View"}</Text>
+      </TouchableOpacity>
+
+      <View style={[styles.bottomCard, { bottom: Math.max(insets.bottom, 16) + 8 }]}>
         {offersLoading ? (
           <View style={styles.loadingState}>
             <ActivityIndicator size="small" color="#2563eb" />
             <Text style={styles.loadingText}>Loading nearby events...</Text>
+          </View>
+        ) : showEventList ? (
+          <View>
+            <View style={styles.listHeader}>
+              <View>
+                <Text style={styles.listTitle}>
+                  {activeFilter === "happy-hours" ? "Happy Hours" : "Nearby Events"}
+                </Text>
+                <Text style={styles.listSubtitle}>
+                  {visibleEvents.length} {visibleEvents.length === 1 ? "place" : "places"} found
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.listCloseButton} onPress={() => setShowEventList(false)}>
+                <Ionicons name="close" size={19} color={theme.COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.eventList}>
+              {visibleEvents.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.eventListItem}
+                  activeOpacity={0.85}
+                  onPress={() => selectMapEvent(event)}
+                >
+                  {event.imageUrl ? (
+                    <Image source={{ uri: event.imageUrl }} style={styles.eventListImage} />
+                  ) : (
+                    <View style={[styles.eventListImage, styles.eventListImageFallback]}>
+                      <Ionicons name="calendar" size={22} color="#ffffff" />
+                    </View>
+                  )}
+                  <View style={styles.eventListBody}>
+                    <Text style={styles.eventListTitle} numberOfLines={1}>{event.title}</Text>
+                    <Text style={styles.eventListOffer} numberOfLines={1}>{event.tag || event.time}</Text>
+                    <Text style={styles.eventListMeta} numberOfLines={1}>
+                      {event.distance} · {event.venue}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+                </TouchableOpacity>
+              ))}
+              {!visibleEvents.length ? (
+                <View style={styles.noResults}>
+                  <Ionicons name="search-outline" size={28} color="#94a3b8" />
+                  <Text style={styles.noResultsTitle}>No matching places</Text>
+                  <Text style={styles.noResultsText}>Try another search or select Events.</Text>
+                </View>
+              ) : null}
+            </ScrollView>
           </View>
         ) : cardEvent ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.cardScrollContent}>
@@ -636,7 +836,9 @@ export default function MapScreen() {
                 </Text>
               </View>
               <View style={styles.infoTile}>
-                <Text style={styles.infoLabel}>Ticket</Text>
+                <Text style={styles.infoLabel}>
+                  {cardEvent.entityType === "happy_hour" ? "Offer price" : "Ticket"}
+                </Text>
                 <Text style={styles.infoValue}>
                   {cardEvent.ticketPrice != null ? cardEvent.ticketPrice : "Check details"}
                 </Text>
@@ -858,33 +1060,113 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 15,
   },
-  topBar: {
+  mapHeader: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 50 : 30,
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
+    gap: 10,
+  },
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 9,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.COLORS.white,
+    width: 46,
+    height: 46,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
     justifyContent: "center",
     alignItems: "center",
     ...theme.SHADOWS.card,
   },
-  topBarTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+  searchBox: {
+    flex: 1,
+    height: 48,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    ...theme.SHADOWS.card,
+  },
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    fontSize: 14,
     color: theme.COLORS.textPrimary,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  },
+  filterButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    ...theme.SHADOWS.card,
+  },
+  categoryRow: {
+    gap: 8,
+    paddingRight: 12,
+  },
+  categoryChip: {
+    height: 40,
+    justifyContent: "center",
+    paddingHorizontal: 17,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  categoryChipActive: {
+    borderColor: theme.COLORS.primary,
+    backgroundColor: theme.COLORS.primary,
+  },
+  categoryChipText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  categoryChipTextActive: {
+    color: "#ffffff",
+  },
+  mapActions: {
+    position: "absolute",
+    right: 16,
+  },
+  mapActionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
+    ...theme.SHADOWS.card,
+  },
+  listViewButton: {
+    position: "absolute",
+    right: 16,
+    zIndex: 20,
+    minWidth: 126,
+    height: 52,
     borderRadius: 20,
-    overflow: "hidden",
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    backgroundColor: theme.COLORS.primary,
+    ...theme.SHADOWS.primary,
+  },
+  listViewButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
   },
   loadingState: {
     flexDirection: "row",
@@ -906,7 +1188,6 @@ const styles = StyleSheet.create({
   },
   bottomCard: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? 40 : 24,
     left: 20,
     right: 20,
     backgroundColor: theme.COLORS.white,
@@ -914,6 +1195,92 @@ const styles = StyleSheet.create({
     padding: 16,
     maxHeight: height * 0.5,
     ...theme.SHADOWS.primary,
+  },
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  listTitle: {
+    color: theme.COLORS.textPrimary,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  listSubtitle: {
+    marginTop: 2,
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  listCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f1f5f9",
+  },
+  eventList: {
+    maxHeight: height * 0.34,
+  },
+  eventListItem: {
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f7",
+  },
+  eventListImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#dbeafe",
+  },
+  eventListImageFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.primary,
+  },
+  eventListBody: {
+    flex: 1,
+  },
+  eventListTitle: {
+    color: theme.COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  eventListOffer: {
+    marginTop: 3,
+    color: "#b45309",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  eventListMeta: {
+    marginTop: 4,
+    color: theme.COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  noResults: {
+    minHeight: 170,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  noResultsTitle: {
+    marginTop: 10,
+    color: theme.COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  noResultsText: {
+    marginTop: 5,
+    color: theme.COLORS.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
   },
   cardScrollContent: {
     paddingBottom: 4,

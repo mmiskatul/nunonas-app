@@ -16,6 +16,11 @@ export type ProviderPayload = {
   priceRange?: string | null;
   distance?: string | null;
   distance_km?: number | string | null;
+  is_open_now?: boolean | null;
+  offer_text?: string | null;
+  near_metro?: boolean | null;
+  metro_station?: string | null;
+  nearest_metro_station?: string | null;
   location?: string | null;
   address?: string | null;
   city?: string | null;
@@ -54,6 +59,7 @@ export type ProviderOffer = {
 
 export type ProviderCollectionResponse<TItem = ProviderPayload> = {
   items?: TItem[];
+  total?: number;
 };
 
 export type NormalizedRestaurant = {

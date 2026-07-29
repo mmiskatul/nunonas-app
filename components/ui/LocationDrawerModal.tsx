@@ -14,13 +14,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import RNMapbox from "@rnmapbox/maps";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../constants/theme";
-import { MAPBOX_ACCESS_TOKEN, reverseGeocode } from "../../lib/mapbox";
+import { reverseGeocode } from "../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
 
 const { width, height } = Dimensions.get("window");
-RNMapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
@@ -113,18 +112,19 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                     <Text style={styles.locationUnavailableText}>Enable location to preview your area.</Text>
                   </View>
                 ) : (
-                  <RNMapbox.MapView
+                  <MapView
                     style={styles.staticMap}
-                    styleURL={RNMapbox.StyleURL.Street}
-                  >
-                    <RNMapbox.Camera
-                      defaultSettings={{
-                        centerCoordinate: [gpsCoords.longitude, gpsCoords.latitude],
-                        zoomLevel: 14,
-                      }}
-                    />
-                    <RNMapbox.UserLocation visible />
-                  </RNMapbox.MapView>
+                    provider={PROVIDER_GOOGLE}
+                    initialRegion={{
+                      latitude: gpsCoords.latitude,
+                      longitude: gpsCoords.longitude,
+                      latitudeDelta: 0.03,
+                      longitudeDelta: 0.03,
+                    }}
+                    showsUserLocation
+                    showsMyLocationButton={false}
+                    toolbarEnabled={false}
+                  />
                 )}
 
                 {/* Open Live Map Button (Overlaid on Map Preview) */}

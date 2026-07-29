@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, View, Text, Image, Dimensions } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
-import { buildStaticMapUrl, forwardGeocode } from "../../../../../lib/mapbox";
+import { buildStaticMapUrl, forwardGeocode } from "../../../../../lib/google-maps";
 
 const { width } = Dimensions.get("window");
 

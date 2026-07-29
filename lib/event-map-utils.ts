@@ -90,6 +90,7 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     venue: item.venue ?? item.location ?? "Venue available",
     address,
     tag: item.offer_text ?? item.offerText ?? item.event_type ?? item.eventType ?? "Live Event",
+    offerText: item.offer_text ?? item.offerText ?? "",
     eventType: item.event_type ?? item.eventType ?? "Event",
     imageUrl: item.banner_image_url ?? item.cover_image_url ?? item.image_url ?? item.imageUrl ?? "",
     description: item.description ?? "",
@@ -107,7 +108,13 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     currentBookingCode: item.current_booking_code ?? item.currentBookingCode ?? "",
     isSoldOut: Boolean(item.is_sold_out ?? item.isSoldOut),
     remainingCapacity,
-    detailRoute: item.detail_route ?? item.detailRoute ?? (item.id ? `/home/events/${item.id}` : null),
+    isOpenNow: Boolean(item.is_open_now ?? item.isOpenNow),
+    detailRoute:
+      item.detail_route ??
+      item.detailRoute ??
+      ((item.entity_type ?? item.entityType ?? "event") === "event" && item.id
+        ? `/home/events/${item.id}`
+        : null),
   };
 }
 

@@ -1,26 +1,40 @@
-// @ts-nocheck
 import React from "react";
 import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const DiningSearch = () => {
+type Props = {
+  value: string;
+  onSearch: (value: string) => void;
+  mapMode?: boolean;
+};
+
+const DiningSearch = ({ value, onSearch, mapMode = false }: Props) => {
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color={theme.COLORS.textSecondary} />
         <TextInput
-          placeholder="Search restaurants..."
+          value={value}
+          onChangeText={onSearch}
+          placeholder={mapMode ? "Search restaurants or areas" : "Search restaurants..."}
           placeholderTextColor={theme.COLORS.textSecondary}
           style={styles.input}
+          returnKeyType="search"
         />
-        <TouchableOpacity style={styles.filterBtn}>
-          <Ionicons
-            name="options-outline"
-            size={20}
-            color={theme.COLORS.textSecondary}
-          />
-        </TouchableOpacity>
+        {value ? (
+          <TouchableOpacity
+            style={styles.filterBtn}
+            onPress={() => onSearch("")}
+            accessibilityLabel="Clear restaurant search"
+          >
+            <Ionicons
+              name="close"
+              size={20}
+              color={theme.COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );

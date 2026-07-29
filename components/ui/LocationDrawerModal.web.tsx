@@ -11,9 +11,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
-import { reverseGeocode } from "../../lib/mapbox";
+import { reverseGeocode } from "../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
-import MapboxWebMap from "./MapboxWebMap";
+import GoogleWebMap from "./GoogleWebMap";
 
 const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocation }) => {
   const router = useRouter();
@@ -66,7 +66,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
           <View style={styles.card}>
             <View style={styles.preview}>
               {coordinates ? (
-                <MapboxWebMap center={coordinates} height={230} zoomLevel={14} />
+                <GoogleWebMap center={coordinates} height={230} zoomLevel={14} />
               ) : (
                 <View style={styles.mapPlaceholder}>
                   {loading ? (

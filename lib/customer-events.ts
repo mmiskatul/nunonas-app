@@ -26,6 +26,10 @@ export async function getMapEvents(limit = 50): Promise<CustomerMapEventsRespons
   return apiGetAuth(`${CUSTOMER_BASE}/map/events${buildQuery({ limit })}`) as Promise<CustomerMapEventsResponse>;
 }
 
+export async function getMapHappyHours(limit = 50): Promise<CustomerMapEventsResponse> {
+  return apiGetAuth(`${CUSTOMER_BASE}/map/happy-hours${buildQuery({ limit })}`) as Promise<CustomerMapEventsResponse>;
+}
+
 export async function getEvent(eventId: string): Promise<CustomerMapEventPayload> {
   return apiGetAuth(`${CUSTOMER_BASE}/events/${eventId}`) as Promise<CustomerMapEventPayload>;
 }

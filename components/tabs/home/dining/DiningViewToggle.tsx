@@ -1,18 +1,23 @@
-// @ts-nocheck
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import theme from "../../../../constants/theme";
 
-const DiningViewToggle = ({ count = 248 }) => {
-  const [view, setView] = useState("list");
+export type DiningView = "list" | "map";
 
+type Props = {
+  count: number;
+  view: DiningView;
+  onChange: (view: DiningView) => void;
+};
+
+const DiningViewToggle = ({ count, view, onChange }: Props) => {
   return (
     <View style={styles.container}>
       <View style={styles.toggleGroup}>
         <TouchableOpacity
           style={[styles.toggleBtn, view === "list" && styles.activeBtn]}
-          onPress={() => setView("list")}
+          onPress={() => onChange("list")}
         >
           <Ionicons
             name="list"
@@ -29,7 +34,7 @@ const DiningViewToggle = ({ count = 248 }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggleBtn, view === "map" && styles.activeBtn]}
-          onPress={() => setView("map")}
+          onPress={() => onChange("map")}
         >
           <Ionicons
             name="map"

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,13 +24,19 @@ import {
   buildDirectionsUrl,
   getDrivingRoute,
   reverseGeocode,
-} from "../lib/mapbox";
+} from "../lib/google-maps";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
+import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
 import { listNearbyOffers } from "../lib/nearby-offers";
-import MapboxWebMap from "../components/ui/MapboxWebMap";
+import GoogleWebMap from "./ui/GoogleWebMap";
+import MapFilterChips, {
+  toggleMapFilter,
+  type MapFilterKey,
+} from "./ui/MapFilterChips";
 const DEFAULT_ADDRESS = "Location unavailable";
 type BookingState = { loading: boolean; code: string; status: string };
+type MapFilter = "happy-hours" | "events";
 
 export default function MapScreenWeb() {
   const router = useRouter();
@@ -40,6 +47,9 @@ export default function MapScreenWeb() {
   const [addressText, setAddressText] = useState(DEFAULT_ADDRESS);
   const [offersLoading, setOffersLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<MapFilter>("events");
+  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventDetails, setSelectedEventDetails] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventLoading, setSelectedEventLoading] = useState(false);
@@ -87,6 +97,13 @@ export default function MapScreenWeb() {
         const initialEvent = selectedId
           ? items.find((item) => item.id === selectedId) ?? null
           : null;
+        if (initialEvent) {
+          setActiveFilter(
+            initialEvent.entityType === "happy_hour"
+              ? "happy-hours"
+              : "events",
+          );
+        }
         setSelectedEvent(initialEvent);
       } catch (error: unknown) {
         console.error("Error loading offers for web map:", error);
@@ -120,6 +137,9 @@ export default function MapScreenWeb() {
           status: selectedEvent.currentBookingStatus ?? "",
         });
 
+        if (selectedEvent.entityType === "happy_hour") {
+          return;
+        }
         const eventPayload = await getEvent(selectedEvent.id);
         if (cancelled) {
           return;
@@ -191,6 +211,10 @@ export default function MapScreenWeb() {
   const resolvedBookingCode = bookingState.code || cardEvent?.currentBookingCode || "";
   const resolvedBookingStatusText = resolvedBookingCode
     ? `${resolvedBookingStatus || "confirmed"} - ${resolvedBookingCode}`
+    : cardEvent?.entityType === "happy_hour"
+      ? cardEvent.isOpenNow
+        ? "Live now"
+        : "Scheduled"
     : resolvedBookingStatus || "Not booked yet";
   const canShowInlineBooking =
     cardEvent?.bookingMode === "simple" &&
@@ -202,6 +226,40 @@ export default function MapScreenWeb() {
     (typeof cardEvent?.distanceKm === "number" ? `${cardEvent.distanceKm.toFixed(1)} km away` : cardEvent?.distance ?? "Nearby");
   const routeDurationText = routeInfo?.durationText ?? "Select for route";
   const routeLocationText = cardEvent?.address ?? cardEvent?.locationLabel ?? cardEvent?.location ?? "Location available";
+  const visibleEvents = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const matchingEvents = nearbyEvents.filter((event) => {
+      const searchableText = [
+        event.title,
+        event.eventType,
+        event.tag,
+        event.venue,
+        event.address,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
+        return false;
+      }
+      return activeFilter === "happy-hours"
+        ? event.entityType === "happy_hour"
+        : event.entityType === "event";
+    });
+    return filterMapEvents(
+      attachEventDistances(matchingEvents, markerCoords),
+      mapFilters,
+    );
+  }, [activeFilter, mapFilters, markerCoords, nearbyEvents, searchQuery]);
+
+  useEffect(() => {
+    if (
+      selectedEvent &&
+      !visibleEvents.some((event) => event.id === selectedEvent.id)
+    ) {
+      setSelectedEvent(null);
+    }
+  }, [selectedEvent, visibleEvents]);
 
   const openDirections = async () => {
     const targetEvent = selectedEventDetails ?? selectedEvent;
@@ -232,7 +290,7 @@ export default function MapScreenWeb() {
       router.push(detailRoute);
       return;
     }
-    if (eventDetailsId) {
+    if (eventDetailsId && selectedEvent?.entityType !== "happy_hour") {
       router.push(`/home/events/${eventDetailsId}`);
     }
   };
@@ -295,20 +353,75 @@ export default function MapScreenWeb() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={theme.COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Nearby Events</Text>
-        <View style={styles.topBarSpacer} />
+        <View style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color={theme.COLORS.textSecondary} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search events or areas"
+            placeholderTextColor="#94a3b8"
+            style={styles.searchInput}
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={19} color="#94a3b8" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setMapFilters(["near-me"])}
+          accessibilityLabel="Reset map filters"
+        >
+          <Ionicons name="options-outline" size={21} color={theme.COLORS.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
+          <TouchableOpacity
+            style={[styles.categoryChip, activeFilter === "happy-hours" && styles.categoryChipActive]}
+            onPress={() => setActiveFilter("happy-hours")}
+          >
+            <Text style={[styles.categoryChipText, activeFilter === "happy-hours" && styles.categoryChipTextActive]}>
+              Happy Hours
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.categoryChip, activeFilter === "events" && styles.categoryChipActive]}
+            onPress={() => setActiveFilter("events")}
+          >
+            <Text style={[styles.categoryChipText, activeFilter === "events" && styles.categoryChipTextActive]}>
+              Events
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.categoryChip} onPress={() => router.push("/home/dining")}>
+            <Text style={styles.categoryChipText}>Restaurants</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.categoryChip} onPress={() => router.push("/home/spa")}>
+            <Text style={styles.categoryChipText}>Spa</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <MapFilterChips
+          active={mapFilters}
+          onToggle={(filter) =>
+            setMapFilters((current) => toggleMapFilter(current, filter))
+          }
+        />
+
         <View style={styles.mapShell}>
           {markerCoords ? (
-            <MapboxWebMap
+            <GoogleWebMap
               center={
                 selectedEvent?.latitude != null && selectedEvent?.longitude != null
                   ? { latitude: selectedEvent.latitude, longitude: selectedEvent.longitude }
                   : markerCoords
               }
-              markers={nearbyEvents.map((event) => ({
+              markers={visibleEvents.map((event) => ({
                 id: String(event.id),
                 title: event.title,
                 latitude: event.latitude,
@@ -368,7 +481,7 @@ export default function MapScreenWeb() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.eventPills}
             >
-              {nearbyEvents.map((offer) => (
+              {visibleEvents.map((offer) => (
                 <TouchableOpacity
                   key={String(offer.id)}
                   style={[
@@ -433,7 +546,9 @@ export default function MapScreenWeb() {
                     <Text style={styles.infoValue}>{cardEvent.date ?? "Date TBA"}</Text>
                   </View>
                   <View style={styles.infoTile}>
-                    <Text style={styles.infoLabel}>Booking</Text>
+                    <Text style={styles.infoLabel}>
+                      {cardEvent.entityType === "happy_hour" ? "Status" : "Booking"}
+                    </Text>
                     <Text style={styles.infoValue} numberOfLines={1}>
                       {resolvedBookingStatusText}
                     </Text>
@@ -503,9 +618,11 @@ export default function MapScreenWeb() {
             ) : (
               <View style={styles.emptyStateCard}>
                 <Ionicons name="location-outline" size={28} color={theme.COLORS.primary} />
-                <Text style={styles.emptyStateTitle}>Select an event</Text>
+                <Text style={styles.emptyStateTitle}>
+                  Select {activeFilter === "happy-hours" ? "a Happy Hour" : "an event"}
+                </Text>
                 <Text style={styles.emptyStateText}>
-                  Choose any event from the list to load its directions and booking options.
+                  Choose an item from the list to load its location, directions, and available actions.
                 </Text>
               </View>
             )}
@@ -527,7 +644,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
   },
   backButton: {
     width: 42,
@@ -537,18 +654,63 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: theme.COLORS.white,
   },
-  topBarTitle: {
-    fontSize: 18,
-    fontWeight: "800",
+  searchBox: {
+    flex: 1,
+    height: 46,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: theme.COLORS.white,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    fontSize: 14,
     color: theme.COLORS.textPrimary,
   },
-  topBarSpacer: {
-    width: 42,
+  filterButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.COLORS.white,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   content: {
     paddingHorizontal: 20,
     paddingBottom: 32,
     gap: 14,
+  },
+  categoryRow: {
+    gap: 8,
+    paddingRight: 12,
+  },
+  categoryChip: {
+    height: 40,
+    justifyContent: "center",
+    paddingHorizontal: 17,
+    borderRadius: 999,
+    backgroundColor: theme.COLORS.white,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  categoryChipActive: {
+    borderColor: theme.COLORS.primary,
+    backgroundColor: theme.COLORS.primary,
+  },
+  categoryChipText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  categoryChipTextActive: {
+    color: "#ffffff",
   },
   mapShell: {
     height: 420,

@@ -20,7 +20,7 @@ import QuickAccess from "../../../components/tabs/home/QuickAccess";
 import TrendingNow from "../../../components/tabs/home/TrendingNow";
 import FeaturedExperiences from "../../../components/tabs/home/FeaturedExperiences";
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
-import { reverseGeocode } from "../../../lib/mapbox";
+import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 
