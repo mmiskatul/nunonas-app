@@ -188,17 +188,15 @@ function createEventContent(
 
   const ring = document.createElement("span");
   Object.assign(ring.style, {
-    width: "50px",
-    height: "50px",
-    padding: "3px",
-    overflow: "hidden",
+    width: selected ? "46px" : "40px",
+    height: selected ? "46px" : "40px",
+    padding: "0",
+    overflow: "visible",
+    boxSizing: "border-box",
     borderRadius: "50%",
     border: `3px solid ${selected ? theme.COLORS.primary : "#ffffff"}`,
-    background:
-      marker.kind === "event" || marker.imageUrl
-        ? "#ffffff"
-        : theme.COLORS.primary,
-    color: marker.kind === "event" ? theme.COLORS.primary : "#ffffff",
+    background: marker.imageUrl ? "#ffffff" : "#16a34a",
+    color: marker.imageUrl ? theme.COLORS.primary : "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -211,14 +209,17 @@ function createEventContent(
   if (marker.kind === "event" || marker.kind === "spa" || marker.kind === "hotel") {
     const iconHost = document.createElement("span");
     Object.assign(iconHost.style, {
+      width: "100%",
+      height: "100%",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      lineHeight: "1",
     });
     ring.appendChild(iconHost);
     iconRoot = createRoot(iconHost);
     const Icon = marker.kind === "spa" ? FaSpa : marker.kind === "hotel" ? MdHotel : MdEventNote;
-    iconRoot.render(<Icon size={selected ? 29 : 25} aria-hidden />);
+    iconRoot.render(<Icon size={selected ? 26 : 22} aria-hidden />);
   } else if (marker.imageUrl) {
     const image = document.createElement("img");
     image.src = marker.imageUrl;
@@ -246,13 +247,14 @@ function createRestaurantContent(
   button.title = marker.title;
   button.setAttribute("aria-label", `Restaurant: ${marker.title}`);
   Object.assign(button.style, {
-    width: selected ? "40px" : "34px",
-    height: selected ? "40px" : "34px",
-    padding: "7px",
+    width: selected ? "42px" : "36px",
+    height: selected ? "42px" : "36px",
+    padding: "0",
+    boxSizing: "border-box",
     borderRadius: "50%",
     border: `2px solid ${selected ? theme.COLORS.primary : "#ffffff"}`,
-    background: "#ffffff",
-    color: theme.COLORS.primary,
+    background: "#16a34a",
+    color: "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -262,14 +264,17 @@ function createRestaurantContent(
   });
   const iconHost = document.createElement("span");
   Object.assign(iconHost.style, {
+    width: "100%",
+    height: "100%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    lineHeight: "1",
   });
   button.appendChild(iconHost);
   const iconRoot = createRoot(iconHost);
   iconRoot.render(
-    <GrCafeteria size={selected ? 20 : 17} aria-hidden />,
+    <GrCafeteria size={selected ? 25 : 21} aria-hidden />,
   );
   return { button, iconRoot };
 }
