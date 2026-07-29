@@ -32,14 +32,23 @@ export default function EventMapWeb({ events: suppliedEvents, loading: suppliedL
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const [payload, coords] = await Promise.all([
+      const [eventsResult, locationResult] = await Promise.allSettled([
         listEvents<CustomerMapEventsResponse>({ limit: 100 }),
         getCurrentCoords(),
       ]);
-      const items = Array.isArray(payload?.items) ? payload.items : [];
-      setFetchedEvents(items.map((item: CustomerMapEventPayload) => normalizeMapEvent(item)).filter((event) => event.entityType === "event"));
-      if (coords) setLocation({ latitude: coords.latitude, longitude: coords.longitude });
-      else setError("Turn on location access to see event locations.");
+      if (eventsResult.status === "fulfilled") {
+        const payload = eventsResult.value;
+        const items = Array.isArray(payload?.items) ? payload.items : [];
+        setFetchedEvents(items.map((item: CustomerMapEventPayload) => normalizeMapEvent(item)).filter((event) => event.entityType === "event"));
+      } else {
+        setError("Events could not be loaded.");
+      }
+      if (locationResult.status === "fulfilled" && locationResult.value) {
+        const coords = locationResult.value;
+        setLocation({ latitude: coords.latitude, longitude: coords.longitude });
+      } else {
+        setError("Turn on location access to see event locations.");
+      }
     } catch (value: unknown) {
       setError(value instanceof Error ? value.message : "Events could not be loaded.");
       if (!isExpectedLocationError(value)) console.error("Event map failed:", value);
