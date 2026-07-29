@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { GrCafeteria } from "react-icons/gr";
+import { MdEventNote } from "react-icons/md";
 import { StyleSheet, Text, View } from "react-native";
 import theme from "../../constants/theme";
 import { GOOGLE_MAPS_API_KEY } from "../../lib/google-maps";
@@ -12,7 +13,7 @@ export type GoogleWebMarker = {
   latitude: number;
   longitude: number;
   imageUrl?: string | null;
-  kind?: "event" | "restaurant";
+  kind?: "event" | "happy_hour" | "restaurant";
 };
 
 type Props = {
@@ -149,7 +150,7 @@ function createCurrentLocationContent(): HTMLDivElement {
 function createEventContent(
   marker: GoogleWebMarker,
   selected: boolean,
-): HTMLButtonElement {
+): { button: HTMLButtonElement; iconRoot?: Root } {
   const button = document.createElement("button");
   button.type = "button";
   button.setAttribute("aria-label", `Event location: ${marker.title}`);
@@ -192,8 +193,11 @@ function createEventContent(
     overflow: "hidden",
     borderRadius: "50%",
     border: `3px solid ${selected ? theme.COLORS.primary : "#ffffff"}`,
-    background: marker.imageUrl ? "#ffffff" : theme.COLORS.primary,
-    color: "#ffffff",
+    background:
+      marker.kind === "event" || marker.imageUrl
+        ? "#ffffff"
+        : theme.COLORS.primary,
+    color: marker.kind === "event" ? theme.COLORS.primary : "#ffffff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -202,7 +206,20 @@ function createEventContent(
     boxShadow: "0 5px 12px rgba(15,23,42,0.28)",
     transform: selected ? "scale(1.1)" : "scale(1)",
   });
-  if (marker.imageUrl) {
+  let iconRoot: Root | undefined;
+  if (marker.kind === "event") {
+    const iconHost = document.createElement("span");
+    Object.assign(iconHost.style, {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    });
+    ring.appendChild(iconHost);
+    iconRoot = createRoot(iconHost);
+    iconRoot.render(
+      <MdEventNote size={selected ? 29 : 25} aria-hidden />,
+    );
+  } else if (marker.imageUrl) {
     const image = document.createElement("img");
     image.src = marker.imageUrl;
     image.alt = "";
@@ -217,7 +234,7 @@ function createEventContent(
     ring.textContent = marker.title.slice(0, 1).toUpperCase();
   }
   button.appendChild(ring);
-  return button;
+  return { button, iconRoot };
 }
 
 function createRestaurantContent(
@@ -324,7 +341,9 @@ export default function GoogleWebMap({
             markerIconRoots.push(content.iconRoot);
             advancedMarker.appendChild(content.button);
           } else {
-            advancedMarker.appendChild(createEventContent(marker, selected));
+            const content = createEventContent(marker, selected);
+            if (content.iconRoot) markerIconRoots.push(content.iconRoot);
+            advancedMarker.appendChild(content.button);
           }
           advancedMarker.addListener("click", () => onMarkerPress?.(marker));
           markerInstances.push(advancedMarker);

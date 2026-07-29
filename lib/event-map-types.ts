@@ -31,6 +31,8 @@ export type CustomerMapEventPayload = {
   title?: string;
   name?: string;
   category?: string;
+  event_category?: string;
+  eventCategory?: string;
   event_type?: string;
   eventType?: string;
   event_date?: string;

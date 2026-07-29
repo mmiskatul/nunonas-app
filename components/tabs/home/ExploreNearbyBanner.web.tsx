@@ -189,6 +189,7 @@ const ExploreNearbyBanner = () => {
                   latitude: offer.latitude,
                   longitude: offer.longitude,
                   imageUrl: offer.imageUrl,
+                  kind: offer.entityType === "happy_hour" ? "happy_hour" : "event",
                 }))}
                 selectedId={selectedOffer?.id ? String(selectedOffer.id) : null}
                 onMarkerPress={(marker) => {

@@ -10,7 +10,7 @@ import {
   Dimensions,
   Image,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../../constants/theme";
@@ -67,7 +67,15 @@ function OfferMarker({ offer, onPress, active }) {
           </Text>
         </View>
         <View style={[styles.markerImageRing, active && styles.markerImageRingActive]}>
-          {offer.imageUrl ? (
+          {offer.entityType === "event" ? (
+            <View style={[styles.markerImage, styles.eventMarkerIcon]}>
+              <MaterialIcons
+                name="event-note"
+                size={26}
+                color={theme.COLORS.primary}
+              />
+            </View>
+          ) : offer.imageUrl ? (
             <Image source={{ uri: offer.imageUrl }} style={styles.markerImage} />
           ) : (
             <View style={[styles.markerImage, styles.markerFallback]}>
@@ -467,6 +475,11 @@ const styles = StyleSheet.create({
   markerFallback: {
     alignItems: "center",
     backgroundColor: theme.COLORS.primary,
+    justifyContent: "center",
+  },
+  eventMarkerIcon: {
+    alignItems: "center",
+    backgroundColor: "#ffffff",
     justifyContent: "center",
   },
   markerOfferChip: {

@@ -1,19 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../../../../constants/theme";
+import type { GeoCoordinates } from "../../../../../lib/event-map-types";
 import {
   buildDirectionsUrl,
   buildPlaceUrl,
 } from "../../../../../lib/google-maps";
-import type { GeoCoordinates } from "../../../../../lib/event-map-types";
+import GoogleWebMap from "../../../../ui/GoogleWebMap";
 
 type EventLocationMapProps = {
   venueName?: string;
@@ -22,7 +22,7 @@ type EventLocationMapProps = {
   origin: GeoCoordinates | null;
 };
 
-export default function EventLocationMap({
+export default function EventLocationMapWeb({
   venueName,
   address,
   coordinates,
@@ -32,15 +32,14 @@ export default function EventLocationMap({
   const resolvedAddress = address || "Location not provided.";
 
   const handleDirections = async () => {
-    const url = origin && coordinates
-      ? buildDirectionsUrl(origin, coordinates)
-      : coordinates
-        ? buildPlaceUrl(coordinates)
-        : null;
+    const url =
+      origin && coordinates
+        ? buildDirectionsUrl(origin, coordinates)
+        : coordinates
+          ? buildPlaceUrl(coordinates)
+          : null;
 
-    if (!url) {
-      return;
-    }
+    if (!url) return;
 
     try {
       await Linking.openURL(url);
@@ -55,38 +54,22 @@ export default function EventLocationMap({
 
       <View style={styles.mapContainer}>
         {coordinates ? (
-          <MapView
-            key={`${coordinates.latitude}:${coordinates.longitude}`}
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            initialRegion={{
-              latitude: coordinates.latitude,
-              longitude: coordinates.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.015,
-            }}
-            pitchEnabled={false}
-            rotateEnabled={false}
-            showsUserLocation={Boolean(origin)}
-            showsMyLocationButton={false}
-            toolbarEnabled={false}
-            accessibilityLabel={`Map preview for ${resolvedVenueName}`}
-          >
-            <Marker
-              coordinate={coordinates}
-              title={resolvedVenueName}
-              description={resolvedAddress}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <View style={styles.eventMarker}>
-                <MaterialIcons
-                  name="event-note"
-                  size={24}
-                  color={theme.COLORS.primary}
-                />
-              </View>
-            </Marker>
-          </MapView>
+          <GoogleWebMap
+            center={coordinates}
+            markers={[
+              {
+                id: "event-location",
+                title: resolvedVenueName,
+                latitude: coordinates.latitude,
+                longitude: coordinates.longitude,
+                kind: "event",
+              },
+            ]}
+            selectedId="event-location"
+            height={180}
+            zoomLevel={15}
+            showCenterMarker={false}
+          />
         ) : (
           <View style={styles.mapUnavailable}>
             <Ionicons
@@ -114,7 +97,11 @@ export default function EventLocationMap({
         accessibilityRole="button"
         accessibilityState={{ disabled: !coordinates }}
       >
-        <Ionicons name="navigate" size={20} color={theme.COLORS.textPrimary} />
+        <Ionicons
+          name="navigate"
+          size={20}
+          color={theme.COLORS.textPrimary}
+        />
         <Text style={styles.directionsText}>Get Directions</Text>
       </TouchableOpacity>
     </View>
@@ -138,25 +125,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     backgroundColor: "#f3f4f6",
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-  },
-  eventMarker: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 2,
-    borderColor: theme.COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#ffffff",
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.24,
-    shadowRadius: 5,
-    elevation: 5,
   },
   mapUnavailable: {
     flex: 1,
@@ -204,5 +172,3 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textPrimary,
   },
 });
-
-

@@ -108,7 +108,12 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     address,
     tag: item.offer_text ?? item.offerText ?? item.event_type ?? item.eventType ?? "Live Event",
     offerText: item.offer_text ?? item.offerText ?? "",
-    eventType: item.event_type ?? item.eventType ?? "Event",
+    eventType:
+      item.event_category ??
+      item.eventCategory ??
+      item.event_type ??
+      item.eventType ??
+      "Culture",
     imageUrl: item.banner_image_url ?? item.cover_image_url ?? item.image_url ?? item.imageUrl ?? "",
     description: item.description ?? "",
     capacity: toNumber(item.capacity),

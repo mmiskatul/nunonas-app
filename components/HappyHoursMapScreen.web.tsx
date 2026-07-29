@@ -429,6 +429,7 @@ export default function MapScreenWeb() {
                 latitude: event.latitude,
                 longitude: event.longitude,
                 imageUrl: event.imageUrl,
+                kind: event.entityType === "happy_hour" ? "happy_hour" : "event",
               }))}
               selectedId={selectedEvent?.id ? String(selectedEvent.id) : null}
               onMarkerPress={(marker) => {

@@ -19,7 +19,7 @@ import MapView, {
   Polyline,
   PROVIDER_GOOGLE,
 } from "react-native-maps";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import theme from "../constants/theme";
 import { bookEventTickets, getEvent } from "../lib/customer-events";
@@ -553,7 +553,15 @@ export default function MapScreen() {
                       selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
                     ]}
                   >
-                    {offer.imageUrl ? (
+                    {offer.entityType === "event" ? (
+                      <View style={[styles.eventMarkerImage, styles.eventMarkerEventIcon]}>
+                        <MaterialIcons
+                          name="event-note"
+                          size={26}
+                          color={theme.COLORS.primary}
+                        />
+                      </View>
+                    ) : offer.imageUrl ? (
                       <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
                     ) : (
                       <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
@@ -1013,6 +1021,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: theme.COLORS.primary,
+  },
+  eventMarkerEventIcon: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
   },
   cloudOverlay: {
     ...StyleSheet.absoluteFillObject,
