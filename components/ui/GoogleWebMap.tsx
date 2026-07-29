@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { GrCafeteria } from "react-icons/gr";
 import { FaSpa } from "react-icons/fa";
-import { MdEventNote, MdHotel } from "react-icons/md";
+import { MdEventNote, MdHotel, MdRestaurant } from "react-icons/md";
 import { StyleSheet, Text, View } from "react-native";
 import theme from "../../constants/theme";
 import { GOOGLE_MAPS_API_KEY } from "../../lib/google-maps";
@@ -158,6 +157,7 @@ function createEventContent(
   Object.assign(button.style, {
     minWidth: "96px",
     padding: "0",
+    overflow: "visible",
     border: "0",
     background: "transparent",
     display: "flex",
@@ -270,11 +270,16 @@ function createRestaurantContent(
     alignItems: "center",
     justifyContent: "center",
     lineHeight: "1",
+    overflow: "visible",
   });
   button.appendChild(iconHost);
   const iconRoot = createRoot(iconHost);
   iconRoot.render(
-    <GrCafeteria size={selected ? 25 : 21} aria-hidden />,
+    <MdRestaurant
+      size={selected ? 25 : 21}
+      aria-hidden
+      style={{ display: "block", overflow: "visible" }}
+    />,
   );
   return { button, iconRoot };
 }
