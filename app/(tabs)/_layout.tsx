@@ -2,14 +2,20 @@
 import { Tabs, useSegments, useRouter, useRootNavigationState } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import theme from "../../constants/theme";
 import { restoreSession } from "../../lib/auth-session";
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
   const navState = useRootNavigationState();
+  const tabBarBottomPadding = Math.max(
+    insets.bottom,
+    Platform.OS === "android" ? 16 : 10,
+  );
 
   const [authStatus, setAuthStatus] = useState("loading"); // "loading" | "authorized" | "unauthorized"
 
@@ -75,15 +81,17 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.COLORS.primary,
         tabBarInactiveTintColor: theme.COLORS.textSecondary,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 10,
+          height: 60 + tabBarBottomPadding,
+          paddingBottom: tabBarBottomPadding,
+          paddingTop: 8,
           display: isTabHidden ? "none" : "flex",
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
+          marginBottom: 2,
         },
       }}
     >

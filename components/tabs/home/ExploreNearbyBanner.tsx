@@ -54,6 +54,15 @@ function OfferMarker({ offer, onPress, active }) {
       onSelected={onPress}
     >
       <View style={styles.markerWrap}>
+        <View style={[styles.markerTitleChip, active && styles.markerTitleChipActive]}>
+          <Text
+            style={[styles.markerTitleText, active && styles.markerTitleTextActive]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {offer.title}
+          </Text>
+        </View>
         <View style={[styles.markerImageRing, active && styles.markerImageRingActive]}>
           {offer.imageUrl ? (
             <Image source={{ uri: offer.imageUrl }} style={styles.markerImage} />
@@ -393,6 +402,34 @@ const styles = StyleSheet.create({
   markerWrap: {
     alignItems: "center",
     minWidth: 84,
+  },
+  markerTitleChip: {
+    maxWidth: width * 0.48,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  markerTitleChipActive: {
+    borderColor: theme.COLORS.primary,
+    backgroundColor: theme.COLORS.primary,
+  },
+  markerTitleText: {
+    maxWidth: width * 0.42,
+    color: "#0f172a",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  markerTitleTextActive: {
+    color: "#ffffff",
   },
   markerImageRing: {
     width: 54,

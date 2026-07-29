@@ -65,25 +65,47 @@ export default function MapboxWebMap({
             key={marker.id}
             id={`web-event-${marker.id}`}
             coordinate={[marker.longitude, marker.latitude]}
+            anchor={{ x: 0.5, y: 1 }}
           >
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => onMarkerPress?.(marker)}
-              style={[
-                styles.markerRing,
-                selectedId === marker.id ? styles.markerRingSelected : null,
-              ]}
+              style={styles.eventMarker}
               accessibilityLabel={`Event location: ${marker.title}`}
             >
-              {marker.imageUrl ? (
-                <Image source={{ uri: marker.imageUrl }} style={styles.markerImage} />
-              ) : (
-                <View style={[styles.markerImage, styles.markerFallback]}>
-                  <Text style={styles.markerFallbackText}>
-                    {marker.title.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <View
+                style={[
+                  styles.markerTitle,
+                  selectedId === marker.id ? styles.markerTitleSelected : null,
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={[
+                    styles.markerTitleText,
+                    selectedId === marker.id ? styles.markerTitleTextSelected : null,
+                  ]}
+                >
+                  {marker.title}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.markerRing,
+                  selectedId === marker.id ? styles.markerRingSelected : null,
+                ]}
+              >
+                {marker.imageUrl ? (
+                  <Image source={{ uri: marker.imageUrl }} style={styles.markerImage} />
+                ) : (
+                  <View style={[styles.markerImage, styles.markerFallback]}>
+                    <Text style={styles.markerFallbackText}>
+                      {marker.title.slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           </RNMapbox.MarkerView>
         ))}
@@ -101,6 +123,37 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  eventMarker: {
+    minWidth: 96,
+    alignItems: "center",
+  },
+  markerTitle: {
+    maxWidth: 160,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+  },
+  markerTitleSelected: {
+    borderColor: theme.COLORS.primary,
+    backgroundColor: theme.COLORS.primary,
+  },
+  markerTitleText: {
+    maxWidth: 138,
+    color: "#0f172a",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  markerTitleTextSelected: {
+    color: "#ffffff",
   },
   markerRing: {
     width: 50,

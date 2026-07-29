@@ -461,19 +461,40 @@ export default function MapScreen() {
                 onSelected={() => setSelectedEvent(offer)}
               >
                 <View
-                  style={[
-                    styles.eventMarkerRing,
-                    selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
-                  ]}
+                  style={styles.eventMarkerWrap}
                   accessibilityLabel={`Event location: ${offer.title}`}
                 >
-                  {offer.imageUrl ? (
-                    <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
-                  ) : (
-                    <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
-                      <Ionicons name="calendar" size={18} color="#ffffff" />
-                    </View>
-                  )}
+                  <View
+                    style={[
+                      styles.eventMarkerTitle,
+                      selectedEvent?.id === offer.id && styles.eventMarkerTitleActive,
+                    ]}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={[
+                        styles.eventMarkerTitleText,
+                        selectedEvent?.id === offer.id && styles.eventMarkerTitleTextActive,
+                      ]}
+                    >
+                      {offer.title}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.eventMarkerRing,
+                      selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
+                    ]}
+                  >
+                    {offer.imageUrl ? (
+                      <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
+                    ) : (
+                      <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
+                        <Ionicons name="calendar" size={18} color="#ffffff" />
+                      </View>
+                    )}
+                  </View>
                 </View>
               </RNMapbox.PointAnnotation>
             ))}
@@ -753,6 +774,38 @@ const styles = StyleSheet.create({
     color: theme.COLORS.white,
     fontSize: 13,
     fontWeight: "800",
+  },
+  eventMarkerWrap: {
+    minWidth: 104,
+    alignItems: "center",
+  },
+  eventMarkerTitle: {
+    maxWidth: 170,
+    marginBottom: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  eventMarkerTitleActive: {
+    borderColor: theme.COLORS.primary,
+    backgroundColor: theme.COLORS.primary,
+  },
+  eventMarkerTitleText: {
+    maxWidth: 148,
+    color: "#0f172a",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  eventMarkerTitleTextActive: {
+    color: "#ffffff",
   },
   eventMarkerRing: {
     width: 54,
