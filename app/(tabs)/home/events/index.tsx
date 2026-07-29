@@ -7,7 +7,6 @@ import {
   Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import { listEvents } from "../../../../lib/customer-api";
 import { getErrorMessage, normalizeMapEvent } from "../../../../lib/event-map-utils";
@@ -17,6 +16,7 @@ import EventSearchBar from "../../../../components/tabs/home/events/EventSearchB
 import EventFilterToggle from "../../../../components/tabs/home/events/EventFilterToggle";
 import CategoryFilters from "../../../../components/tabs/home/events/CategoryFilters";
 import EventCard from "../../../../components/tabs/home/events/EventCard";
+import EventMap from "../../../../components/tabs/home/events/EventMap";
 
 const EVENT_CATEGORIES = [
   "All",
@@ -110,7 +110,6 @@ function matchesEventCategory(
 }
 
 export default function EventsScreen() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"List" | "Map">("List");
@@ -155,10 +154,6 @@ export default function EventsScreen() {
   }, [searchQuery]);
 
   const handleTabChange = (nextTab: "List" | "Map") => {
-    if (nextTab === "Map") {
-      router.push("/home/events/map");
-      return;
-    }
     setActiveTab(nextTab);
   };
 
@@ -185,7 +180,7 @@ export default function EventsScreen() {
           }
         />
 
-        <View style={styles.list}>
+        {activeTab === "Map" ? <EventMap /> : <View style={styles.list}>
           {loading ? (
             <View style={styles.centerState}>
               <ActivityIndicator color={theme.COLORS.primary} />
@@ -201,7 +196,7 @@ export default function EventsScreen() {
               <Text style={styles.messageText}>No events matched your search.</Text>
             </View>
           )}
-        </View>
+        </View>}
       </ScrollView>
     </SafeAreaView>
   );
