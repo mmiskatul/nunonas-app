@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { GrCafeteria } from "react-icons/gr";
-import { MdEventNote, MdHotel, MdSpa } from "react-icons/md";
+import { FaSpa } from "react-icons/fa";
+import { MdEventNote, MdHotel } from "react-icons/md";
 import { StyleSheet, Text, View } from "react-native";
 import theme from "../../constants/theme";
 import { GOOGLE_MAPS_API_KEY } from "../../lib/google-maps";
@@ -216,7 +217,7 @@ function createEventContent(
     });
     ring.appendChild(iconHost);
     iconRoot = createRoot(iconHost);
-    const Icon = marker.kind === "spa" ? MdSpa : marker.kind === "hotel" ? MdHotel : MdEventNote;
+    const Icon = marker.kind === "spa" ? FaSpa : marker.kind === "hotel" ? MdHotel : MdEventNote;
     iconRoot.render(<Icon size={selected ? 29 : 25} aria-hidden />);
   } else if (marker.imageUrl) {
     const image = document.createElement("img");
