@@ -23,16 +23,20 @@ import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { updateCurrentLocation } from "../../../lib/customer-api";
+import { useAppDispatch, useAppSelector } from "../../../store/hooks";
+import { addressUpdated, locationLoadingChanged, locationUpdated } from "../../../store/slices/locationSlice";
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
-  const [locationText, setLocationText] = useState("Select location");
   const [refreshing, setRefreshing] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const dispatch = useAppDispatch();
+  const locationText = useAppSelector((state) => state.location.address);
 
   useEffect(() => {
     async function getUserLocation() {
       try {
+        dispatch(locationLoadingChanged(true));
         const coords = await getCurrentCoords();
         if (!coords) return;
 
@@ -48,12 +52,22 @@ export default function HomeScreen() {
           coords.longitude
         );
         if (address) {
-          setLocationText(address);
+          dispatch(locationUpdated({
+            coords: { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy },
+            address,
+          }));
+        } else {
+          dispatch(locationUpdated({
+            coords: { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy },
+          }));
         }
       } catch (error) {
         if (!isExpectedLocationError(error)) {
           console.warn("Could not retrieve current location: ", error);
         }
+      }
+      finally {
+        dispatch(locationLoadingChanged(false));
       }
     }
 
@@ -72,9 +86,10 @@ export default function HomeScreen() {
           location_enabled: true,
         });
         const address = await reverseGeocode(coords.latitude, coords.longitude);
-        if (address) {
-          setLocationText(address);
-        }
+        dispatch(locationUpdated({
+          coords: { latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy },
+          address: address || undefined,
+        }));
       }
     } catch (error) {
       if (!isExpectedLocationError(error)) {
@@ -145,7 +160,7 @@ export default function HomeScreen() {
       <LocationDrawerModal
         visible={isLocationModalVisible}
         onClose={() => setIsLocationModalVisible(false)}
-        onSelectLocation={setLocationText}
+        onSelectLocation={(address) => dispatch(addressUpdated(address))}
         currentLocation={locationText}
       />
     </SafeAreaView>
