@@ -20,7 +20,7 @@ import {
   reverseGeocode,
 } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
-import { listNearbyOffers } from "../../../lib/nearby-offers";
+import { listNearbyMapPins } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 
@@ -90,7 +90,7 @@ function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, s
         zoomLevel={13}
         markers={markerOffers.map((offer) => ({
           id: `nearby-event-${offer.id}`,
-          kind: offer.entityType === "event" ? "event" : offer.serviceType === "spa" ? "spa" : offer.serviceType === "hotel" ? "hotel" : "restaurant",
+          kind: offer.entityType === "event" ? "event" : offer.entityType === "happy_hour" ? "happy_hour" : offer.serviceType === "spa" ? "spa" : offer.serviceType === "hotel" ? "hotel" : "restaurant",
           coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
           onPress: () => setSelectedOffer(offer),
           children: <OfferMarker offer={offer} active={selectedOffer?.id === offer.id} />,
@@ -149,7 +149,7 @@ const ExploreNearbyBanner = () => {
     async function getOffers() {
       try {
         setOffersLoading(true);
-        const items = (await listNearbyOffers(8)).filter((item) => item.entityType === "event");
+        const items = await listNearbyMapPins(50);
         setOffers(items);
         setSelectedOffer(items[0] ?? null);
       } catch (error) {
@@ -318,7 +318,7 @@ const ExploreNearbyBanner = () => {
           <Text style={styles.sparkles}>Nearby on the road, not just by pin</Text>
 
           <Text style={styles.description}>
-            Tap any event marker to preview the event and driving distance.
+            Explore restaurants, hotels, spas, events, and Happy Hours nearby.
           </Text>
 
           {selectedOffer ? (

@@ -18,7 +18,7 @@ import {
   reverseGeocode,
 } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
-import { listNearbyOffers } from "../../../lib/nearby-offers";
+import { listNearbyMapPins } from "../../../lib/nearby-offers";
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 import GoogleWebMap from "../../ui/GoogleWebMap";
@@ -77,7 +77,7 @@ const ExploreNearbyBanner = () => {
     async function loadOffers() {
       try {
         setOffersLoading(true);
-        const items = (await listNearbyOffers(6)).filter((item) => item.entityType === "event");
+        const items = await listNearbyMapPins(50);
         setOffers(items);
         setSelectedOffer(items[0] ?? null);
       } catch (error) {
@@ -189,7 +189,7 @@ const ExploreNearbyBanner = () => {
                   latitude: offer.latitude,
                   longitude: offer.longitude,
                   imageUrl: offer.imageUrl,
-                  kind: offer.entityType === "happy_hour" ? "happy_hour" : "event",
+                  kind: offer.entityType,
                 }))}
                 selectedId={selectedOffer?.id ? String(selectedOffer.id) : null}
                 onMarkerPress={(marker) => {
