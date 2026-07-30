@@ -2,6 +2,7 @@ import type { DrivingRoute, GeoCoordinates } from "./event-map-types";
 
 export const GOOGLE_MAPS_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
 type StaticMapOptions = {
   center?: string | GeoCoordinates | null;
@@ -179,45 +180,39 @@ export async function getDrivingRoute(
   origin: GeoCoordinates | null,
   destination: GeoCoordinates | null,
 ): Promise<DrivingRoute | null> {
-  if (!GOOGLE_MAPS_API_KEY || !origin || !destination) return null;
+  if (!MAPBOX_ACCESS_TOKEN || !origin || !destination) return null;
   try {
     const params = new URLSearchParams({
-      origin: `${origin.latitude},${origin.longitude}`,
-      destination: `${destination.latitude},${destination.longitude}`,
-      mode: "driving",
-      alternatives: "false",
-      key: GOOGLE_MAPS_API_KEY,
+      alternatives: "true",
+      geometries: "geojson",
+      overview: "full",
+      steps: "false",
+      access_token: MAPBOX_ACCESS_TOKEN,
     });
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`,
-    );
+    const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?${params.toString()}`);
     if (!response.ok) return null;
     const data = (await response.json()) as {
-      status?: string;
       routes?: Array<{
-        overview_polyline?: { points?: string };
-        legs?: Array<{
-          distance?: { value?: number; text?: string };
-          duration?: { value?: number; text?: string };
-        }>;
+        distance?: number;
+        duration?: number;
+        geometry?: { coordinates?: Array<[number, number]> };
       }>;
     };
-    const route = data.routes?.[0];
-    const leg = route?.legs?.[0];
-    if (data.status !== "OK" || !route) return null;
-    const distanceMeters = leg?.distance?.value ?? null;
-    const durationSeconds = leg?.duration?.value ?? null;
+    const route = [...(data.routes ?? [])]
+      .filter((candidate) => Number.isFinite(candidate.distance) && Number.isFinite(candidate.duration))
+      .sort((left, right) => Number(left.distance) - Number(right.distance))[0];
+    if (!route) return null;
+    const distanceMeters = route.distance ?? null;
+    const durationSeconds = route.duration ?? null;
     return {
-      distanceMeters,
-      distanceText: leg?.distance?.text ?? formatDistance(distanceMeters),
-      durationSeconds,
-      durationText: leg?.duration?.text ?? formatDuration(durationSeconds),
-      coordinates: route.overview_polyline?.points
-        ? decodePolyline(route.overview_polyline.points)
-        : [],
+      distanceMeters: Number.isFinite(distanceMeters) ? distanceMeters : null,
+      distanceText: formatDistance(distanceMeters),
+      durationSeconds: Number.isFinite(durationSeconds) ? durationSeconds : null,
+      durationText: formatDuration(durationSeconds),
+      coordinates: (route.geometry?.coordinates ?? []).map(([longitude, latitude]) => ({ latitude, longitude })),
     };
   } catch (error) {
-    console.error("Google directions failed:", error);
+    console.error("Mapbox directions failed:", error);
     return null;
   }
 }
