@@ -190,8 +190,9 @@ export default function SearchScreen() {
             </TouchableOpacity>;
           })}
         </View> : null}
+        {!searchQuery.trim() ? <>
         {/* Current Location Card */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationCard} 
           activeOpacity={0.8}
           onPress={() => router.push("/map")}
@@ -233,6 +234,7 @@ export default function SearchScreen() {
             />
           ))}
         </View>
+        </> : null}
 
         {/* Recent Searches */}
         {recentSearches.length > 0 && (
