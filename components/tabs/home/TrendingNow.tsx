@@ -1,5 +1,5 @@
 ﻿// @ts-nocheck
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -13,9 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
-import { getTrendingHotels } from "../../../lib/customer-api";
-import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
 import { calculateDistanceKm, formatDistanceKm } from "../../../lib/distance";
+import { useTrendingQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
+import { useAppSelector } from "../../../store/hooks";
 
 function getLocationLabel(item) {
   const rawLocation =
@@ -33,11 +33,11 @@ function getLocationLabel(item) {
 
 function normalizeTrendingItems(payload) {
   if (Array.isArray(payload)) {
-    return payload.filter((item) => (item?.id ?? item?._id) && (item?.name ?? item?.title));
+    return dedupeFeedItems(payload).filter((item) => (item?.name ?? item?.title));
   }
 
   if (Array.isArray(payload?.items)) {
-    return payload.items.filter((item) => (item?.id ?? item?._id) && (item?.name ?? item?.title));
+    return dedupeFeedItems(payload.items).filter((item) => (item?.name ?? item?.title));
   }
 
   return [];
@@ -109,43 +109,25 @@ function getDetailRoute(item) {
 
 const TrendingNow = () => {
   const router = useRouter();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, isError, refetch } = useTrendingQuery(12);
+  const coords = useAppSelector((state) => state.location.coords);
+  const items = useMemo(() => normalizeTrendingItems(data).map((item) => {
+    const distanceKm = calculateDistanceKm(coords, item);
+    return distanceKm == null ? item : { ...item, distance_km: distanceKm };
+  }), [data, coords]);
 
-  const fetchTrending = useCallback(async () => {
-    try {
-      // Calculate a fallback distance on-device as well. This keeps the card
-      // accurate even when the API response was generated before the latest
-      // GPS sync completed.
-      const [trendingHotels, coords] = await Promise.all([
-        getTrendingHotels(12),
-        getCurrentCoords().catch((error) => {
-          if (!isExpectedLocationError(error)) console.warn("Could not read location for distance:", error);
-          return null;
-        }),
-      ]);
-      const normalized = normalizeTrendingItems(trendingHotels).map((item) => {
-        const distanceKm = calculateDistanceKm(coords, item);
-        return distanceKm == null ? item : { ...item, distance_km: distanceKm };
-      });
-      setItems(normalized);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchTrending();
-  }, [fetchTrending]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator color={theme.COLORS.primary} />
       </View>
     );
+  }
+
+  if (isError) {
+    return <TouchableOpacity style={styles.errorState} onPress={() => refetch()}>
+      <Text style={styles.emptyText}>Trending is unavailable. Tap to retry.</Text>
+    </TouchableOpacity>;
   }
 
   return (
@@ -332,6 +314,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  errorState: { marginHorizontal: 20, marginTop: 20, padding: 16, borderRadius: 14, backgroundColor: theme.COLORS.surface },
   providerImage: {
     position: "absolute",
     top: 14,

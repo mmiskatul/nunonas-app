@@ -25,11 +25,13 @@ import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location
 import { updateCurrentLocation } from "../../../lib/customer-api";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { addressUpdated, locationLoadingChanged, locationUpdated } from "../../../store/slices/locationSlice";
+import { useQueryClient } from "@tanstack/react-query";
+import { homeQueryKeys } from "../../../lib/queries/homeQueries";
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshVersion, setRefreshVersion] = useState(0);
+  const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const locationText = useAppSelector((state) => state.location.address);
 
@@ -96,8 +98,7 @@ export default function HomeScreen() {
         console.warn("Could not refresh home location: ", error);
       }
     } finally {
-      // Remount data-backed home sections so each section refetches its data.
-      setRefreshVersion((version) => version + 1);
+      await queryClient.invalidateQueries({ queryKey: homeQueryKeys.all });
       setRefreshing(false);
     }
   };
@@ -149,11 +150,11 @@ export default function HomeScreen() {
         </View>
 
         {/* Components */}
-        <ExploreNearbyBanner key={`nearby-${refreshVersion}`} />
-        <PlanForMeBanner key={`plan-${refreshVersion}`} />
-        <QuickAccess key={`quick-${refreshVersion}`} />
-        <TrendingNow key={`trending-${refreshVersion}`} />
-        <FeaturedExperiences key={`featured-${refreshVersion}`} />
+        <ExploreNearbyBanner />
+        <PlanForMeBanner />
+        <QuickAccess />
+        <TrendingNow />
+        <FeaturedExperiences />
       </ScrollView>
 
       {/* Location Selection Modal Component */}

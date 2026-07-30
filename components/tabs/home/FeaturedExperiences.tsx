@@ -1,18 +1,18 @@
 // @ts-nocheck
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
-import { getHomeFeed } from "../../../lib/customer-api";
 import { formatDistanceKm } from "../../../lib/distance";
 import { calculateDistanceKm } from "../../../lib/distance";
-import { getCurrentCoords } from "../../../lib/location";
+import { useHomeFeedQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
+import { useAppSelector } from "../../../store/hooks";
 
 function normalizeItems(payload) {
   const items = payload?.featured_experiences;
-  return Array.isArray(items) ? items.filter((item) => item?.id || item?._id) : [];
+  return Array.isArray(items) ? dedupeFeedItems(items) : [];
 }
 
 function routeFor(item) {
@@ -27,29 +27,21 @@ function routeFor(item) {
 
 const FeaturedExperiences = () => {
   const router = useRouter();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, isError, refetch } = useHomeFeedQuery();
+  const coords = useAppSelector((state) => state.location.coords);
+  const items = useMemo(() => normalizeItems(data).map((item) => {
+    const distanceKm = calculateDistanceKm(coords, item);
+    return distanceKm == null ? item : { ...item, distance_km: distanceKm };
+  }), [data, coords]);
 
-  const fetchItems = useCallback(async () => {
-    try {
-      const [feed, coords] = await Promise.all([getHomeFeed(), getCurrentCoords().catch(() => null)]);
-      setItems(normalizeItems(feed).map((item) => {
-        const distanceKm = calculateDistanceKm(coords, item);
-        return distanceKm == null ? item : { ...item, distance_km: distanceKm };
-      }));
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
-
-  if (loading) {
+  if (isLoading) {
     return <ActivityIndicator style={styles.loading} color={theme.COLORS.primary} />;
+  }
+
+  if (isError) {
+    return <TouchableOpacity style={styles.status} onPress={() => refetch()}>
+      <Text style={styles.statusText}>Featured experiences are unavailable. Tap to retry.</Text>
+    </TouchableOpacity>;
   }
 
   if (!items.length) return null;
@@ -104,6 +96,8 @@ const styles = StyleSheet.create({
   ratingText: { fontSize: 14, fontWeight: "700", color: theme.COLORS.textPrimary },
   separator: { color: theme.COLORS.textSecondary },
   distance: { fontSize: 13, color: theme.COLORS.textSecondary },
+  status: { marginHorizontal: 20, marginTop: 24, padding: 16, borderRadius: 14, backgroundColor: theme.COLORS.surface },
+  statusText: { textAlign: "center", color: theme.COLORS.textSecondary, fontSize: 13 },
   actionBtn: { height: 36, borderRadius: 8, width: 110, paddingHorizontal: 12 },
   actionBtnText: { fontSize: 14 },
 });

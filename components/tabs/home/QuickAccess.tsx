@@ -1,6 +1,6 @@
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   StyleSheet,
   Text,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import theme from "../../../constants/theme";
-import { listCategories } from "../../../lib/customer-api";
+import { useCategoriesQuery } from "../../../lib/queries/homeQueries";
 import { DiningIcon, HotelIcon, SpaIcon } from "../../ui/SVGIcons";
 
 function EventsQuickAccessIcon({ width = 18, height = 20, color }: { width?: number; height?: number; color?: string }) {
@@ -86,42 +86,18 @@ function formatCount(category: CategoryKey, count: number | null) {
 
 export default function QuickAccess() {
   const router = useRouter();
-  const [counts, setCounts] = useState(INITIAL_COUNTS);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadCategoryCounts() {
-      try {
-        const response = await listCategories<CategoryCountResponse>();
-        if (!active) {
-          return;
-        }
-        const items = Array.isArray(response?.items)
-          ? response.items
-          : Array.isArray(response?.data)
-            ? response.data
-            : [];
-        const nextCounts = { ...INITIAL_COUNTS };
-        for (const item of items) {
-          const key = String(item.key ?? "").trim().toLowerCase() as CategoryKey;
-          if (!(key in nextCounts)) {
-            continue;
-          }
-          const count = Number(item.count);
-          nextCounts[key] = Number.isFinite(count) ? Math.max(0, count) : 0;
-        }
-        setCounts(nextCounts);
-      } catch {
-        // Keep every shortcut usable even if the count request is unavailable.
-      }
+  const { data, isLoading } = useCategoriesQuery();
+  const counts = { ...INITIAL_COUNTS };
+  const response = data as CategoryCountResponse | undefined;
+  const items = Array.isArray(response?.items) ? response.items : Array.isArray(response?.data) ? response.data : [];
+  for (const item of items as CategoryCountItem[]) {
+    const key = String(item.key ?? "").trim().toLowerCase() as CategoryKey;
+    if (key in counts) {
+      const count = Number(item.count);
+      counts[key] = Number.isFinite(count) ? Math.max(0, count) : 0;
     }
-
-    void loadCategoryCounts();
-    return () => {
-      active = false;
-    };
-  }, []);
+  }
+  const visibleCategories = CATEGORIES.filter((category) => isLoading || (counts[category.key] ?? 0) > 0);
 
   return (
     <View style={styles.container}>
@@ -138,7 +114,7 @@ export default function QuickAccess() {
       </View>
 
       <View style={styles.list}>
-        {CATEGORIES.map((category) => {
+        {visibleCategories.map((category) => {
           const IconComponent = category.Icon;
           const countLabel = formatCount(category.key, counts[category.key]);
           return (
