@@ -1,9 +1,3 @@
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-const googleMapsAndroidApiKey =
-  process.env.GOOGLE_MAPS_ANDROID_API_KEY || googleMapsApiKey;
-const googleMapsIosApiKey =
-  process.env.GOOGLE_MAPS_IOS_API_KEY || googleMapsApiKey;
-
 export default {
   expo: {
     name: "Activity Planner",
@@ -22,9 +16,6 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.nuno.activityplanner",
-      config: {
-        googleMapsApiKey: googleMapsIosApiKey,
-      },
     },
     android: {
       adaptiveIcon: {
@@ -33,11 +24,6 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.nuno.activityplanner",
-      config: {
-        googleMaps: {
-          apiKey: googleMapsAndroidApiKey,
-        },
-      },
       permissions: [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
