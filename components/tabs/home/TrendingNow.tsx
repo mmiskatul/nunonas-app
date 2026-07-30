@@ -83,11 +83,11 @@ function getItemType(item) {
 
 function getTypeIcon(item) {
   const type = getItemType(item);
-  if (type === "Restaurant") return "restaurant-outline";
-  if (type === "Spa") return "sparkles-outline";
-  if (type === "Event") return "calendar-outline";
+  if (type === "Restaurant") return "restaurant";
+  if (type === "Spa") return "leaf";
+  if (type === "Event") return "calendar";
   if (type === "Happy Hour") return "pricetag-outline";
-  return "bed-outline";
+  return "bed";
 }
 function getDetailRoute(item) {
   if (item?.detail_route) {

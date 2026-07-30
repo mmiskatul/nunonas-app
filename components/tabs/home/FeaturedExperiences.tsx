@@ -30,6 +30,15 @@ function typeLabel(item) {
   return "Recommended experience";
 }
 
+function typeIcon(item) {
+  const type = String(item?.service_type ?? item?.entity_type ?? item?.category ?? "").toLowerCase();
+  if (type === "restaurant" || type === "dining") return "restaurant";
+  if (type === "event") return "calendar";
+  if (type === "spa") return "leaf";
+  if (type === "hotel") return "bed";
+  return "sparkles-outline";
+}
+
 function routeFor(item) {
   if (item.detail_route) return item.detail_route;
   const id = item.id ?? item._id;
@@ -80,11 +89,11 @@ const FeaturedExperiences = () => {
           <TouchableOpacity key={`${String(item.service_type ?? item.entity_type ?? item.category ?? "experience")}-${id}-${index}`} style={styles.card} activeOpacity={0.9} onPress={() => router.push(route)}>
               {image ? <Image source={{ uri: image }} style={styles.image} /> : (
                 <View style={[styles.image, styles.imagePlaceholder]}>
-                  <Ionicons name="business-outline" size={34} color={theme.COLORS.border} />
+                  <Ionicons name={typeIcon(item)} size={34} color={theme.COLORS.border} />
                 </View>
               )}
               <View style={styles.cardContent}>
-                <View style={styles.typePill}><Ionicons name="sparkles-outline" size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View>
+                <View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
                 <View style={styles.detailsRow}>
                   {item.avg_rating != null && <>
