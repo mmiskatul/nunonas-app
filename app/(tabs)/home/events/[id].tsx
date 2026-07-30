@@ -20,6 +20,8 @@ import EventLocationMap from "../../../../components/tabs/home/events/details/Ev
 import EventFooter from "../../../../components/tabs/home/events/details/EventFooter";
 import BookingPriceSummary from "../../../../components/ui/BookingPriceSummary";
 import PromoCodeInput from "../../../../components/ui/PromoCodeInput";
+import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
+import { hydrateSavedItems, markSaved, markUnsaved, savedKey } from "../../../../store/slices/savedSlice";
 
 type BookingState = {
   loading: boolean;
@@ -39,8 +41,9 @@ export default function EventDetailsScreen() {
     loading: false,
     code: "",
   });
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const dispatch = useAppDispatch();
+  const saved = useAppSelector((state) => Boolean(eventId && state.saved.keys[savedKey("event", eventId)]));
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState("");
   const [quote, setQuote] = useState(null);
@@ -69,7 +72,7 @@ export default function EventDetailsScreen() {
         }
         setEvent(normalizeMapEvent(eventPayload));
         setOrigin(coords ? { latitude: coords.latitude, longitude: coords.longitude } : null);
-        setSaved(Boolean(savedPayload.items?.some((item) => item.entity_type === "event" && item.entity_id === eventId)));
+        dispatch(hydrateSavedItems(savedPayload.items ?? []));
       } catch (error: unknown) {
         if (!cancelled) {
           setError(getErrorMessage(error, "Could not load event details."));
@@ -86,7 +89,7 @@ export default function EventDetailsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [dispatch, eventId]);
 
   const loadQuote = async (code = promoCode) => {
     if (!eventId) return null;
@@ -118,7 +121,6 @@ export default function EventDetailsScreen() {
       return;
     }
     const nextSaved = !saved;
-    setSaved(nextSaved);
     setSaving(true);
     try {
       if (nextSaved) {
@@ -126,9 +128,9 @@ export default function EventDetailsScreen() {
       } else {
         await removeSaved("event", eventId);
       }
+      dispatch(nextSaved ? markSaved({ entityType: "event", entityId: eventId }) : markUnsaved({ entityType: "event", entityId: eventId }));
       showToast(nextSaved ? "Event saved." : "Event removed from saved items.", { type: "success" });
     } catch (error: unknown) {
-      setSaved(!nextSaved);
       showToast(getErrorMessage(error, "Could not update saved events."), { type: "error" });
     } finally {
       setSaving(false);

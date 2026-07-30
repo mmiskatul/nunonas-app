@@ -16,6 +16,8 @@ import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import { listSaved, removeSaved } from "../../lib/customer-api";
 import { showToast } from "../../lib/toast";
+import { useAppDispatch } from "../../store/hooks";
+import { hydrateSavedItems, markUnsaved } from "../../store/slices/savedSlice";
 
 
 // Import Components
@@ -99,11 +101,14 @@ export default function SaveScreen() {
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const dispatch = useAppDispatch();
 
   const fetchSaved = useCallback(async () => {
     try {
       const data = await listSaved();
-      setSavedItems(normalizeSavedItems(data));
+      const items = normalizeSavedItems(data);
+      setSavedItems(items);
+      dispatch(hydrateSavedItems(items));
     } catch (err) {
       console.warn("Failed to load saved items:", err.message);
       setSavedItems([]);
@@ -111,13 +116,14 @@ export default function SaveScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
 
   const handleRemoveSaved = useCallback(async (entityType, entityId) => {
     try {
       await removeSaved(entityType, entityId);
+      dispatch(markUnsaved({ entityType, entityId: String(entityId) }));
       setSavedItems((prev) => prev.filter((item) => (item.id ?? item._id) !== entityId));
       showToast("Removed from saved items.", { type: "success" });
     } catch (err) {

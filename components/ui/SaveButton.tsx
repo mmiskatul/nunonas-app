@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import theme from "../../constants/theme";
 import { addSaved, listSaved, removeSaved } from "../../lib/customer-api";
 import { showToast } from "../../lib/toast";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { hydrateSavedItems, markSaved, markUnsaved, savedKey } from "../../store/slices/savedSlice";
 
 type SaveButtonProps = {
   entityType: string;
@@ -12,35 +14,33 @@ type SaveButtonProps = {
 };
 
 export default function SaveButton({ entityType, entityId, compact = false }: SaveButtonProps) {
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const dispatch = useAppDispatch();
+  const saved = useAppSelector((state) => Boolean(entityId && state.saved.keys[savedKey(entityType, entityId)]));
+  const hydrated = useAppSelector((state) => state.saved.hydrated);
 
   useEffect(() => {
     let active = true;
-    if (!entityId) return () => { active = false; };
+    if (!entityId || hydrated) return () => { active = false; };
     listSaved<{ items?: Array<{ entity_type?: string; entity_id?: string }> }>()
       .then((payload) => {
         if (!active) return;
-        setSaved(Boolean(payload?.items?.some((item) =>
-          String(item.entity_type).toLowerCase() === entityType.toLowerCase() &&
-          String(item.entity_id) === String(entityId),
-        )));
+        dispatch(hydrateSavedItems(payload?.items ?? []));
       })
       .catch(() => undefined);
     return () => { active = false; };
-  }, [entityId, entityType]);
+  }, [dispatch, entityId, entityType, hydrated]);
 
   const toggle = async () => {
     if (!entityId || saving) return;
     const next = !saved;
-    setSaved(next);
     setSaving(true);
     try {
       if (next) await addSaved(entityType, String(entityId));
       else await removeSaved(entityType, String(entityId));
+      dispatch(next ? markSaved({ entityType, entityId: String(entityId) }) : markUnsaved({ entityType, entityId: String(entityId) }));
       showToast(next ? "Saved successfully." : "Removed from saved items.", { type: "success" });
     } catch (error) {
-      setSaved(!next);
       showToast(error instanceof Error ? error.message : "Could not update saved items.", { type: "error" });
     } finally {
       setSaving(false);
