@@ -95,12 +95,19 @@ export default function RestaurantDetailsScreen() {
   const coverImage = restaurant.imageUrl
     ? { uri: restaurant.imageUrl }
     : require("../../../../assets/images/discover-experience.png");
+  const headerImages = [
+    coverImage,
+    ...galleryItems
+      .map((item) => item.image_url ?? item.cover_image_url ?? item.image)
+      .filter(Boolean)
+      .map((uri) => ({ uri })),
+  ].filter((item, index, all) => index === all.findIndex((candidate) => candidate.uri === item.uri));
 
   return (
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[3]}>
-        <ImageHeader image={coverImage} />
+        <ImageHeader image={coverImage} images={headerImages} />
         <DetailsInfo restaurant={restaurant} offers={offers} />
         <DetailsActions restaurantId={restaurantId} />
         <DetailsTabs activeTab={activeTab} onTabPress={setActiveTab} />

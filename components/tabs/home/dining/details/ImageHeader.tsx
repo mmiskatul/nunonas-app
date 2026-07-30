@@ -1,11 +1,12 @@
 // @ts-nocheck
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
   Image,
   TouchableOpacity,
   Dimensions,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -13,12 +14,24 @@ import theme from "../../../../../constants/theme";
 
 const { width } = Dimensions.get("window");
 
-const ImageHeader = ({ image }) => {
+const ImageHeader = ({ image, images = [] }) => {
   const router = useRouter();
+  const slides = useMemo(() => (images.length ? images : [image]), [image, images]);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} />
+      <FlatList
+        data={slides}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(_, index) => `header-image-${index}`}
+        onMomentumScrollEnd={(event) => {
+          setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / width));
+        }}
+        renderItem={({ item }) => <Image source={item} style={styles.image} />}
+      />
 
       {/* Top Overlay Buttons */}
       <View style={styles.overlay}>
@@ -39,11 +52,10 @@ const ImageHeader = ({ image }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Pagination Indicators (Static placeholder) */}
       <View style={styles.pagination}>
-        <View style={[styles.dot, styles.activeDot]} />
-        <View style={styles.dot} />
-        <View style={styles.dot} />
+        {slides.map((_, index) => (
+          <View key={`header-dot-${index}`} style={[styles.dot, index === activeIndex && styles.activeDot]} />
+        ))}
       </View>
     </View>
   );
