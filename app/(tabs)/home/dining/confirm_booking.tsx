@@ -13,6 +13,7 @@ import {
 } from "../../../../lib/customer-api";
 import { getFirstQueryParam, getErrorMessage } from "../../../../lib/event-map-utils";
 import { normalizeRestaurant } from "../../../../lib/provider-utils";
+import { showToast } from "../../../../lib/toast";
 
 // Import Modular Components
 import ConfirmSummaryCard from "../../../../components/tabs/home/dining/details/booking/confirm_booking/ConfirmSummaryCard";
@@ -150,7 +151,7 @@ export default function ConfirmBookingScreen() {
         }
       });
     } catch (error) {
-      Alert.alert("Booking failed", getErrorMessage(error, "Could not confirm restaurant booking."));
+        showToast(getErrorMessage(error, "Could not confirm restaurant booking."), { type: "error" });
     } finally {
       setSubmitting(false);
     }

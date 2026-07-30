@@ -18,6 +18,7 @@ import { getHotel } from "../../../../lib/customer-api";
 import { getFirstQueryParam } from "../../../../lib/event-map-utils";
 import { getErrorMessage, normalizeHotel } from "../../../../lib/provider-utils";
 import type { NormalizedHotel, ProviderPayload } from "../../../../lib/provider-types";
+import { showToast } from "../../../../lib/toast";
 import {
   bookHotelRoom,
   bookHotelStay,
@@ -213,7 +214,7 @@ export default function HotelBookingScreen() {
       });
     } catch (error: unknown) {
       setError(getErrorMessage(error, "Could not complete hotel booking."));
-      Alert.alert("Booking failed", getErrorMessage(error, "Could not complete hotel booking."));
+        showToast(getErrorMessage(error, "Could not complete hotel booking."), { type: "error" });
     } finally {
       setSubmitting(false);
     }

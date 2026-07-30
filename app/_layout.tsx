@@ -7,6 +7,7 @@ import { AppState } from "react-native";
 import { useEffect } from "react";
 import { store } from "../store/store";
 import { queryClient } from "../lib/queryClient";
+import ToastHost from "../components/ui/ToastHost";
 
 export default function RootLayout() {
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function RootLayout() {
               headerShown: false,
             }}
           />
+          <ToastHost />
         </SafeAreaProvider>
       </QueryClientProvider>
     </Provider>

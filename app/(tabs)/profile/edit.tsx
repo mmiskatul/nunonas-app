@@ -21,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import theme from "../../../constants/theme";
 import { getMe, updatePersonalDetails, uploadProfileImage } from "../../../lib/customer-api";
 import ProfileAvatarPlaceholder from "../../../components/tabs/profile/ProfileAvatarPlaceholder";
+import { showToast } from "../../../lib/toast";
 
 function InputField({
   label,
@@ -105,7 +106,7 @@ const EditProfileScreen = () => {
         });
       } catch (error) {
         if (active) {
-          Alert.alert("Profile unavailable", error.message);
+          showToast(error.message || "Profile unavailable.", { type: "error" });
         }
       } finally {
         if (active) {
@@ -156,9 +157,10 @@ const EditProfileScreen = () => {
         imageUrl,
       }));
       setSelectedImage(null);
+      showToast("Profile updated successfully.", { type: "success" });
       router.back();
     } catch (error) {
-      Alert.alert("Save failed", error.message);
+      showToast(error.message || "Could not save your profile.", { type: "error" });
     } finally {
       setUploadingImage(false);
       setSaving(false);

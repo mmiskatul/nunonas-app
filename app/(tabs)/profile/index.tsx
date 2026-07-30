@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
+import { showToast } from "../../../lib/toast";
 import { logoutSession } from "../../../lib/auth-session";
 import { getMe, updateNotificationPreferences } from "../../../lib/customer-api";
 
@@ -91,7 +92,7 @@ export default function ProfileScreen() {
     } catch (error) {
       if (key === "nearby_events") setNearbyEvents(previous);
       else setBookingReminders(previous);
-      Alert.alert("Notification settings", error?.message || "Could not save this preference.");
+      showToast(error?.message || "Could not save this preference.", { type: "error" });
     }
   };
 

@@ -8,6 +8,7 @@ import Button from "../../../../components/ui/Button";
 import PageHeader from "../../../../components/ui/PageHeader";
 import { bookSpa, getSpa, getSpaBookingQuote } from "../../../../lib/customer-api";
 import { getErrorMessage, normalizeSpa } from "../../../../lib/provider-utils";
+import { showToast } from "../../../../lib/toast";
 
 // Import Modular Components
 import SpaSummary from "../../../../components/tabs/home/spa/details/booking/SpaSummary";
@@ -102,7 +103,7 @@ export default function SpaConfirmBookingScreen() {
         },
       });
     } catch (bookingError) {
-      Alert.alert("Booking failed", getErrorMessage(bookingError, "Could not send this spa booking request."));
+      showToast(getErrorMessage(bookingError, "Could not send this spa booking request."), { type: "error" });
     } finally {
       setSubmitting(false);
     }

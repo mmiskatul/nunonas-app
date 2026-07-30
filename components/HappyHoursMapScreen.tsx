@@ -31,6 +31,7 @@ import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/ev
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { attachEventDistances } from "../lib/map-filtering";
 import { listNearbyMapPins, normalizeNearbyMapPins } from "../lib/nearby-offers";
+import { showToast } from "../lib/toast";
 
 const { width, height } = Dimensions.get("window");
 const NEARBY_MAP_ZOOM = 14;
@@ -388,15 +389,10 @@ export default function MapScreen() {
             }
           : current
       );
-      Alert.alert(
-        "Ticket booked",
-        bookingCode
-          ? `Your booking reference is ${bookingCode}.`
-          : "Your event ticket has been booked."
-      );
+      showToast(bookingCode ? `Ticket booked: ${bookingCode}` : "Your event ticket has been booked.", { type: "success" });
     } catch (error: unknown) {
       setBookingState((current) => ({ ...current, loading: false }));
-      Alert.alert("Booking failed", getErrorMessage(error, "Could not book tickets right now."));
+      showToast(getErrorMessage(error, "Could not book tickets right now."), { type: "error" });
     }
   };
   const cardEvent = selectedEventDetails ?? selectedEvent;
