@@ -39,6 +39,17 @@ function typeIcon(item) {
   return "sparkles-outline";
 }
 
+function cardImage(item) {
+  const type = String(item?.service_type ?? item?.entity_type ?? item?.category ?? "").toLowerCase();
+  if (type === "event") {
+    return [item?.banner_image_url, item?.event_banner_image_url, item?.banner_url]
+      .find((value) => typeof value === "string" && value.trim());
+  }
+
+  return [item?.profile_image_url, item?.cover_image_url, item?.image_url, item?.image]
+    .find((value) => typeof value === "string" && value.trim());
+}
+
 function routeFor(item) {
   if (item.detail_route) return item.detail_route;
   const id = item.id ?? item._id;
@@ -84,8 +95,7 @@ const FeaturedExperiences = () => {
           const id = item.id ?? item._id;
           const title = item.name ?? item.title ?? item.business_name;
           const route = routeFor(item);
-          const image = [item.profile_image_url, item.cover_image_url, item.image_url, item.image]
-            .find((value) => typeof value === "string" && value.trim());
+          const image = cardImage(item);
           return (
           <TouchableOpacity key={`${String(item.service_type ?? item.entity_type ?? item.category ?? "experience")}-${id}-${index}`} style={styles.card} activeOpacity={0.9} onPress={() => router.push(route)}>
               {image ? <Image source={{ uri: image }} style={styles.image} /> : (

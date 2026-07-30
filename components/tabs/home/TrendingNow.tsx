@@ -89,6 +89,18 @@ function getTypeIcon(item) {
   if (type === "Happy Hour") return "pricetag-outline";
   return "bed";
 }
+
+function getCardImage(item) {
+  const type = getItemType(item);
+  if (type === "Event") {
+    return [item?.banner_image_url, item?.event_banner_image_url, item?.banner_url]
+      .find((value) => typeof value === "string" && value.trim());
+  }
+
+  return [item?.profile_image_url, item?.cover_image_url, item?.image_url, item?.image]
+    .find((value) => typeof value === "string" && value.trim());
+}
+
 function getDetailRoute(item) {
   if (item?.detail_route) {
     return item.detail_route;
@@ -150,8 +162,7 @@ const TrendingNow = () => {
             const itemKey = `${getItemType(item).toLowerCase()}-${itemId}-${index}`;
             const title = item.name ?? item.title;
             const detailRoute = getDetailRoute(item);
-            const imageUrl = [item.profile_image_url, item.cover_image_url, item.image_url, item.image]
-              .find((value) => typeof value === "string" && value.trim());
+            const imageUrl = getCardImage(item);
 
             return (
               <View key={itemKey} style={styles.cardShadow}>
