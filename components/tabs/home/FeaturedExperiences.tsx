@@ -7,12 +7,27 @@ import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
 import { formatDistanceKm } from "../../../lib/distance";
 import { calculateDistanceKm } from "../../../lib/distance";
-import { useHomeFeedQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
+import { useHomeFeedQuery, useTrendingQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
 import { useAppSelector } from "../../../store/hooks";
 
 function normalizeItems(payload) {
   const items = payload?.featured_experiences;
   return Array.isArray(items) ? dedupeFeedItems(items) : [];
+}
+
+function normalizeFallbackItems(payload) {
+  const items = Array.isArray(payload) ? payload : payload?.items;
+  return Array.isArray(items) ? dedupeFeedItems(items) : [];
+}
+
+function typeLabel(item) {
+  const type = String(item?.service_type ?? item?.entity_type ?? item?.category ?? "experience").toLowerCase();
+  if (type === "restaurant" || type === "dining") return "Dining experience";
+  if (type === "hotel") return "Stay experience";
+  if (type === "spa") return "Wellness experience";
+  if (type === "event") return "Event experience";
+  if (type === "happy_hour" || type === "happy hour") return "Happy Hour experience";
+  return "Recommended experience";
 }
 
 function routeFor(item) {
@@ -28,17 +43,22 @@ function routeFor(item) {
 const FeaturedExperiences = () => {
   const router = useRouter();
   const { data, isLoading, isError, refetch } = useHomeFeedQuery();
+  const trendingQuery = useTrendingQuery(12);
   const coords = useAppSelector((state) => state.location.coords);
-  const items = useMemo(() => normalizeItems(data).map((item) => {
+  const items = useMemo(() => {
+    const featured = normalizeItems(data);
+    const source = featured.length ? featured : normalizeFallbackItems(trendingQuery.data);
+    return source.map((item) => {
     const distanceKm = calculateDistanceKm(coords, item);
     return distanceKm == null ? item : { ...item, distance_km: distanceKm };
-  }), [data, coords]);
+    });
+  }, [data, trendingQuery.data, coords]);
 
-  if (isLoading) {
+  if (isLoading || (trendingQuery.isLoading && !normalizeItems(data).length)) {
     return <ActivityIndicator style={styles.loading} color={theme.COLORS.primary} />;
   }
 
-  if (isError) {
+  if (isError && !items.length) {
     return <TouchableOpacity style={styles.status} onPress={() => refetch()}>
       <Text style={styles.statusText}>Featured experiences are unavailable. Tap to retry.</Text>
     </TouchableOpacity>;
@@ -49,6 +69,7 @@ const FeaturedExperiences = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Featured Experiences</Text>
+      <Text style={styles.sectionSubtitle}>Curated from the best nearby places</Text>
       <View style={styles.list}>
         {items.map((item, index) => {
           const id = item.id ?? item._id;
@@ -63,6 +84,7 @@ const FeaturedExperiences = () => {
                 </View>
               )}
               <View style={styles.cardContent}>
+                <View style={styles.typePill}><Ionicons name="sparkles-outline" size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
                 <View style={styles.detailsRow}>
                   {item.avg_rating != null && <>
@@ -85,7 +107,8 @@ const FeaturedExperiences = () => {
 const styles = StyleSheet.create({
   loading: { marginTop: 30 },
   container: { paddingHorizontal: 20, marginTop: 30, paddingBottom: 40 },
-  sectionTitle: { fontSize: 20, fontWeight: "800", color: theme.COLORS.textPrimary, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: "800", color: theme.COLORS.textPrimary, marginBottom: 3 },
+  sectionSubtitle: { fontSize: 13, color: theme.COLORS.textSecondary, marginBottom: 16 },
   list: { gap: 16 },
   card: { flexDirection: "row", backgroundColor: theme.COLORS.white, borderRadius: 24, borderWidth: 1, borderColor: theme.COLORS.border, padding: 12, alignItems: "center", ...theme.SHADOWS.card },
   image: { width: 100, height: 100, borderRadius: 16 },
@@ -100,6 +123,8 @@ const styles = StyleSheet.create({
   statusText: { textAlign: "center", color: theme.COLORS.textSecondary, fontSize: 13 },
   actionBtn: { height: 36, borderRadius: 8, width: 110, paddingHorizontal: 12 },
   actionBtnText: { fontSize: 14 },
+  typePill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 7, borderRadius: 999, backgroundColor: "#eef2ff" },
+  typeText: { color: theme.COLORS.primary, fontSize: 10, fontWeight: "800" },
 });
 
 export default FeaturedExperiences;
