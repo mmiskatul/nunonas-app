@@ -89,7 +89,7 @@ export default function NativeMapboxMap({
 }
 
 const styles = StyleSheet.create({
-  container: { width: "100%", overflow: "hidden", backgroundColor: "#dbeafe" },
+  container: { width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#dbeafe" },
   map: { flex: 1 },
   unavailable: { alignItems: "center", justifyContent: "center", padding: 16 },
   errorText: { color: "#475569", fontSize: 12, fontWeight: "600", textAlign: "center" },
