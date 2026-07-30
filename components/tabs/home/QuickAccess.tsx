@@ -7,9 +7,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import theme from "../../../constants/theme";
 import { listCategories } from "../../../lib/customer-api";
-import { DiningIcon, EventsIcon, HotelIcon, SpaIcon } from "../../ui/SVGIcons";
+import { DiningIcon, HotelIcon, SpaIcon } from "../../ui/SVGIcons";
+
+function EventsQuickAccessIcon({ width = 18, height = 20, color }: { width?: number; height?: number; color?: string }) {
+  return <MaterialIcons name="emoji-events" size={Math.max(width, height)} color={color || "#A855F7"} />;
+}
 
 type CategoryKey = "restaurant" | "event" | "spa" | "hotel";
 
@@ -42,7 +47,7 @@ const CATEGORIES: QuickAccessCategory[] = [
   {
     key: "event",
     name: "Events",
-    Icon: EventsIcon,
+    Icon: EventsQuickAccessIcon,
     color: "#f5f3ff",
     route: "/home/events",
   },
