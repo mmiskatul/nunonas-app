@@ -20,6 +20,9 @@ export default function EventCard({ event }: EventCardProps) {
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         <Image source={imageSource} style={styles.image} resizeMode="cover" />
+        {event.profileImageUrl ? (
+          <Image source={{ uri: event.profileImageUrl }} style={styles.providerImage} />
+        ) : null}
         {event.tag ? (
           <View
             style={[
@@ -93,6 +96,17 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  providerImage: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    backgroundColor: "#e2e8f0",
   },
   tag: {
     position: "absolute",

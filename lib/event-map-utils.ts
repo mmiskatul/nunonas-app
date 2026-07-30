@@ -111,6 +111,7 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
       item.eventType ??
       "Culture",
     imageUrl: item.banner_image_url ?? item.cover_image_url ?? item.image_url ?? item.imageUrl ?? "",
+    profileImageUrl: item.profile_image_url ?? "",
     description: item.description ?? "",
     capacity: toNumber(item.capacity),
     ticketPrice: ticketPriceValue != null ? `${ticketPriceValue}` : null,

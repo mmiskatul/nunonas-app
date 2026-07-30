@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import NativeMapboxMap from "./NativeMapboxMap";
 import theme from "../../constants/theme";
 import { reverseGeocode } from "../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
@@ -112,19 +112,7 @@ const LocationDrawerModal = ({ visible, onClose, onSelectLocation, currentLocati
                     <Text style={styles.locationUnavailableText}>Enable location to preview your area.</Text>
                   </View>
                 ) : (
-                  <MapView
-                    style={styles.staticMap}
-                    provider={PROVIDER_GOOGLE}
-                    initialRegion={{
-                      latitude: gpsCoords.latitude,
-                      longitude: gpsCoords.longitude,
-                      latitudeDelta: 0.03,
-                      longitudeDelta: 0.03,
-                    }}
-                    showsUserLocation
-                    showsMyLocationButton={false}
-                    toolbarEnabled={false}
-                  />
+                  <NativeMapboxMap center={gpsCoords} height={230} zoomLevel={14} />
                 )}
 
                 {/* Open Live Map Button (Overlaid on Map Preview) */}

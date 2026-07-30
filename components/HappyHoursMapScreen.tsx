@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -14,11 +14,7 @@ import {
   TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
-import MapView, {
-  Marker,
-  Polyline,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import NativeMapboxMap from "./ui/NativeMapboxMap";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import theme from "../constants/theme";
@@ -122,7 +118,7 @@ const CLOUDS_CONFIG: CloudConfig[] = [
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<any>(null);
   const transitionProgress = useRef(new Animated.Value(0)).current;
   const cloudOpacity = useRef(new Animated.Value(0)).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
@@ -484,96 +480,33 @@ export default function MapScreen() {
     <View style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
         {markerCoords ? (
-          <MapView
-            ref={mapRef}
-            style={StyleSheet.absoluteFillObject}
-            provider={PROVIDER_GOOGLE}
-            initialRegion={{
-              latitude: markerCoords.latitude,
-              longitude: markerCoords.longitude,
-              latitudeDelta: NEARBY_REGION_DELTA,
-              longitudeDelta: NEARBY_REGION_DELTA,
-            }}
-            showsUserLocation
-            showsMyLocationButton={false}
-            toolbarEnabled={false}
-            mapPadding={{ top: 240, right: 20, bottom: 180, left: 20 }}
-          >
-            {routeInfo?.coordinates?.length ? (
-              <Polyline
-                coordinates={routeInfo.coordinates}
-                strokeColor="#2563eb"
-                strokeWidth={5}
-                lineCap="round"
-                lineJoin="round"
-              />
-            ) : null}
-
-            {visibleEvents.map((offer) => (
-              <Marker
-                key={String(offer.id)}
-                identifier={`event-${offer.id}`}
-                coordinate={{
-                  latitude: Number(offer.latitude),
-                  longitude: Number(offer.longitude),
-                }}
-                anchor={{ x: 0.5, y: 1 }}
-                onPress={() => selectMapEvent(offer)}
-                zIndex={selectedEvent?.id === offer.id ? 2 : 1}
-              >
-                <View
-                  style={styles.eventMarkerWrap}
-                  accessibilityLabel={`Event location: ${offer.title}`}
-                >
-                  <View
-                    style={[
-                      styles.eventMarkerTitle,
-                      selectedEvent?.id === offer.id && styles.eventMarkerTitleActive,
-                    ]}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      style={[
-                        styles.eventMarkerTitleText,
-                        selectedEvent?.id === offer.id && styles.eventMarkerTitleTextActive,
-                      ]}
-                    >
-                      {offer.title}
-                    </Text>
+                    <NativeMapboxMap
+            center={markerCoords}
+            zoomLevel={selectedEvent ? SELECTED_EVENT_ZOOM : NEARBY_MAP_ZOOM}
+            showUserLocation
+            routeCoordinates={routeInfo?.coordinates ?? []}
+            markers={visibleEvents.map((offer) => ({
+              id: `event-${offer.id}`,
+              coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
+              onPress: () => selectMapEvent(offer),
+              children: (
+                <View style={styles.eventMarkerWrap} accessibilityLabel={`Event location: ${offer.title}`}>
+                  <View style={[styles.eventMarkerTitle, selectedEvent?.id === offer.id && styles.eventMarkerTitleActive]}>
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.eventMarkerTitleText, selectedEvent?.id === offer.id && styles.eventMarkerTitleTextActive]}>{offer.title}</Text>
                   </View>
-                  <View
-                    style={[
-                      styles.eventMarkerRing,
-                      selectedEvent?.id === offer.id && styles.eventMarkerRingActive,
-                    ]}
-                  >
-                    {offer.entityType === "event" ? (
-                      <View style={[styles.eventMarkerImage, styles.eventMarkerEventIcon]}>
-                        <MaterialIcons
-                          name="event-note"
-                          size={26}
-                          color={theme.COLORS.primary}
-                        />
-                      </View>
-                    ) : offer.imageUrl ? (
-                      <Image source={{ uri: offer.imageUrl }} style={styles.eventMarkerImage} />
-                    ) : (
-                      <View style={[styles.eventMarkerImage, styles.eventMarkerFallback]}>
-                        <Ionicons name="calendar" size={18} color="#ffffff" />
-                      </View>
-                    )}
+                  <View style={[styles.eventMarkerRing, selectedEvent?.id === offer.id && styles.eventMarkerRingActive]}>
+                    <View style={[styles.eventMarkerImage, styles.eventMarkerEventIcon]}><MaterialIcons name="event-note" size={26} color={theme.COLORS.primary} /></View>
                   </View>
                 </View>
-              </Marker>
-            ))}
-          </MapView>
+              ),
+            }))}
+          />
         ) : (
           <View style={styles.locationLoadingState}>
             {locationLoading ? (
               <>
                 <ActivityIndicator size="large" color={theme.COLORS.primary} />
-                <Text style={styles.locationLoadingTitle}>Finding your current location…</Text>
+                <Text style={styles.locationLoadingTitle}>Finding your current locationâ€¦</Text>
                 <Text style={styles.locationLoadingText}>
                   The map will open only after your real position is available.
                 </Text>
@@ -724,7 +657,7 @@ export default function MapScreen() {
                     <Text style={styles.eventListTitle} numberOfLines={1}>{event.title}</Text>
                     <Text style={styles.eventListOffer} numberOfLines={1}>{event.tag || event.time}</Text>
                     <Text style={styles.eventListMeta} numberOfLines={1}>
-                      {event.distance} · {event.venue}
+                      {event.distance} Â· {event.venue}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
@@ -1463,6 +1396,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-
-
 

@@ -48,6 +48,7 @@ export type CustomerMapEventPayload = {
   cover_image_url?: string | null;
   image_url?: string | null;
   imageUrl?: string | null;
+  profile_image_url?: string | null;
   description?: string;
   capacity?: number | string | null;
   ticket_price?: number | string | null;
@@ -99,6 +100,7 @@ export type NormalizedMapEvent = {
   offerText: string;
   eventType: string;
   imageUrl: string;
+  profileImageUrl: string;
   description: string;
   capacity: number | null;
   ticketPrice: string | null;

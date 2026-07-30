@@ -7,13 +7,13 @@ import {
   Linking,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import theme from "../../../../../constants/theme";
 import {
   buildDirectionsUrl,
   buildPlaceUrl,
 } from "../../../../../lib/google-maps";
 import type { GeoCoordinates } from "../../../../../lib/event-map-types";
+import NativeMapboxMap from "../../../../ui/NativeMapboxMap";
 
 type EventLocationMapProps = {
   venueName?: string;
@@ -55,38 +55,17 @@ export default function EventLocationMap({
 
       <View style={styles.mapContainer}>
         {coordinates ? (
-          <MapView
-            key={`${coordinates.latitude}:${coordinates.longitude}`}
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            initialRegion={{
-              latitude: coordinates.latitude,
-              longitude: coordinates.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.015,
-            }}
-            pitchEnabled={false}
-            rotateEnabled={false}
-            showsUserLocation={Boolean(origin)}
-            showsMyLocationButton={false}
-            toolbarEnabled={false}
-            accessibilityLabel={`Map preview for ${resolvedVenueName}`}
-          >
-            <Marker
-              coordinate={coordinates}
-              title={resolvedVenueName}
-              description={resolvedAddress}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <View style={styles.eventMarker}>
-                <MaterialIcons
-                  name="event-note"
-                  size={24}
-                  color={theme.COLORS.primary}
-                />
-              </View>
-            </Marker>
-          </MapView>
+          <NativeMapboxMap
+            center={coordinates}
+            height={180}
+            zoomLevel={15}
+            showUserLocation={Boolean(origin)}
+            markers={[{
+              id: "event-venue",
+              coordinate: coordinates,
+              children: <View style={styles.eventMarker}><MaterialIcons name="event-note" size={24} color={theme.COLORS.primary} /></View>,
+            }]}
+          />
         ) : (
           <View style={styles.mapUnavailable}>
             <Ionicons

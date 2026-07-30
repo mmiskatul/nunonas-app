@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import NativeMapboxMap from "../../ui/NativeMapboxMap";
 import theme from "../../../constants/theme";
 import {
   buildDirectionsUrl,
@@ -46,16 +46,6 @@ function getCardLabel(item) {
 
 function OfferMarker({ offer, onPress, active }) {
   return (
-    <Marker
-      identifier={`nearby-event-${offer.id}`}
-      coordinate={{
-        latitude: Number(offer.latitude),
-        longitude: Number(offer.longitude),
-      }}
-      anchor={{ x: 0.5, y: 1 }}
-      onPress={onPress}
-      zIndex={active ? 2 : 1}
-    >
       <View style={styles.markerWrap}>
         <View style={[styles.markerTitleChip, active && styles.markerTitleChipActive]}>
           <Text
@@ -89,7 +79,23 @@ function OfferMarker({ offer, onPress, active }) {
           </Text>
         </View>
       </View>
-    </Marker>
+  );
+}
+
+function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, style }) {
+  return (
+    <View style={style}>
+      <NativeMapboxMap
+        center={gpsCoords}
+        zoomLevel={13}
+        markers={markerOffers.map((offer) => ({
+          id: `nearby-event-${offer.id}`,
+          coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
+          onPress: () => setSelectedOffer(offer),
+          children: <OfferMarker offer={offer} active={selectedOffer?.id === offer.id} />,
+        }))}
+      />
+    </View>
   );
 }
 
@@ -236,29 +242,7 @@ const ExploreNearbyBanner = () => {
                 <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
               </View>
             ) : (
-              <MapView
-                style={styles.staticMap}
-                provider={PROVIDER_GOOGLE}
-                initialRegion={{
-                  latitude: gpsCoords.latitude,
-                  longitude: gpsCoords.longitude,
-                  latitudeDelta: 0.08,
-                  longitudeDelta: 0.08,
-                }}
-                showsUserLocation
-                showsMyLocationButton={false}
-                toolbarEnabled={false}
-                mapPadding={{ top: 70, right: 10, bottom: 20, left: 10 }}
-              >
-                {markerOffers.map((offer) => (
-                  <OfferMarker
-                    key={offer.id}
-                    offer={offer}
-                    active={selectedOffer?.id === offer.id}
-                    onPress={() => setSelectedOffer(offer)}
-                  />
-                ))}
-              </MapView>
+              <NearbyMap gpsCoords={gpsCoords} markerOffers={markerOffers} selectedOffer={selectedOffer} setSelectedOffer={setSelectedOffer} style={styles.staticMap} />
             )}
 
             <TouchableOpacity
@@ -317,29 +301,7 @@ const ExploreNearbyBanner = () => {
             <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
           </View>
         ) : (
-          <MapView
-            style={StyleSheet.absoluteFillObject}
-            provider={PROVIDER_GOOGLE}
-            initialRegion={{
-              latitude: gpsCoords.latitude,
-              longitude: gpsCoords.longitude,
-              latitudeDelta: 0.08,
-              longitudeDelta: 0.08,
-            }}
-            showsUserLocation
-            showsMyLocationButton={false}
-            toolbarEnabled={false}
-            mapPadding={{ top: 70, right: 10, bottom: 20, left: 10 }}
-          >
-            {markerOffers.map((offer) => (
-              <OfferMarker
-                key={offer.id}
-                offer={offer}
-                active={selectedOffer?.id === offer.id}
-                onPress={() => setSelectedOffer(offer)}
-              />
-            ))}
-          </MapView>
+          <NearbyMap gpsCoords={gpsCoords} markerOffers={markerOffers} selectedOffer={selectedOffer} setSelectedOffer={setSelectedOffer} style={StyleSheet.absoluteFillObject} />
         )}
 
         <TouchableOpacity

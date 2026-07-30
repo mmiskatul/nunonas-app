@@ -48,6 +48,7 @@ export default {
     },
     plugins: [
       "expo-router",
+      "@rnmapbox/maps",
       [
         "expo-location",
         {

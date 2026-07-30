@@ -158,11 +158,12 @@ const TrendingNow = () => {
         >
           {items.map((item, index) => {
             const itemId = item.id ?? item._id ?? `trending-${index}`;
+            const itemKey = `${getItemType(item).toLowerCase()}-${itemId}-${index}`;
             const title = item.name ?? item.title;
             const detailRoute = getDetailRoute(item);
 
             return (
-              <View key={itemId} style={styles.cardShadow}>
+              <View key={itemKey} style={styles.cardShadow}>
                 <TouchableOpacity
                   style={styles.card}
                   onPress={() => router.push(detailRoute)}
@@ -178,6 +179,12 @@ const TrendingNow = () => {
                     <Ionicons name={getTypeIcon(item)} size={42} color={theme.COLORS.border} />
                   </View>
                 )}
+                {item.profile_image_url ? (
+                  <Image
+                    source={{ uri: item.profile_image_url }}
+                    style={styles.providerImage}
+                  />
+                ) : null}
 
                 <View style={styles.cardContent}>
                   <View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View>
@@ -324,6 +331,17 @@ const styles = StyleSheet.create({
     backgroundColor: theme.COLORS.surface,
     justifyContent: "center",
     alignItems: "center",
+  },
+  providerImage: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    backgroundColor: "#e2e8f0",
   },
   cardContent: {
     paddingHorizontal: 18,
