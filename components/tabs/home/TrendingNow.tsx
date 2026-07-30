@@ -134,7 +134,7 @@ const TrendingNow = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Trending Now</Text>
-        <TouchableOpacity onPress={() => router.push("/home")}>
+        <TouchableOpacity onPress={() => router.push("/home/trending")}>
           <Text style={styles.viewAll}>Explore All</Text>
         </TouchableOpacity>
       </View>
