@@ -16,6 +16,7 @@ function normalizeItems(payload) {
 }
 
 function routeFor(item) {
+  if (item.detail_route) return item.detail_route;
   const id = item.id ?? item._id;
   const category = String(item.service_type ?? item.entity_type ?? item.category ?? "").toLowerCase();
   if (category === "hotel") return `/home/hotels/${id}`;
