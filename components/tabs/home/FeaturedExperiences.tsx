@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
+import SaveButton from "../../ui/SaveButton";
 import { formatDistanceKm } from "../../../lib/distance";
 import { calculateDistanceKm } from "../../../lib/distance";
 import { useHomeFeedQuery, useTrendingQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
@@ -104,7 +105,7 @@ const FeaturedExperiences = () => {
                 </View>
               )}
               <View style={styles.cardContent}>
-                <View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View>
+                <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View><SaveButton entityType={String(item.service_type ?? item.entity_type ?? item.category ?? "restaurant").toLowerCase().replace("dining", "restaurant")} entityId={id} compact /></View>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
                 <View style={styles.detailsRow}>
                   {item.avg_rating != null && <>
@@ -144,6 +145,7 @@ const styles = StyleSheet.create({
   actionBtn: { height: 36, borderRadius: 8, width: 110, paddingHorizontal: 12 },
   actionBtnText: { fontSize: 14 },
   typePill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 7, borderRadius: 999, backgroundColor: "#eef2ff" },
+  cardMetaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 7 },
   typeText: { color: theme.COLORS.primary, fontSize: 10, fontWeight: "800" },
 });
 

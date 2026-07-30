@@ -43,6 +43,12 @@ const SavedCard = ({ item, onDetails, onAction, onRemove }) => {
           <Text style={styles.subInfo}>{item.subInfo}</Text>
         </View>
 
+        {item.savedAt && (
+          <Text style={styles.savedAtText}>
+            Saved {new Date(item.savedAt).toLocaleDateString()}
+          </Text>
+        )}
+
         <View style={styles.locationRow}>
           <Ionicons
             name="location-outline"
@@ -174,6 +180,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.COLORS.textSecondary,
     fontWeight: "500",
+  },
+  savedAtText: {
+    fontSize: 12,
+    color: theme.COLORS.textSecondary,
+    marginBottom: 8,
   },
   locationRow: {
     flexDirection: "row",

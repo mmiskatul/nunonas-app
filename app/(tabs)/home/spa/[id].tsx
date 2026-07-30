@@ -100,7 +100,7 @@ export default function SpaDetailsScreen() {
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[3]}
       >
-        <SpaImageHeader image={spa.imageUrl ? { uri: spa.imageUrl } : require("../../../../assets/images/spa/galley/Rectangle 2.png")} />
+        <SpaImageHeader image={spa.imageUrl ? { uri: spa.imageUrl } : require("../../../../assets/images/spa/galley/Rectangle 2.png")} entityId={spaId} />
         <SpaDetailsInfo spa={spa} />
 
         <SpaDetailsActions />

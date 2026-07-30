@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import theme from "../../../../../constants/theme";
 import type { ProviderImageSource } from "../../../../../lib/provider-types";
+import SaveButton from "../../../../ui/SaveButton";
 
 const { width } = Dimensions.get("window");
 const ASPECT_RATIO = 1.3;
@@ -13,7 +14,7 @@ type HotelImageHeaderProps = {
   image: string | ProviderImageSource;
 };
 
-export default function HotelImageHeader({ image }: HotelImageHeaderProps) {
+export default function HotelImageHeader({ image, entityId }: HotelImageHeaderProps & { entityId?: string | null }) {
   const router = useRouter();
   const imageSource = typeof image === "string" ? { uri: image } : image;
 
@@ -34,13 +35,7 @@ export default function HotelImageHeader({ image }: HotelImageHeaderProps) {
               color={theme.COLORS.textPrimary}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.circleBtn}>
-            <Ionicons
-              name="heart-outline"
-              size={24}
-              color={theme.COLORS.textPrimary}
-            />
-          </TouchableOpacity>
+          <SaveButton entityType="hotel" entityId={entityId} compact />
         </View>
       </SafeAreaView>
 

@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
+import SaveButton from "../../../ui/SaveButton";
 
 const SpaCard = ({ spa }) => {
   const router = useRouter();
@@ -27,6 +28,7 @@ const SpaCard = ({ spa }) => {
             <Image source={{ uri: spa.profile_image_url }} style={styles.profileImage} />
           </View>
         ) : null}
+        <View style={styles.saveOverlay}><SaveButton entityType="spa" entityId={spa.id} compact /></View>
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.title}>{spa.title}</Text>
@@ -70,6 +72,7 @@ const SpaCard = ({ spa }) => {
 };
 
 const styles = StyleSheet.create({
+  saveOverlay: { position: "absolute", top: 12, right: 12 },
   card: {
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,

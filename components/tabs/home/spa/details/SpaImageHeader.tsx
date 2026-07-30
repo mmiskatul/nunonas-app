@@ -10,10 +10,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../../constants/theme";
+import SaveButton from "../../../../ui/SaveButton";
 
 const { width } = Dimensions.get("window");
 
-const SpaImageHeader = ({ image }) => {
+const SpaImageHeader = ({ image, entityId }) => {
   const router = useRouter();
 
   return (
@@ -30,13 +31,7 @@ const SpaImageHeader = ({ image }) => {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.favBtn}>
-          <Ionicons
-            name="heart-outline"
-            size={24}
-            color={theme.COLORS.textPrimary}
-          />
-        </TouchableOpacity>
+        <SaveButton entityType="spa" entityId={entityId} compact />
       </View>
 
       {/* Pagination Indicators (Static placeholder) */}

@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
+import SaveButton from "../../../ui/SaveButton";
 
 const HotelCard = ({ hotel }) => {
   const router = useRouter();
@@ -70,9 +71,7 @@ const HotelCard = ({ hotel }) => {
         >
           <Text style={styles.statusText}>{hotel.status}</Text>
         </View>
-        <TouchableOpacity style={styles.favoriteBtn}>
-          <Ionicons name="heart-outline" size={20} color="white" />
-        </TouchableOpacity>
+        <View style={styles.favoriteBtn}><SaveButton entityType="hotel" entityId={hotel.id} compact /></View>
         {hotel.profile_image_url ? (
           <View style={styles.profileImageWrap}>
             <Image source={{ uri: hotel.profile_image_url }} style={styles.profileImage} />

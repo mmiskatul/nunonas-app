@@ -21,7 +21,7 @@ import { showToast } from "../../lib/toast";
 // Import Components
 import SavedCard from "../../components/tabs/save/SavedCard";
 
-const FILTERS = ["All", "Restaurants", "Events", "Spas", "Hotels"];
+const FILTERS = ["All", "Restaurants", "Events", "Spas", "Hotels", "Happy Hours"];
 
 const SAVED_ITEMS = [];
 /* Legacy placeholder removed; saved cards are loaded from the customer API. */
@@ -135,7 +135,10 @@ export default function SaveScreen() {
     subInfo: item.subInfo ?? item.category ?? "",
     location: item.location ?? item.address ?? "",
     distance: item.distance ?? (item.distance_km ? `${item.distance_km} km` : ""),
-    image: item.image_url ?? item.cover_image_url ?? item.image,
+    image: item.entity_type === "event"
+      ? item.banner_image_url ?? item.cover_image_url ?? item.image_url ?? item.image
+      : item.image_url ?? item.cover_image_url ?? item.image,
+    savedAt: item.saved_at ?? item.created_at ?? null,
     actionLabel: item.entity_type === "event" ? "Get Tickets" : "Book Now",
   }));
 
@@ -165,7 +168,9 @@ export default function SaveScreen() {
                   ? "calendar"
                   : item === "Spas"
                     ? "leaf"
-                    : "bed"
+                    : item === "Happy Hours"
+                      ? "pricetag-outline"
+                      : "bed"
             }
             size={16}
             color={isActive ? theme.COLORS.white : theme.COLORS.textSecondary}

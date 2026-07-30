@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../constants/theme";
 import Button from "../../ui/Button";
+import SaveButton from "../../ui/SaveButton";
 import { calculateDistanceKm, formatDistanceKm } from "../../../lib/distance";
 import { useTrendingQuery, dedupeFeedItems } from "../../../lib/queries/homeQueries";
 import { useAppSelector } from "../../../store/hooks";
@@ -182,7 +183,7 @@ const TrendingNow = () => {
                   </View>
                 )}
                 <View style={styles.cardContent}>
-                  <View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View>
+                  <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View><SaveButton entityType={getItemType(item).toLowerCase().replace(" ", "_")} entityId={itemId} compact /></View>
                   <View style={styles.titleRow}>
                     <Text style={styles.title} numberOfLines={1}>
                       {title}
@@ -345,6 +346,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   typePill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 10, borderRadius: 999, backgroundColor: "#eef2ff" },
+  cardMetaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
   typeText: { fontSize: 12, fontWeight: "800", color: theme.COLORS.primary },
   titleRow: {
     flexDirection: "row",

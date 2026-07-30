@@ -96,7 +96,7 @@ export default function HotelDetailsScreen() {
         stickyHeaderIndices={[2]}
         contentContainerStyle={styles.scrollContent}
       >
-        <HotelImageHeader image={hotel.imageUrl} />
+        <HotelImageHeader image={hotel.imageUrl} entityId={hotelId} />
         <HotelDetailsInfo hotel={hotel} />
         <HotelDetailsTabs activeTab={activeTab} onTabPress={setActiveTab} />
         {renderTabContent()}

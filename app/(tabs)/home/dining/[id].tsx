@@ -107,7 +107,7 @@ export default function RestaurantDetailsScreen() {
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[3]}>
-        <ImageHeader image={coverImage} images={headerImages} />
+        <ImageHeader image={coverImage} images={headerImages} entityId={restaurantId} />
         <DetailsInfo restaurant={restaurant} offers={offers} />
         <DetailsActions restaurantId={restaurantId} />
         <DetailsTabs activeTab={activeTab} onTabPress={setActiveTab} />

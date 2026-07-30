@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import Button from "../../../ui/Button";
+import SaveButton from "../../../ui/SaveButton";
 import { formatDistanceKm } from "../../../../lib/distance";
 
 function getImageSource(restaurant) {
@@ -62,6 +63,7 @@ const RestaurantCard = ({ restaurant }) => {
             <Image source={{ uri: restaurant.profile_image_url }} style={styles.profileImage} />
           </View>
         ) : null}
+        <View style={styles.saveOverlay}><SaveButton entityType="restaurant" entityId={restaurant.id} compact /></View>
       </View>
       <View style={styles.cardContent}>
         <Text style={styles.title}>{title}</Text>
@@ -105,6 +107,7 @@ const RestaurantCard = ({ restaurant }) => {
 };
 
 const styles = StyleSheet.create({
+  saveOverlay: { position: "absolute", top: 12, right: 12 },
   card: {
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,

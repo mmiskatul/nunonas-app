@@ -11,10 +11,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../../../../constants/theme";
+import SaveButton from "../../../../ui/SaveButton";
 
 const { width } = Dimensions.get("window");
 
-const ImageHeader = ({ image, images = [] }) => {
+const ImageHeader = ({ image, images = [], entityId }) => {
   const router = useRouter();
   const slides = useMemo(() => (images.length ? images : [image]), [image, images]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -43,13 +44,7 @@ const ImageHeader = ({ image, images = [] }) => {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.favBtn}>
-          <Ionicons
-            name="heart-outline"
-            size={24}
-            color={theme.COLORS.textPrimary}
-          />
-        </TouchableOpacity>
+        <SaveButton entityType="restaurant" entityId={entityId} compact />
       </View>
 
       <View style={styles.pagination}>
