@@ -43,6 +43,7 @@ export default {
       ],
     ],
     extra: {
+      mapboxAccessToken: process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "",
       router: {},
       eas: {
         projectId: "315819ed-4fd0-470a-a393-a3703e796337",
