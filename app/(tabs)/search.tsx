@@ -157,7 +157,7 @@ export default function SearchScreen() {
         <View style={styles.searchContainer}>
           <Ionicons
             name="search"
-            size={20}
+            size={18}
             color={theme.COLORS.textSecondary}
           />
           <TextInput
@@ -267,23 +267,23 @@ const styles = StyleSheet.create({
     backgroundColor: theme.COLORS.white,
   },
   searchHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.COLORS.surface,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    gap: 8,
     borderWidth: 1,
     borderColor: theme.COLORS.border,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: theme.COLORS.textPrimary,
   },
   scrollContent: {
@@ -314,12 +314,13 @@ const styles = StyleSheet.create({
   resultMeta: { marginTop: 4, color: theme.COLORS.textSecondary, fontSize: 12, textTransform: "capitalize" },
   locationCard: {
     backgroundColor: theme.COLORS.primary,
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 32,
+    marginBottom: 24,
     ...theme.SHADOWS.primary,
   },
   locationInfo: {
@@ -328,22 +329,22 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 5,
   },
   locationLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "rgba(255, 255, 255, 0.8)",
   },
   locationText: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
     color: theme.COLORS.white,
   },
   arrowContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
