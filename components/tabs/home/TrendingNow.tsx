@@ -176,9 +176,9 @@ const TrendingNow = () => {
                   onPress={() => router.push(detailRoute)}
                   activeOpacity={0.9}
                 >
-                {item.cover_image_url || item.image_url || item.image ? (
+                {item.profile_image_url || item.cover_image_url || item.image_url || item.image ? (
                   <Image
-                    source={{ uri: item.cover_image_url ?? item.image_url ?? item.image }}
+                    source={{ uri: item.profile_image_url ?? item.cover_image_url ?? item.image_url ?? item.image }}
                     style={styles.image}
                   />
                 ) : (
@@ -186,13 +186,6 @@ const TrendingNow = () => {
                     <Ionicons name={getTypeIcon(item)} size={42} color={theme.COLORS.border} />
                   </View>
                 )}
-                {item.profile_image_url ? (
-                  <Image
-                    source={{ uri: item.profile_image_url }}
-                    style={styles.providerImage}
-                  />
-                ) : null}
-
                 <View style={styles.cardContent}>
                   <View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View>
                   <View style={styles.titleRow}>
