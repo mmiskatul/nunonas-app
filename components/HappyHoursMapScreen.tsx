@@ -321,6 +321,16 @@ export default function MapScreen() {
       return;
     }
 
+    // Refresh the in-app route at the moment the user asks for directions so
+    // the distance and ETA reflect Google's current traffic data.
+    const liveRoute = await getDrivingRoute(markerCoords, {
+      latitude: targetEvent.latitude,
+      longitude: targetEvent.longitude,
+    });
+    if (liveRoute) {
+      setRouteInfo(liveRoute);
+    }
+
     const url = buildDirectionsUrl(markerCoords, {
       latitude: targetEvent.latitude,
       longitude: targetEvent.longitude,
