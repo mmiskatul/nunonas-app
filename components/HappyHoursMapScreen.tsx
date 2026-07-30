@@ -487,6 +487,7 @@ export default function MapScreen() {
             routeCoordinates={routeInfo?.coordinates ?? []}
             markers={visibleEvents.map((offer) => ({
               id: `event-${offer.id}`,
+              kind: offer.entityType === "happy_hour" ? "happy_hour" : "event",
               coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
               onPress: () => selectMapEvent(offer),
               children: (
