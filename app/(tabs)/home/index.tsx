@@ -24,11 +24,24 @@ import UpcomingBookings from "../../../components/tabs/home/UpcomingBookings";
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
-import { updateCurrentLocation } from "../../../lib/customer-api";
+import { getMe, updateCurrentLocation } from "../../../lib/customer-api";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { addressUpdated, locationLoadingChanged, locationUpdated } from "../../../store/slices/locationSlice";
 import { useQueryClient } from "@tanstack/react-query";
 import { homeQueryKeys } from "../../../lib/queries/homeQueries";
+
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Good Morning";
+  if (hour >= 12 && hour < 17) return "Good Afternoon";
+  if (hour >= 17 && hour < 21) return "Good Evening";
+  return "Good Night";
+}
+
+function getFirstName(fullName) {
+  const name = String(fullName ?? "").trim();
+  return name ? name.split(/\s+/)[0] : "Nuno";
+}
 
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
@@ -36,6 +49,25 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const locationText = useAppSelector((state) => state.location.address);
+  const [greeting, setGreeting] = useState(getTimeGreeting);
+  const [userName, setUserName] = useState("Nuno");
+
+  useEffect(() => {
+    let active = true;
+    getMe()
+      .then((profile) => {
+        if (active) setUserName(getFirstName(profile?.full_name));
+      })
+      .catch(() => {
+        // Keep the friendly fallback when the profile request is unavailable.
+      });
+
+    const timer = setInterval(() => setGreeting(getTimeGreeting()), 60_000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     async function getUserLocation() {
@@ -145,7 +177,7 @@ export default function HomeScreen() {
       >
         {/* Welcome Text */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Good Morning, Nuno!</Text>
+          <Text style={styles.welcomeTitle}>{greeting}, {userName}!</Text>
           <Text style={styles.welcomeSubtitle}>
             What would you like to discover today?
           </Text>
