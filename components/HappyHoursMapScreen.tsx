@@ -634,7 +634,12 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} style={styles.eventList}>
-              {visibleEvents.map((event) => (
+              {offersLoading ? (
+                <View style={styles.listLoadingState}>
+                  <ActivityIndicator size="small" color={theme.COLORS.primary} />
+                  <Text style={styles.listLoadingText}>Loading nearby places...</Text>
+                </View>
+              ) : visibleEvents.map((event) => (
                 <TouchableOpacity
                   key={`${event.entityType}-${event.id}`}
                   style={styles.eventListItem}
@@ -658,7 +663,7 @@ export default function MapScreen() {
                   <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
                 </TouchableOpacity>
               ))}
-              {!visibleEvents.length ? (
+              {!offersLoading && !visibleEvents.length ? (
                 <View style={styles.noResults}>
                   <Ionicons name="search-outline" size={28} color="#94a3b8" />
                   <Text style={styles.noResultsTitle}>No matching places</Text>
@@ -1113,6 +1118,17 @@ const styles = StyleSheet.create({
   },
   eventList: {
     maxHeight: height * 0.34,
+  },
+  listLoadingState: {
+    minHeight: 150,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  listLoadingText: {
+    color: theme.COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "600",
   },
   eventListItem: {
     minHeight: 76,
