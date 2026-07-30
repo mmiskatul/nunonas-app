@@ -150,6 +150,8 @@ const TrendingNow = () => {
             const itemKey = `${getItemType(item).toLowerCase()}-${itemId}-${index}`;
             const title = item.name ?? item.title;
             const detailRoute = getDetailRoute(item);
+            const imageUrl = [item.profile_image_url, item.cover_image_url, item.image_url, item.image]
+              .find((value) => typeof value === "string" && value.trim());
 
             return (
               <View key={itemKey} style={styles.cardShadow}>
@@ -158,9 +160,9 @@ const TrendingNow = () => {
                   onPress={() => router.push(detailRoute)}
                   activeOpacity={0.9}
                 >
-                {item.profile_image_url || item.cover_image_url || item.image_url || item.image ? (
+                {imageUrl ? (
                   <Image
-                    source={{ uri: item.profile_image_url ?? item.cover_image_url ?? item.image_url ?? item.image }}
+                    source={{ uri: imageUrl }}
                     style={styles.image}
                   />
                 ) : (

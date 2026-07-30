@@ -84,7 +84,8 @@ const FeaturedExperiences = () => {
           const id = item.id ?? item._id;
           const title = item.name ?? item.title ?? item.business_name;
           const route = routeFor(item);
-          const image = item.profile_image_url ?? item.cover_image_url ?? item.image_url ?? item.image;
+          const image = [item.profile_image_url, item.cover_image_url, item.image_url, item.image]
+            .find((value) => typeof value === "string" && value.trim());
           return (
           <TouchableOpacity key={`${String(item.service_type ?? item.entity_type ?? item.category ?? "experience")}-${id}-${index}`} style={styles.card} activeOpacity={0.9} onPress={() => router.push(route)}>
               {image ? <Image source={{ uri: image }} style={styles.image} /> : (

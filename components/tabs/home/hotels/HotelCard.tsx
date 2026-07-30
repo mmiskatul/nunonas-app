@@ -33,7 +33,12 @@ const HotelCard = ({ hotel }) => {
     }
   };
 
-  const imageSource = typeof hotel.image === "string" ? { uri: hotel.image } : hotel.image;
+  const hotelImageUrl = typeof hotel.image === "string" ? hotel.image.trim() : "";
+  const imageSource = hotelImageUrl
+    ? { uri: hotelImageUrl }
+    : hotel.image && typeof hotel.image === "object"
+      ? hotel.image
+      : null;
 
   return (
     <TouchableOpacity
@@ -42,7 +47,13 @@ const HotelCard = ({ hotel }) => {
       onPress={() => router.push(`/home/hotels/${hotel.id}`)}
     >
       <View style={styles.imageContainer}>
-        <Image source={imageSource} style={styles.image} />
+        {imageSource ? (
+          <Image source={imageSource} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Ionicons name="bed" size={42} color={theme.COLORS.textSecondary} />
+          </View>
+        )}
         {hotel.badge && (
           <View style={[styles.badge, { backgroundColor: "#06b6d4" }]}>
             <Text style={styles.badgeText}>{hotel.badge}</Text>
@@ -143,6 +154,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  imagePlaceholder: {
+    backgroundColor: theme.COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileImageWrap: {
     position: "absolute",
