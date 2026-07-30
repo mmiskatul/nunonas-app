@@ -27,13 +27,9 @@ import {
 } from "../lib/google-maps";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
-import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
+import { attachEventDistances } from "../lib/map-filtering";
 import { listNearbyMapPins, normalizeNearbyMapPins } from "../lib/nearby-offers";
 import GoogleWebMap from "./ui/GoogleWebMap";
-import MapFilterChips, {
-  toggleMapFilter,
-  type MapFilterKey,
-} from "./ui/MapFilterChips";
 const DEFAULT_ADDRESS = "Location unavailable";
 const NEARBY_MAP_ZOOM = 14;
 const SELECTED_EVENT_ZOOM = 15;
@@ -49,7 +45,6 @@ export default function MapScreenWeb() {
   const [offersLoading, setOffersLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventDetails, setSelectedEventDetails] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventLoading, setSelectedEventLoading] = useState(false);
@@ -234,13 +229,10 @@ export default function MapScreenWeb() {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-      return event.entityType === "event";
+      return true;
     });
-    return filterMapEvents(
-      attachEventDistances(matchingEvents, markerCoords),
-      mapFilters,
-    );
-  }, [mapFilters, markerCoords, nearbyEvents, searchQuery]);
+    return attachEventDistances(matchingEvents, markerCoords);
+  }, [markerCoords, nearbyEvents, searchQuery]);
 
   useEffect(() => {
     if (
@@ -348,7 +340,7 @@ export default function MapScreenWeb() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search events or areas"
+            placeholder="Search places or areas"
             placeholderTextColor="#94a3b8"
             style={styles.searchInput}
           />
@@ -358,22 +350,9 @@ export default function MapScreenWeb() {
             </TouchableOpacity>
           ) : null}
         </View>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setMapFilters(["near-me"])}
-          accessibilityLabel="Reset map filters"
-        >
-          <Ionicons name="options-outline" size={21} color={theme.COLORS.primary} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <MapFilterChips
-          active={mapFilters}
-          onToggle={(filter) =>
-            setMapFilters((current) => toggleMapFilter(current, filter))
-          }
-        />
 
         <View style={styles.mapShell}>
           {markerCoords ? (

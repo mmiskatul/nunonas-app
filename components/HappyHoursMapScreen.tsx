@@ -29,12 +29,8 @@ import {
 } from "../lib/google-maps";
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
-import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
+import { attachEventDistances } from "../lib/map-filtering";
 import { listNearbyMapPins, normalizeNearbyMapPins } from "../lib/nearby-offers";
-import MapFilterChips, {
-  toggleMapFilter,
-  type MapFilterKey,
-} from "./ui/MapFilterChips";
 
 const { width, height } = Dimensions.get("window");
 const NEARBY_MAP_ZOOM = 14;
@@ -129,7 +125,6 @@ export default function MapScreen() {
   const [animationComplete, setAnimationComplete] = useState(false);
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mapFilters, setMapFilters] = useState<MapFilterKey[]>(["near-me"]);
   const [showEventList, setShowEventList] = useState(false);
   const [offersLoading, setOffersLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
@@ -438,13 +433,10 @@ export default function MapScreen() {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-      return event.entityType === "event";
+      return true;
     });
-    return filterMapEvents(
-      attachEventDistances(matchingEvents, markerCoords),
-      mapFilters,
-    );
-  }, [mapFilters, markerCoords, nearbyEvents, searchQuery]);
+    return attachEventDistances(matchingEvents, markerCoords);
+  }, [markerCoords, nearbyEvents, searchQuery]);
 
   useEffect(() => {
     if (
@@ -569,7 +561,7 @@ export default function MapScreen() {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search events or areas"
+            placeholder="Search places or areas"
               placeholderTextColor="#94a3b8"
               style={styles.searchInput}
               returnKeyType="search"
@@ -580,20 +572,8 @@ export default function MapScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowEventList((current) => !current)}
-          >
-            <Ionicons name="options-outline" size={21} color={theme.COLORS.primary} />
-          </TouchableOpacity>
         </View>
 
-        <MapFilterChips
-          active={mapFilters}
-          onToggle={(filter) =>
-            setMapFilters((current) => toggleMapFilter(current, filter))
-          }
-        />
       </View>
 
       <View style={[styles.mapActions, { top: Math.max(insets.top, 12) + 220 }]}>
@@ -620,7 +600,7 @@ export default function MapScreen() {
             <View style={styles.listHeader}>
               <View>
                 <Text style={styles.listTitle}>
-                  Nearby Events
+                  Nearby Places
                 </Text>
                 <Text style={styles.listSubtitle}>
                   {visibleEvents.length} {visibleEvents.length === 1 ? "place" : "places"} found
@@ -659,7 +639,7 @@ export default function MapScreen() {
                 <View style={styles.noResults}>
                   <Ionicons name="search-outline" size={28} color="#94a3b8" />
                   <Text style={styles.noResultsTitle}>No matching places</Text>
-                  <Text style={styles.noResultsText}>Try another search or select Events.</Text>
+                  <Text style={styles.noResultsText}>Try another search or explore a different area.</Text>
                 </View>
               ) : null}
             </ScrollView>
