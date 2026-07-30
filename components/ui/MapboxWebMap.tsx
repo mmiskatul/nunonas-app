@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { IoPricetagOutline, IoRestaurant, IoSparklesOutline } from "react-icons/io5";
-import { MdOutlineEmojiEvents, MdHotel } from "react-icons/md";
+import { IoBedOutline, IoCalendarOutline, IoLeaf, IoPricetagOutline, IoRestaurant } from "react-icons/io5";
 import { View, Text, StyleSheet } from "react-native";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -30,10 +29,10 @@ type Props = {
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
 function markerIcon(kind: MapboxWebMarker["kind"]) {
-  if (kind === "spa") return IoSparklesOutline;
-  if (kind === "hotel") return MdHotel;
+  if (kind === "spa") return IoLeaf;
+  if (kind === "hotel") return IoBedOutline;
   if (kind === "happy_hour") return IoPricetagOutline;
-  if (kind === "event") return MdOutlineEmojiEvents;
+  if (kind === "event") return IoCalendarOutline;
   return IoRestaurant;
 }
 
