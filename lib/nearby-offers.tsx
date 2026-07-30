@@ -82,6 +82,7 @@ export type NearbyMapPin = {
   distanceKm: number | null;
   imageUrl: string;
   offerText: string;
+  detailRoute: string;
 };
 
 export async function listNearbyMapPins(limit = 50): Promise<NearbyMapPin[]> {
@@ -126,4 +127,23 @@ export async function listNearbyMapPins(limit = 50): Promise<NearbyMapPin[]> {
       return true;
     })
     .sort((left, right) => (left.distanceKm ?? Number.MAX_SAFE_INTEGER) - (right.distanceKm ?? Number.MAX_SAFE_INTEGER));
+}
+
+export function normalizeNearbyMapPins(pins: NearbyMapPin[]): NormalizedMapEvent[] {
+  return pins.map((pin) => normalizeMapEvent({
+    id: pin.id,
+    title: pin.title,
+    name: pin.title,
+    entity_type: pin.entityType,
+    entityType: pin.entityType,
+    service_type: pin.serviceType,
+    latitude: pin.latitude,
+    longitude: pin.longitude,
+    distance_km: pin.distanceKm,
+    profile_image_url: pin.imageUrl,
+    image_url: pin.imageUrl,
+    offer_text: pin.offerText,
+    location: "Nearby",
+    detail_route: pin.detailRoute,
+  }));
 }

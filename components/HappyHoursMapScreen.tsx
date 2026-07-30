@@ -30,7 +30,7 @@ import {
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
-import { listNearbyOffers } from "../lib/nearby-offers";
+import { listNearbyMapPins, normalizeNearbyMapPins } from "../lib/nearby-offers";
 import MapFilterChips, {
   toggleMapFilter,
   type MapFilterKey,
@@ -172,7 +172,7 @@ export default function MapScreen() {
     async function loadOffers() {
       try {
         setOffersLoading(true);
-        const items = await listNearbyOffers(50);
+        const items = normalizeNearbyMapPins(await listNearbyMapPins(50));
         setNearbyEvents(items);
         // Do not open an event automatically. The map should show all event
         // pointers first; details open only after the user taps a pointer.
@@ -207,7 +207,7 @@ export default function MapScreen() {
           code: selectedEvent.currentBookingCode ?? "",
           status: selectedEvent.currentBookingStatus ?? "",
         });
-        if (selectedEvent.entityType === "happy_hour") {
+        if (selectedEvent.entityType !== "event") {
           return;
         }
         const eventPayload = await getEvent(selectedEvent.id);
@@ -487,7 +487,7 @@ export default function MapScreen() {
             routeCoordinates={routeInfo?.coordinates ?? []}
             markers={visibleEvents.map((offer) => ({
               id: `event-${offer.id}`,
-              kind: offer.entityType === "happy_hour" ? "happy_hour" : "event",
+              kind: offer.entityType as "restaurant" | "hotel" | "spa" | "event" | "happy_hour",
               coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
               onPress: () => selectMapEvent(offer),
               children: (

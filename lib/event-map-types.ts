@@ -76,6 +76,7 @@ export type CustomerMapEventPayload = {
   isOpenNow?: boolean;
   detail_route?: string | null;
   detailRoute?: string | null;
+  service_type?: string | null;
 };
 
 export type CustomerMapEventsResponse = {

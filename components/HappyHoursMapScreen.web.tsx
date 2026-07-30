@@ -28,7 +28,7 @@ import {
 import type { DrivingRoute, GeoCoordinates, NormalizedMapEvent } from "../lib/event-map-types";
 import { getCurrentCoords, isExpectedLocationError } from "../lib/location";
 import { attachEventDistances, filterMapEvents } from "../lib/map-filtering";
-import { listNearbyOffers } from "../lib/nearby-offers";
+import { listNearbyMapPins, normalizeNearbyMapPins } from "../lib/nearby-offers";
 import GoogleWebMap from "./ui/GoogleWebMap";
 import MapFilterChips, {
   toggleMapFilter,
@@ -91,7 +91,7 @@ export default function MapScreenWeb() {
     async function loadOffers() {
       try {
         setOffersLoading(true);
-        const items = await listNearbyOffers(50);
+        const items = normalizeNearbyMapPins(await listNearbyMapPins(50));
         setNearbyEvents(items);
         const selectedId = getFirstQueryParam(eventId) ?? getFirstQueryParam(offerId);
         const initialEvent = selectedId
@@ -130,7 +130,7 @@ export default function MapScreenWeb() {
           status: selectedEvent.currentBookingStatus ?? "",
         });
 
-        if (selectedEvent.entityType === "happy_hour") {
+        if (selectedEvent.entityType !== "event") {
           return;
         }
         const eventPayload = await getEvent(selectedEvent.id);
@@ -389,7 +389,7 @@ export default function MapScreenWeb() {
                 latitude: event.latitude,
                 longitude: event.longitude,
                 imageUrl: event.imageUrl,
-                kind: event.entityType === "happy_hour" ? "happy_hour" : "event",
+                kind: event.entityType as "restaurant" | "hotel" | "spa" | "event" | "happy_hour",
               }))}
               selectedId={selectedEvent?.id ? String(selectedEvent.id) : null}
               onMarkerPress={(marker) => {
