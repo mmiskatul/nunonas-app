@@ -110,7 +110,8 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
       item.event_type ??
       item.eventType ??
       "Culture",
-    imageUrl: item.banner_image_url ?? item.cover_image_url ?? item.image_url ?? item.imageUrl ?? "",
+    // Event cards use only the event's own banner image.
+    imageUrl: item.banner_image_url ?? "",
     profileImageUrl: item.profile_image_url ?? "",
     description: item.description ?? "",
     capacity: toNumber(item.capacity),

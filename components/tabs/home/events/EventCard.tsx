@@ -11,18 +11,20 @@ type EventCardProps = {
 
 export default function EventCard({ event }: EventCardProps) {
   const router = useRouter();
-  const imageSource = event.imageUrl
-    ? { uri: event.imageUrl }
-    : require("../../../../assets/images/events.webp");
+  const imageSource = event.imageUrl ? { uri: event.imageUrl } : null;
   const tagColor = event.currentBookingCode ? "#16a34a" : theme.COLORS.primary;
 
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image source={imageSource} style={styles.image} resizeMode="cover" />
-        {event.profileImageUrl ? (
-          <Image source={{ uri: event.profileImageUrl }} style={styles.providerImage} />
-        ) : null}
+        {imageSource ? (
+          <Image source={imageSource} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Ionicons name="calendar" size={42} color={theme.COLORS.primary} />
+            <Text style={styles.imagePlaceholderText}>Event banner unavailable</Text>
+          </View>
+        )}
         {event.tag ? (
           <View
             style={[
@@ -96,6 +98,17 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#eff6ff",
+  },
+  imagePlaceholderText: {
+    marginTop: 6,
+    color: theme.COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   providerImage: {
     position: "absolute",
