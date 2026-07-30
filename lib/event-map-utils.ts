@@ -83,6 +83,7 @@ function toNumber(value: number | string | null | undefined): number | null {
 
 export function normalizeMapEvent(item: CustomerMapEventPayload = {}): NormalizedMapEvent {
   const distanceValue = toNumber(item.distance_km) ?? item.distanceKm ?? null;
+  const entityType = String(item.entity_type ?? item.entityType ?? item.service_type ?? "event").trim().toLowerCase();
   const location = item.location ?? item.venue ?? "Venue available";
   const address = item.address ?? item.locationLabel ?? item.location ?? item.venue ?? "Address available";
   const ticketPriceValue = toNumber(item.ticket_price) ?? toNumber(item.ticketPrice);
@@ -90,7 +91,7 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
 
   return {
     id: item.id ?? item._id ?? "",
-    entityType: item.entity_type ?? item.entityType ?? "event",
+    entityType,
     title: item.title ?? item.name ?? "Untitled Event",
     date: formatEventDateRange(item.event_date, item.end_date),
     time: formatEventTime(item.start_time, item.end_time),
@@ -110,8 +111,11 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
       item.event_type ??
       item.eventType ??
       "Culture",
-    // Event cards use only the event's own banner image.
-    imageUrl: item.banner_image_url ?? "",
+    // Events must use their banner. Venue cards use their profile image so the
+    // image shown beside the name matches the venue's detail page.
+    imageUrl: entityType === "event"
+      ? item.banner_image_url ?? ""
+      : item.profile_image_url ?? item.image_url ?? item.imageUrl ?? item.cover_image_url ?? "",
     profileImageUrl: item.profile_image_url ?? "",
     description: item.description ?? "",
     capacity: toNumber(item.capacity),
@@ -133,7 +137,7 @@ export function normalizeMapEvent(item: CustomerMapEventPayload = {}): Normalize
     detailRoute:
       item.detail_route ??
       item.detailRoute ??
-      ((item.entity_type ?? item.entityType ?? "event") === "event" && item.id
+      (entityType === "event" && item.id
         ? `/home/events/${item.id}`
         : null),
   };
