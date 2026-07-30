@@ -1082,10 +1082,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 20,
     right: 20,
+    zIndex: 30,
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,
     padding: 16,
     maxHeight: height * 0.5,
+    elevation: 30,
     ...theme.SHADOWS.primary,
   },
   listHeader: {
