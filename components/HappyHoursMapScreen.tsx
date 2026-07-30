@@ -36,6 +36,15 @@ const { width, height } = Dimensions.get("window");
 const NEARBY_MAP_ZOOM = 14;
 const SELECTED_EVENT_ZOOM = 15;
 const NEARBY_REGION_DELTA = 0.025;
+type ServiceFilter = "all" | "restaurant" | "hotel" | "spa" | "event" | "happy_hour";
+const SERVICE_FILTERS: Array<{ key: ServiceFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "restaurant", label: "Restaurants" },
+  { key: "hotel", label: "Hotels" },
+  { key: "spa", label: "Spas" },
+  { key: "event", label: "Events" },
+  { key: "happy_hour", label: "Happy Hours" },
+];
 type BookingState = { loading: boolean; code: string; status: string };
 type CloudConfig = {
   id: number;
@@ -126,6 +135,7 @@ export default function MapScreen() {
   const [nearbyEvents, setNearbyEvents] = useState<NormalizedMapEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEventList, setShowEventList] = useState(false);
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [offersLoading, setOffersLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<NormalizedMapEvent | null>(null);
   const [selectedEventDetails, setSelectedEventDetails] = useState<NormalizedMapEvent | null>(null);
@@ -433,10 +443,15 @@ export default function MapScreen() {
       if (normalizedSearch && !searchableText.includes(normalizedSearch)) {
         return false;
       }
-      return true;
+      return serviceFilter === "all" || event.entityType === serviceFilter;
     });
     return attachEventDistances(matchingEvents, markerCoords);
-  }, [markerCoords, nearbyEvents, searchQuery]);
+  }, [markerCoords, nearbyEvents, searchQuery, serviceFilter]);
+
+  const availableServiceFilters = useMemo(() => {
+    const available = new Set(nearbyEvents.map((event) => event.entityType));
+    return SERVICE_FILTERS.filter((filter) => filter.key === "all" || available.has(filter.key));
+  }, [nearbyEvents]);
 
   useEffect(() => {
     if (
@@ -574,6 +589,18 @@ export default function MapScreen() {
           </View>
         </View>
 
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
+          {availableServiceFilters.map((filter) => (
+            <TouchableOpacity
+              key={filter.key}
+              style={[styles.categoryChip, serviceFilter === filter.key && styles.categoryChipActive]}
+              onPress={() => setServiceFilter(filter.key)}
+            >
+              <Text style={[styles.categoryChipText, serviceFilter === filter.key && styles.categoryChipTextActive]}>{filter.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
       </View>
 
       <View style={[styles.mapActions, { top: Math.max(insets.top, 12) + 220 }]}>
@@ -593,7 +620,7 @@ export default function MapScreen() {
         <Text style={styles.listViewButtonText}>{showEventList ? "Map View" : "List View"}</Text>
       </TouchableOpacity>
 
-      {false && (showEventList || cardEvent) ? (
+      {showEventList || cardEvent ? (
         <View style={[styles.bottomCard, { bottom: Math.max(insets.bottom, 16) + 8 }]}>
         {showEventList ? (
           <View>
@@ -613,7 +640,7 @@ export default function MapScreen() {
             <ScrollView showsVerticalScrollIndicator={false} style={styles.eventList}>
               {visibleEvents.map((event) => (
                 <TouchableOpacity
-                  key={event.id}
+                  key={`${event.entityType}-${event.id}`}
                   style={styles.eventListItem}
                   activeOpacity={0.85}
                   onPress={() => selectMapEvent(event)}
@@ -622,7 +649,7 @@ export default function MapScreen() {
                     <Image source={{ uri: event.imageUrl }} style={styles.eventListImage} />
                   ) : (
                     <View style={[styles.eventListImage, styles.eventListImageFallback]}>
-                      <Ionicons name="calendar" size={22} color="#ffffff" />
+                      <Ionicons name={event.entityType === "restaurant" ? "restaurant" : event.entityType === "hotel" ? "business" : event.entityType === "spa" ? "sparkles" : event.entityType === "happy_hour" ? "pricetag" : "calendar"} size={22} color="#ffffff" />
                     </View>
                   )}
                   <View style={styles.eventListBody}>
