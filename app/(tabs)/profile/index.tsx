@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -14,7 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import theme from "../../../constants/theme";
 import { showToast } from "../../../lib/toast";
 import { logoutSession } from "../../../lib/auth-session";
-import { getMe, updateNotificationPreferences } from "../../../lib/customer-api";
+import { getMe, getPointsSummary, updateNotificationPreferences } from "../../../lib/customer-api";
 
 // Import Components
 import ProfileMenuItem from "../../../components/tabs/profile/ProfileMenuItem";
@@ -46,6 +46,7 @@ export default function ProfileScreen() {
   const [nearbyEvents, setNearbyEvents] = useState(false);
   const [bookingReminders, setBookingReminders] = useState(true);
   const [profile, setProfile] = useState(null);
+  const previousPointsRef = useRef<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,11 +54,17 @@ export default function ProfileScreen() {
 
       async function loadProfile() {
         try {
-          const data = await getMe();
+          const [data, pointsSummary] = await Promise.all([getMe(), getPointsSummary()]);
           if (active) {
-            setProfile(data);
+            const previousPoints = previousPointsRef.current;
+            const currentPoints = Number(pointsSummary?.points_balance ?? data.points_balance ?? 0);
+            setProfile({ ...data, points_balance: currentPoints });
+            previousPointsRef.current = currentPoints;
             setNearbyEvents(data.notification_preferences.nearby_events);
             setBookingReminders(data.notification_preferences.booking_reminders);
+            if (previousPoints != null && currentPoints > previousPoints) {
+              showToast(`${currentPoints - previousPoints} bonus points added.`, { type: "success" });
+            }
           }
         } catch (error) {
           if (active) {
