@@ -226,7 +226,10 @@ const ExploreNearbyBanner = () => {
     }
   };
 
-  const markerOffers = offers.slice(0, 6);
+  // Keep every valid nearby public item on the Home map. The full map endpoint
+  // already scopes visibility and returns restaurants, hotels, spas, events,
+  // and Happy Hours with coordinates.
+  const markerOffers = offers;
 
   if (showMap) {
     return (
@@ -260,30 +263,6 @@ const ExploreNearbyBanner = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.cardFooter}>
-            <View style={styles.locationInfo}>
-              <View style={styles.locationRow}>
-                <Ionicons name="pricetag" size={16} color={theme.COLORS.primary} />
-                <Text style={styles.locationLabel}>{selectedOffer?.entityType === "event" ? "Nearby Event" : getCardLabel(selectedOffer)}</Text>
-              </View>
-              <Text style={styles.locationText} numberOfLines={1}>
-                {selectedOffer?.title ?? address}
-              </Text>
-              {!!selectedOffer?.offerText && (
-                <Text style={styles.offerCaption} numberOfLines={1}>
-                  {selectedOffer.offerText}
-                </Text>
-              )}
-              <Text style={styles.distanceCaption} numberOfLines={1}>
-                {getDistanceLabel(selectedOffer, routeInfo)}
-                {routeInfo?.durationText ? ` - ${routeInfo.durationText}` : ""}
-              </Text>
-            </View>
-
-            <TouchableOpacity style={styles.refreshBtn} onPress={openDirections}>
-              <Ionicons name="navigate-outline" size={18} color={theme.COLORS.primary} />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     );
