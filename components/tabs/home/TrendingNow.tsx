@@ -182,6 +182,7 @@ const TrendingNow = () => {
                     <Ionicons name={getTypeIcon(item)} size={42} color={theme.COLORS.border} />
                   </View>
                 )}
+                {item.avg_rating != null && <View style={styles.imageRatingBadge}><Ionicons name="star" size={14} color="#f59e0b" /><Text style={styles.imageRatingText}>{Number(item.avg_rating).toFixed(1)}</Text></View>}
                 <View style={styles.cardContent}>
                   <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View><SaveButton entityType={getItemType(item).toLowerCase().replace(" ", "_")} entityId={itemId} compact /></View>
                   <View style={styles.titleRow}>
@@ -189,30 +190,6 @@ const TrendingNow = () => {
                       {title}
                     </Text>
 
-                    {item.avg_rating != null && (
-                      <TouchableOpacity
-                        style={styles.ratingBox}
-                        onPress={() =>
-                          router.push({
-                            pathname: `/home/reviews/${itemId}`,
-                            params: {
-                              title: `${title} Reviews`,
-                              providerType:
-                                item.entity_type === "hotel" || item.service_type === "hotel"
-                                  ? "hotel"
-                                  : item.entity_type === "spa" || item.service_type === "spa"
-                                    ? "spa"
-                                    : "restaurant",
-                            },
-                          })
-                        }
-                      >
-                        <Ionicons name="star" size={18} color="#f59e0b" />
-                        <Text style={styles.ratingText}>
-                          {Number(item.avg_rating).toFixed(1)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
                   </View>
 
                   <View style={styles.locationRow}>
@@ -328,6 +305,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  imageRatingBadge: { position: "absolute", top: 14, right: 14, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#fff7e8", paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
+  imageRatingText: { fontSize: 13, fontWeight: "800", color: "#92400e" },
   errorState: { marginHorizontal: 20, marginTop: 20, padding: 16, borderRadius: 14, backgroundColor: theme.COLORS.surface },
   providerImage: {
     position: "absolute",

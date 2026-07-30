@@ -28,6 +28,7 @@ const SpaCard = ({ spa }) => {
             <Image source={{ uri: spa.profile_image_url }} style={styles.profileImage} />
           </View>
         ) : null}
+        <View style={styles.ratingBadge}><Ionicons name="star" size={14} color="#f59e0b" /><Text style={styles.ratingBadgeText}>{spa.rating ?? "4.5"}</Text></View>
         <View style={styles.saveOverlay}><SaveButton entityType="spa" entityId={spa.id} compact /></View>
       </View>
       <View style={styles.cardContent}>
@@ -73,6 +74,8 @@ const SpaCard = ({ spa }) => {
 
 const styles = StyleSheet.create({
   saveOverlay: { position: "absolute", top: 12, right: 12 },
+  ratingBadge: { position: "absolute", top: 68, right: 12, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#fff7e8", paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
+  ratingBadgeText: { fontSize: 13, fontWeight: "800", color: "#92400e" },
   card: {
     backgroundColor: theme.COLORS.white,
     borderRadius: 24,

@@ -104,6 +104,7 @@ const FeaturedExperiences = () => {
                   <Ionicons name={typeIcon(item)} size={34} color={theme.COLORS.border} />
                 </View>
               )}
+              {item.avg_rating != null && <View style={styles.imageRatingBadge}><Ionicons name="star" size={14} color="#f59e0b" /><Text style={styles.imageRatingText}>{Number(item.avg_rating).toFixed(1)}</Text></View>}
               <View style={styles.cardContent}>
                 <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View><SaveButton entityType={String(item.service_type ?? item.entity_type ?? item.category ?? "restaurant").toLowerCase().replace("dining", "restaurant")} entityId={id} compact /></View>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -134,6 +135,8 @@ const styles = StyleSheet.create({
   card: { flexDirection: "row", backgroundColor: theme.COLORS.white, borderRadius: 24, borderWidth: 1, borderColor: theme.COLORS.border, padding: 12, alignItems: "center", ...theme.SHADOWS.card },
   image: { width: 100, height: 100, borderRadius: 16 },
   imagePlaceholder: { backgroundColor: theme.COLORS.surface, justifyContent: "center", alignItems: "center" },
+  imageRatingBadge: { position: "absolute", top: 20, right: 20, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#fff7e8", paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
+  imageRatingText: { fontSize: 13, fontWeight: "800", color: "#92400e" },
   cardContent: { flex: 1, marginLeft: 16, justifyContent: "center" },
   title: { fontSize: 17, fontWeight: "700", color: theme.COLORS.textPrimary, marginBottom: 6 },
   detailsRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 12 },

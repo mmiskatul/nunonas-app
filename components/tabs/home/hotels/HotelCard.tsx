@@ -72,6 +72,7 @@ const HotelCard = ({ hotel }) => {
           <Text style={styles.statusText}>{hotel.status}</Text>
         </View>
         <View style={styles.favoriteBtn}><SaveButton entityType="hotel" entityId={hotel.id} compact /></View>
+        <View style={styles.ratingBadge}><Ionicons name="star" size={14} color="#f59e0b" /><Text style={styles.ratingBadgeText}>{Number(hotel.rating ?? 0).toFixed(1)}</Text></View>
         {hotel.profile_image_url ? (
           <View style={styles.profileImageWrap}>
             <Image source={{ uri: hotel.profile_image_url }} style={styles.profileImage} />
@@ -134,6 +135,8 @@ const HotelCard = ({ hotel }) => {
 };
 
 const styles = StyleSheet.create({
+  ratingBadge: { position: "absolute", top: 68, right: 12, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#fff7e8", paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
+  ratingBadgeText: { fontSize: 13, fontWeight: "800", color: "#92400e" },
   container: {
     backgroundColor: theme.COLORS.white,
     borderRadius: 16,
