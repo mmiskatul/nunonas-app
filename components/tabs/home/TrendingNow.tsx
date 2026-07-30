@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
@@ -72,6 +72,21 @@ function getDistanceLabel(item) {
 }
 
 
+function getItemType(item) {
+  const type = String(item?.service_type ?? item?.entity_type ?? item?.category ?? "").toLowerCase();
+  if (type === "restaurant" || type === "dining") return "Restaurant";
+  if (type === "spa") return "Spa";
+  if (type === "event") return "Event";
+  return "Hotel";
+}
+
+function getTypeIcon(item) {
+  const type = getItemType(item);
+  if (type === "Restaurant") return "restaurant-outline";
+  if (type === "Spa") return "sparkles-outline";
+  if (type === "Event") return "calendar-outline";
+  return "bed-outline";
+}
 function getDetailRoute(item) {
   if (item?.detail_route) {
     return item.detail_route;
@@ -96,7 +111,7 @@ const TrendingNow = () => {
       // accurate even when the API response was generated before the latest
       // GPS sync completed.
       const [trendingHotels, coords] = await Promise.all([
-        getTrendingHotels(6),
+        getTrendingHotels(12),
         getCurrentCoords().catch((error) => {
           if (!isExpectedLocationError(error)) console.warn("Could not read location for distance:", error);
           return null;
@@ -130,8 +145,8 @@ const TrendingNow = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Trending Now</Text>
-        <TouchableOpacity onPress={() => router.push("/home/hotels")}>
-          <Text style={styles.viewAll}>View All</Text>
+        <TouchableOpacity onPress={() => router.push("/home")}>
+          <Text style={styles.viewAll}>Explore All</Text>
         </TouchableOpacity>
       </View>
 
@@ -153,18 +168,19 @@ const TrendingNow = () => {
                   onPress={() => router.push(detailRoute)}
                   activeOpacity={0.9}
                 >
-                {item.cover_image_url || item.image_url ? (
+                {item.cover_image_url || item.image_url || item.image ? (
                   <Image
-                    source={{ uri: item.cover_image_url ?? item.image_url }}
+                    source={{ uri: item.cover_image_url ?? item.image_url ?? item.image }}
                     style={styles.image}
                   />
                 ) : (
                   <View style={[styles.image, styles.imagePlaceholder]}>
-                    <Ionicons name="restaurant" size={42} color={theme.COLORS.border} />
+                    <Ionicons name={getTypeIcon(item)} size={42} color={theme.COLORS.border} />
                   </View>
                 )}
 
                 <View style={styles.cardContent}>
+                  <View style={styles.typePill}><Ionicons name={getTypeIcon(item)} size={13} color={theme.COLORS.primary} /><Text style={styles.typeText}>{getItemType(item)}</Text></View>
                   <View style={styles.titleRow}>
                     <Text style={styles.title} numberOfLines={1}>
                       {title}
@@ -222,9 +238,9 @@ const TrendingNow = () => {
       ) : (
         <View style={styles.emptyState}>
           <Ionicons name="bed-outline" size={28} color={theme.COLORS.textSecondary} />
-          <Text style={styles.emptyTitle}>No trending hotels right now</Text>
+          <Text style={styles.emptyTitle}>No trending places right now</Text>
           <Text style={styles.emptyText}>
-            Hotels appear here when they have an available room.
+            Hotels, restaurants, spas, and events will appear here based on what is popular nearby.
           </Text>
         </View>
       )}
@@ -314,6 +330,8 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 20,
   },
+  typePill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 10, borderRadius: 999, backgroundColor: "#eef2ff" },
+  typeText: { fontSize: 12, fontWeight: "800", color: theme.COLORS.primary },
   titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",

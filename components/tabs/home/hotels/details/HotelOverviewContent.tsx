@@ -1,9 +1,10 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import React from "react";
-import { StyleSheet, View, Text, Image, Dimensions } from "react-native";
+import { StyleSheet, View, Text, Dimensions } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import theme from "../../../../../constants/theme";
-import { buildStaticMapUrl, forwardGeocode } from "../../../../../lib/google-maps";
+import { forwardGeocode } from "../../../../../lib/google-maps";
+import HotelOverviewMap from "./HotelOverviewMap";
 
 const { width } = Dimensions.get("window");
 
@@ -39,10 +40,6 @@ const HotelOverviewContent = ({ hotel }) => {
     return () => { active = false; };
   }, [address, hotel?.latitude, hotel?.longitude]);
 
-  const mapUrl = buildStaticMapUrl({
-    center: mapCenter,
-    markerLabel: "G",
-  });
 
   return (
     <View style={styles.container}>
@@ -101,9 +98,7 @@ const HotelOverviewContent = ({ hotel }) => {
       {/* Location Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Location</Text>
-        {mapUrl ? <View style={styles.mapContainer}>
-          <Image source={{ uri: mapUrl }} style={styles.mapImage} />
-        </View> : null}
+        <HotelOverviewMap center={mapCenter} />
         <Text style={styles.address}>{address || "Location not provided."}</Text>
       </View>
     </View>
@@ -185,17 +180,6 @@ const styles = StyleSheet.create({
     color: theme.COLORS.textSecondary,
     marginTop: 2,
   },
-  mapContainer: {
-    height: 180,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  mapImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
   address: {
     fontSize: 14,
     color: theme.COLORS.textSecondary,
@@ -207,5 +191,4 @@ const styles = StyleSheet.create({
 });
 
 export default HotelOverviewContent;
-
 
