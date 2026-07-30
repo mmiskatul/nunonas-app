@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import { reverseGeocode } from "../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../lib/location";
-import { clearRecentSearches, listCategories, listRecentSearches } from "../../lib/customer-api";
+import { clearRecentSearches, globalSearch, listCategories, listRecentSearches } from "../../lib/customer-api";
 
 // Import Components
 import CategoryCard from "../../components/tabs/search/CategoryCard";
@@ -63,7 +63,10 @@ const INITIAL_RECENT_SEARCHES = [];
 
 export default function SearchScreen() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { q } = useLocalSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => String(q ?? ""));
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const [recentSearches, setRecentSearches] = useState(INITIAL_RECENT_SEARCHES);
   const [categories, setCategories] = useState(() =>
     CATEGORY_DEFINITIONS.map((category) => ({ ...category })),
@@ -132,6 +135,21 @@ export default function SearchScreen() {
     void clearRecentSearches().finally(() => setRecentSearches([]));
   };
 
+  const handleSearch = async () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+    setSearching(true);
+    try {
+      const response = await globalSearch(query, { limit: 20 });
+      const items = response?.items ?? response?.data ?? response ?? [];
+      setResults(Array.isArray(items) ? items : []);
+    } catch {
+      setResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Search Input */}
@@ -148,6 +166,8 @@ export default function SearchScreen() {
             placeholderTextColor={theme.COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
         </View>
       </View>
@@ -156,6 +176,20 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {searching ? <Text style={styles.searchStatus}>Searching nearby...</Text> : null}
+        {!searching && searchQuery.trim() && results.length === 0 ? <Text style={styles.searchStatus}>No matching places found.</Text> : null}
+        {results.length > 0 ? <View style={styles.resultsSection}>
+          <Text style={styles.sectionTitle}>Search results</Text>
+          {results.map((item, index) => {
+            const type = String(item.entity_type ?? item.service_type ?? item.category ?? "restaurant").toLowerCase();
+            const id = String(item.id ?? item._id ?? index);
+            const route = type === "hotel" ? `/home/hotels/${id}` : type === "spa" ? `/home/spa/${id}` : type === "event" ? `/home/events/${id}` : `/home/dining/${id}`;
+            return <TouchableOpacity key={`${type}-${id}`} style={styles.resultCard} onPress={() => router.push(route)}>
+              <Ionicons name={type === "hotel" ? "bed-outline" : type === "spa" ? "sparkles-outline" : type === "event" ? "calendar-outline" : "restaurant-outline"} size={20} color={theme.COLORS.primary} />
+              <View style={styles.resultBody}><Text style={styles.resultTitle} numberOfLines={1}>{item.name ?? item.title ?? item.business_name ?? "Place"}</Text><Text style={styles.resultMeta}>{type.replace("_", " ")} {item.location ? `· ${item.location}` : ""}</Text></View><Ionicons name="chevron-forward" size={18} color={theme.COLORS.textSecondary} />
+            </TouchableOpacity>;
+          })}
+        </View> : null}
         {/* Current Location Card */}
         <TouchableOpacity 
           style={styles.locationCard} 
@@ -254,6 +288,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
+  searchStatus: {
+    marginBottom: 18,
+    color: theme.COLORS.textSecondary,
+    fontSize: 13,
+  },
+  resultsSection: {
+    marginBottom: 24,
+  },
+  resultCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    marginTop: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.COLORS.border,
+    backgroundColor: theme.COLORS.white,
+  },
+  resultBody: { flex: 1 },
+  resultTitle: { color: theme.COLORS.textPrimary, fontSize: 14, fontWeight: "800" },
+  resultMeta: { marginTop: 4, color: theme.COLORS.textSecondary, fontSize: 12, textTransform: "capitalize" },
   locationCard: {
     backgroundColor: theme.COLORS.primary,
     borderRadius: 20,

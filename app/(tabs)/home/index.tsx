@@ -19,6 +19,9 @@ import PlanForMeBanner from "../../../components/tabs/home/PlanForMeBanner";
 import QuickAccess from "../../../components/tabs/home/QuickAccess";
 import TrendingNow from "../../../components/tabs/home/TrendingNow";
 import FeaturedExperiences from "../../../components/tabs/home/FeaturedExperiences";
+import HomeSearchBar from "../../../components/tabs/home/HomeSearchBar";
+import TimeDiscovery from "../../../components/tabs/home/TimeDiscovery";
+import UpcomingBookings from "../../../components/tabs/home/UpcomingBookings";
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
@@ -149,12 +152,16 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        <HomeSearchBar />
+
         {/* Components */}
         <ExploreNearbyBanner />
         <PlanForMeBanner />
         <QuickAccess />
+        <TimeDiscovery />
         <TrendingNow />
         <FeaturedExperiences />
+        <UpcomingBookings />
       </ScrollView>
 
       {/* Location Selection Modal Component */}

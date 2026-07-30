@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { getHomeFeed, getTrendingHotels, listCategories } from "../customer-api";
+import { getHomeFeed, getTrendingHotels, listCategories, listMyBookings } from "../customer-api";
 
 export const homeQueryKeys = {
   all: ["home"] as const,
   feed: ["home", "feed"] as const,
   trending: ["home", "trending"] as const,
   categories: ["home", "categories"] as const,
+  bookings: ["home", "bookings"] as const,
 };
 
 export function useHomeFeedQuery() {
@@ -26,6 +27,14 @@ export function useCategoriesQuery() {
   return useQuery({
     queryKey: homeQueryKeys.categories,
     queryFn: () => listCategories(),
+  });
+}
+
+export function useUpcomingBookingsQuery() {
+  return useQuery({
+    queryKey: homeQueryKeys.bookings,
+    queryFn: () => listMyBookings({ status: "upcoming", limit: 3 }),
+    staleTime: 60_000,
   });
 }
 
