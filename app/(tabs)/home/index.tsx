@@ -46,6 +46,7 @@ function getFirstName(fullName) {
 export default function HomeScreen() {
   const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [mapRefreshToken, setMapRefreshToken] = useState(0);
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const locationText = useAppSelector((state) => state.location.address);
@@ -133,6 +134,7 @@ export default function HomeScreen() {
       }
     } finally {
       await queryClient.invalidateQueries({ queryKey: homeQueryKeys.all });
+      setMapRefreshToken((value) => value + 1);
       setRefreshing(false);
     }
   };
@@ -186,7 +188,7 @@ export default function HomeScreen() {
         <HomeSearchBar />
 
         {/* Components */}
-        <ExploreNearbyBanner />
+        <ExploreNearbyBanner refreshToken={mapRefreshToken} onPullToRefresh={handleRefresh} />
         <PlanForMeBanner />
         <QuickAccess />
         <TrendingNow />

@@ -82,12 +82,13 @@ function OfferMarker({ offer, onPress, active }) {
   );
 }
 
-function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, style }) {
+function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, style, onPullToRefresh }) {
   return (
     <View style={style}>
       <NativeMapboxMap
         center={gpsCoords}
         zoomLevel={13}
+        onPullToRefresh={onPullToRefresh}
         markers={markerOffers.map((offer) => ({
           id: `nearby-event-${offer.id}`,
           kind: offer.entityType === "event" ? "event" : offer.entityType === "happy_hour" ? "happy_hour" : offer.serviceType === "spa" ? "spa" : offer.serviceType === "hotel" ? "hotel" : "restaurant",
@@ -100,7 +101,7 @@ function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, s
   );
 }
 
-const ExploreNearbyBanner = () => {
+const ExploreNearbyBanner = ({ refreshToken = 0, onPullToRefresh }) => {
   const router = useRouter();
   // Start collapsed: the compact map/footer is the default home view.
   // Tapping the top chevron opens the expanded offer panel.
@@ -167,7 +168,7 @@ const ExploreNearbyBanner = () => {
       await getCoords();
       await getOffers();
     })();
-  }, []);
+  }, [refreshToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -246,7 +247,7 @@ const ExploreNearbyBanner = () => {
                 <Text style={styles.locationUnavailableText}>Enable location to view nearby events.</Text>
               </View>
             ) : (
-              <NearbyMap gpsCoords={gpsCoords} markerOffers={markerOffers} selectedOffer={selectedOffer} setSelectedOffer={setSelectedOffer} style={styles.staticMap} />
+              <NearbyMap gpsCoords={gpsCoords} markerOffers={markerOffers} selectedOffer={selectedOffer} setSelectedOffer={setSelectedOffer} onPullToRefresh={onPullToRefresh} style={styles.staticMap} />
             )}
 
             <TouchableOpacity
