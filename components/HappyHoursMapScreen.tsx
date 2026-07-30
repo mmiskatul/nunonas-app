@@ -588,15 +588,6 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          <View style={[styles.categoryChip, styles.categoryChipActive]}>
-            <Text style={[styles.categoryChipText, styles.categoryChipTextActive]}>Events</Text>
-          </View>
-        </ScrollView>
         <MapFilterChips
           active={mapFilters}
           onToggle={(filter) =>

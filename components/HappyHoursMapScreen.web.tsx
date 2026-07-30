@@ -368,15 +368,6 @@ export default function MapScreenWeb() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          <View style={[styles.categoryChip, styles.categoryChipActive]}>
-            <Text style={[styles.categoryChipText, styles.categoryChipTextActive]}>Events</Text>
-          </View>
-        </ScrollView>
         <MapFilterChips
           active={mapFilters}
           onToggle={(filter) =>
