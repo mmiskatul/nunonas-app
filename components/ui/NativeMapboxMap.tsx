@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import Mapbox from "@rnmapbox/maps";
+import { WebView } from "react-native-webview";
 import type { GeoCoordinates } from "../../lib/event-map-types";
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
-Mapbox.setAccessToken(MAPBOX_TOKEN);
 
 export type NativeMapboxMarker = {
   id: string;
   coordinate: GeoCoordinates;
   children: React.ReactNode;
   onPress?: () => void;
+  title?: string;
 };
 
 type Props = {
@@ -32,57 +32,45 @@ export default function NativeMapboxMap({
   routeCoordinates = [],
   children,
 }: Props) {
-  const cameraRef = useRef<Mapbox.Camera>(null);
+  const mapHtml = useMemo(() => {
+    const markerData = markers.map((marker) => ({
+      id: marker.id,
+      title: marker.title || marker.id,
+      latitude: marker.coordinate.latitude,
+      longitude: marker.coordinate.longitude,
+    }));
+    const route = routeCoordinates.map((point) => [point.longitude, point.latitude]);
+    const json = JSON.stringify({
+      token: MAPBOX_TOKEN,
+      center: [center.longitude, center.latitude],
+      zoom: zoomLevel,
+      markers: markerData,
+      route,
+    }).replace(/</g, "\\u003c");
+    return `<!doctype html><html><head><meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no"/><link href="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css" rel="stylesheet"/><style>html,body,#map{height:100%;margin:0}.marker{width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#16a34a;border:3px solid #fff;box-shadow:0 3px 10px #0f172a66}.marker span{display:block;transform:rotate(45deg);color:#fff;text-align:center;font:700 18px Arial;line-height:32px}.user{width:18px;height:18px;border-radius:50%;background:#2563eb;border:4px solid #fff;box-shadow:0 2px 8px #0f172a66}</style></head><body><div id="map"></div><script src="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js"></script><script>const config=${json};mapboxgl.accessToken=config.token;const map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/streets-v12',center:config.center,zoom:config.zoom,attributionControl:true});map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');new mapboxgl.Marker({element:Object.assign(document.createElement('div'),{className:'user'})}).setLngLat(config.center).addTo(map);config.markers.forEach(item=>{const el=document.createElement('button');el.className='marker';el.title=item.title;el.innerHTML='<span>•</span>';el.onclick=()=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'marker',id:item.id}));new mapboxgl.Marker({element:el,anchor:'bottom'}).setLngLat([item.longitude,item.latitude]).addTo(map)});if(config.route.length>1){map.on('load',()=>{map.addSource('route',{type:'geojson',data:{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:config.route}}});map.addLayer({id:'route',type:'line',source:'route',paint:{'line-color':'#2563eb','line-width':5,'line-cap':'round','line-join':'round'}})})}</script></body></html>`;
+  }, [center.latitude, center.longitude, markers, routeCoordinates, zoomLevel]);
 
-  useEffect(() => {
-    cameraRef.current?.setCamera({
-      centerCoordinate: [center.longitude, center.latitude],
-      zoomLevel,
-      animationDuration: 0,
-    });
-  }, [center.latitude, center.longitude, zoomLevel]);
+  if (!MAPBOX_TOKEN) {
+    return <View style={[styles.container, height != null && { height }]} />;
+  }
 
   return (
     <View style={[styles.container, height != null && { height }]}>
-      <Mapbox.MapView style={styles.map} styleURL={Mapbox.StyleURL.Street} compassEnabled={false}>
-        <Mapbox.Camera
-          ref={cameraRef}
-          defaultSettings={{
-            centerCoordinate: [center.longitude, center.latitude],
-            zoomLevel,
-          }}
-        />
-        {showUserLocation ? <Mapbox.UserLocation visible showsUserHeadingIndicator={false} /> : null}
-        {routeCoordinates.length > 1 ? (
-          <Mapbox.ShapeSource
-            id="native-mapbox-route"
-            shape={{
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: routeCoordinates.map((point) => [point.longitude, point.latitude]),
-              },
-            } as never}
-          >
-            <Mapbox.LineLayer
-              id="native-mapbox-route-line"
-              style={{ lineColor: "#2563eb", lineWidth: 5, lineCap: "round", lineJoin: "round" }}
-            />
-          </Mapbox.ShapeSource>
-        ) : null}
-        {markers.map((marker) => (
-          <Mapbox.PointAnnotation
-            key={marker.id}
-            id={marker.id}
-            coordinate={[marker.coordinate.longitude, marker.coordinate.latitude]}
-            onSelected={marker.onPress}
-          >
-            <View collapsable={false}>{marker.children}</View>
-          </Mapbox.PointAnnotation>
-        ))}
-        {children}
-      </Mapbox.MapView>
+      <WebView
+        originWhitelist={["*"]}
+        source={{ html: mapHtml }}
+        style={styles.map}
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={(event) => {
+          try {
+            const message = JSON.parse(event.nativeEvent.data);
+            if (message.type === "marker") markers.find((marker) => marker.id === message.id)?.onPress?.();
+          } catch {
+            // Ignore malformed messages from the map document.
+          }
+        }}
+      />
     </View>
   );
 }

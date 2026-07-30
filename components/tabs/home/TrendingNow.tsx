@@ -77,6 +77,7 @@ function getItemType(item) {
   if (type === "restaurant" || type === "dining") return "Restaurant";
   if (type === "spa") return "Spa";
   if (type === "event") return "Event";
+  if (type === "happy_hour" || type === "happy hour") return "Happy Hour";
   return "Hotel";
 }
 
@@ -85,6 +86,7 @@ function getTypeIcon(item) {
   if (type === "Restaurant") return "restaurant-outline";
   if (type === "Spa") return "sparkles-outline";
   if (type === "Event") return "calendar-outline";
+  if (type === "Happy Hour") return "pricetag-outline";
   return "bed-outline";
 }
 function getDetailRoute(item) {
@@ -97,6 +99,11 @@ function getDetailRoute(item) {
   if (type === "hotel") return `/home/hotels/${itemId}`;
   if (type === "spa") return `/home/spa/${itemId}`;
   if (type === "event") return `/home/events/${itemId}`;
+  if (type === "happy_hour" || type === "happy hour") {
+    const venueType = String(item?.venue_type ?? "restaurant").toLowerCase();
+    if (venueType === "hotel") return `/home/hotels/${item?.vendor_id ?? itemId}`;
+    if (venueType === "spa") return `/home/spa/${item?.vendor_id ?? itemId}`;
+  }
   return `/home/dining/${itemId}`;
 }
 
