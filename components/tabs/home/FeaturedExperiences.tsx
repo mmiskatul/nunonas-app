@@ -64,7 +64,7 @@ const FeaturedExperiences = () => {
           const route = routeFor(item);
           const image = item.profile_image_url ?? item.cover_image_url ?? item.image_url ?? item.image;
           return (
-            <TouchableOpacity key={id} style={styles.card} activeOpacity={0.9} onPress={() => router.push(route)}>
+          <TouchableOpacity key={`${String(item.service_type ?? item.entity_type ?? item.category ?? "experience")}-${id}-${index}`} style={styles.card} activeOpacity={0.9} onPress={() => router.push(route)}>
               {image ? <Image source={{ uri: image }} style={styles.image} /> : (
                 <View style={[styles.image, styles.imagePlaceholder]}>
                   <Ionicons name="business-outline" size={34} color={theme.COLORS.border} />
