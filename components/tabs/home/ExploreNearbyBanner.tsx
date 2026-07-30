@@ -90,6 +90,7 @@ function NearbyMap({ gpsCoords, markerOffers, selectedOffer, setSelectedOffer, s
         zoomLevel={13}
         markers={markerOffers.map((offer) => ({
           id: `nearby-event-${offer.id}`,
+          kind: offer.entityType === "event" ? "event" : offer.serviceType === "spa" ? "spa" : offer.serviceType === "hotel" ? "hotel" : "restaurant",
           coordinate: { latitude: Number(offer.latitude), longitude: Number(offer.longitude) },
           onPress: () => setSelectedOffer(offer),
           children: <OfferMarker offer={offer} active={selectedOffer?.id === offer.id} />,

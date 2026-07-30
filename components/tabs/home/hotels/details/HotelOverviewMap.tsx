@@ -14,7 +14,7 @@ export default function HotelOverviewMap({ center }: Props) {
         height={180}
         zoomLevel={14}
         showUserLocation={false}
-        markers={[{ id: "hotel", coordinate: center, children: null, title: "Hotel location" }]}
+        markers={[{ id: "hotel", kind: "hotel", coordinate: center, children: null, title: "Hotel location" }]}
       />
     </View>
   );

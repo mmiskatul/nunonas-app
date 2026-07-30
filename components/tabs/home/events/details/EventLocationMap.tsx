@@ -62,6 +62,7 @@ export default function EventLocationMap({
             showUserLocation={Boolean(origin)}
             markers={[{
               id: "event-venue",
+              kind: "event",
               coordinate: coordinates,
               children: <View style={styles.eventMarker}><MaterialIcons name="event-note" size={24} color={theme.COLORS.primary} /></View>,
             }]}
