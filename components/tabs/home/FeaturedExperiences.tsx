@@ -58,7 +58,7 @@ const FeaturedExperiences = () => {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Featured Experiences</Text>
       <View style={styles.list}>
-        {items.map((item) => {
+        {items.map((item, index) => {
           const id = item.id ?? item._id;
           const title = item.name ?? item.title ?? item.business_name;
           const route = routeFor(item);
