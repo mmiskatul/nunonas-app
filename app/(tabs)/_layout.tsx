@@ -128,19 +128,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="happy-hours"
-        options={{
-          title: "Happy Hour",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "pricetag" : "pricetag-outline"}
-              size={25}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="save"
         options={{
           title: "Save",
