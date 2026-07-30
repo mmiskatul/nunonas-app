@@ -447,7 +447,7 @@ export default function MapScreenWeb() {
               ))}
             </ScrollView>
 
-            {cardEvent ? (
+            {false && cardEvent ? (
               <View style={styles.detailsCard}>
                 {selectedEventLoading ? (
                   <View style={styles.inlineLoadingRow}>

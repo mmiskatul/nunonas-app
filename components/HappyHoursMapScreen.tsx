@@ -593,7 +593,7 @@ export default function MapScreen() {
         <Text style={styles.listViewButtonText}>{showEventList ? "Map View" : "List View"}</Text>
       </TouchableOpacity>
 
-      {showEventList || cardEvent ? (
+      {false && (showEventList || cardEvent) ? (
         <View style={[styles.bottomCard, { bottom: Math.max(insets.bottom, 16) + 8 }]}>
         {showEventList ? (
           <View>
