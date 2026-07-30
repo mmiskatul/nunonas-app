@@ -603,7 +603,7 @@ export default function MapScreen() {
 
       </View>
 
-      <View style={[styles.mapActions, { top: Math.max(insets.top, 12) + 220 }]}>
+      <View style={[styles.mapActions, { bottom: Math.max(insets.bottom, 16) + (cardEvent || showEventList ? height * 0.5 : 8) + 64 }]}>
         <TouchableOpacity style={styles.mapActionButton} onPress={recenterMap}>
           <Ionicons name="locate" size={21} color={theme.COLORS.primary} />
         </TouchableOpacity>
