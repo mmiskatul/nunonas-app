@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import theme from "../../constants/theme";
 import { listSaved, removeSaved } from "../../lib/customer-api";
+import { showToast } from "../../lib/toast";
 
 
 // Import Components
@@ -118,8 +119,10 @@ export default function SaveScreen() {
     try {
       await removeSaved(entityType, entityId);
       setSavedItems((prev) => prev.filter((item) => (item.id ?? item._id) !== entityId));
+      showToast("Removed from saved items.", { type: "success" });
     } catch (err) {
       console.warn("Failed to remove saved item:", err.message);
+      showToast("Could not remove this saved item.", { type: "error" });
     }
   }, []);
 

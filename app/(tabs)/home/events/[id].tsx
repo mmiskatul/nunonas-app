@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View, ScrollView, ActivityIndicator, Text } from "re
 import { useLocalSearchParams, useRouter } from "expo-router";
 import theme from "../../../../constants/theme";
 import { addSaved, bookEventTickets, getEvent, getEventBookingQuote, listSaved, removeSaved } from "../../../../lib/customer-api";
+import { showToast } from "../../../../lib/toast";
 import { getErrorMessage, getFirstQueryParam, normalizeMapEvent } from "../../../../lib/event-map-utils";
 import type {
   CustomerMapEventPayload,
@@ -125,9 +126,10 @@ export default function EventDetailsScreen() {
       } else {
         await removeSaved("event", eventId);
       }
+      showToast(nextSaved ? "Event saved." : "Event removed from saved items.", { type: "success" });
     } catch (error: unknown) {
       setSaved(!nextSaved);
-      Alert.alert("Save failed", getErrorMessage(error, "Could not update saved events."));
+      showToast(getErrorMessage(error, "Could not update saved events."), { type: "error" });
     } finally {
       setSaving(false);
     }

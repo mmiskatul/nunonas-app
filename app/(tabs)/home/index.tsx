@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -24,7 +24,8 @@ import UpcomingBookings from "../../../components/tabs/home/UpcomingBookings";
 import LocationDrawerModal from "../../../components/ui/LocationDrawerModal";
 import { reverseGeocode } from "../../../lib/google-maps";
 import { getCurrentCoords, isExpectedLocationError } from "../../../lib/location";
-import { getMe, updateCurrentLocation } from "../../../lib/customer-api";
+import { getMe, getUnreadNotificationCount, updateCurrentLocation } from "../../../lib/customer-api";
+import { showToast } from "../../../lib/toast";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { addressUpdated, locationLoadingChanged, locationUpdated } from "../../../store/slices/locationSlice";
 import { useQueryClient } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ export default function HomeScreen() {
   const locationText = useAppSelector((state) => state.location.address);
   const [greeting, setGreeting] = useState(getTimeGreeting);
   const [userName, setUserName] = useState("Nuno");
+  const unreadNotifications = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -64,6 +66,28 @@ export default function HomeScreen() {
       });
 
     const timer = setInterval(() => setGreeting(getTimeGreeting()), 60_000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const checkNotifications = async () => {
+      try {
+        const payload = await getUnreadNotificationCount();
+        const count = Number(payload?.count ?? payload?.unread_count ?? payload?.unreadCount ?? 0);
+        if (active && unreadNotifications.current !== null && count > unreadNotifications.current) {
+          showToast("You have a new notification.", { type: "info" });
+        }
+        if (active) unreadNotifications.current = count;
+      } catch {
+        // Notification polling is best effort and should not interrupt discovery.
+      }
+    };
+    void checkNotifications();
+    const timer = setInterval(checkNotifications, 60_000);
     return () => {
       active = false;
       clearInterval(timer);

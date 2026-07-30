@@ -88,6 +88,7 @@ export default function ProfileScreen() {
         ...profile?.notification_preferences,
         [key]: value,
       });
+      showToast("Notification settings updated.", { type: "success" });
       setProfile(updated);
     } catch (error) {
       if (key === "nearby_events") setNearbyEvents(previous);

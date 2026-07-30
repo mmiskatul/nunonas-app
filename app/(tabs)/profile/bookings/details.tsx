@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import theme from "../../../../constants/theme";
 import ReviewModal from "../../../../components/ui/ReviewModal";
 import { cancelBooking, createBookingReview, getBooking } from "../../../../lib/customer-api";
+import { showToast } from "../../../../lib/toast";
 
 const InfoRow = ({ label, value, valueStyle }) => (
   <View style={styles.infoRow}>
@@ -138,8 +139,9 @@ export default function BookingDetailsScreen() {
           try {
             const updated = await cancelBooking(String(routeParams.id), "Cancelled by customer");
             setLiveBooking(updated);
+            showToast("Booking cancelled.", { type: "success" });
           } catch (error) {
-            Alert.alert("Cancellation failed", error?.message || "Could not cancel this booking.");
+            showToast(error?.message || "Could not cancel this booking.", { type: "error" });
           }
         },
       },
@@ -157,9 +159,9 @@ export default function BookingDetailsScreen() {
         review: createdReview,
         has_review: true,
       }));
-      Alert.alert("Review submitted", "Your review is now visible to the service provider.");
+      showToast("Review submitted successfully.", { type: "success" });
     } catch (error) {
-      Alert.alert("Review failed", error?.message || "Could not submit your review.");
+      showToast(error?.message || "Could not submit your review.", { type: "error" });
       throw error;
     }
   };
