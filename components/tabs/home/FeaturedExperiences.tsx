@@ -106,7 +106,7 @@ const FeaturedExperiences = () => {
               )}
               {item.avg_rating != null && <View style={styles.imageRatingBadge}><Ionicons name="star" size={14} color="#f59e0b" /><Text style={styles.imageRatingText}>{Number(item.avg_rating).toFixed(1)}</Text></View>}
               <View style={styles.cardContent}>
-                <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View><SaveButton entityType={String(item.service_type ?? item.entity_type ?? item.category ?? "restaurant").toLowerCase().replace("dining", "restaurant")} entityId={id} compact /></View>
+                <View style={styles.cardMetaRow}><View style={styles.typePill}><Ionicons name={typeIcon(item)} size={12} color={theme.COLORS.primary} /><Text style={styles.typeText}>{typeLabel(item)}</Text></View></View>
                 <Text style={styles.title} numberOfLines={1}>{title}</Text>
                 <View style={styles.detailsRow}>
                   {item.avg_rating != null && <>
@@ -116,7 +116,10 @@ const FeaturedExperiences = () => {
                   </>}
                   <Text style={styles.distance}>{formatDistanceKm(item.distance_km) ?? "Nearby"}</Text>
                 </View>
-                <Button title={String(item.category ?? "Explore").toLowerCase() === "hotel" ? "Book Stay" : "Explore"} onPress={() => router.push(route)} style={styles.actionBtn} textStyle={styles.actionBtnText} />
+                <View style={styles.actionRow}>
+                  <Button title={String(item.category ?? "Explore").toLowerCase() === "hotel" ? "Book Stay" : "Explore"} onPress={() => router.push(route)} style={styles.actionBtn} textStyle={styles.actionBtnText} />
+                  <SaveButton entityType={String(item.service_type ?? item.entity_type ?? item.category ?? "restaurant").toLowerCase().replace("dining", "restaurant")} entityId={id} compact />
+                </View>
               </View>
             </TouchableOpacity>
           );
@@ -147,6 +150,7 @@ const styles = StyleSheet.create({
   statusText: { textAlign: "center", color: theme.COLORS.textSecondary, fontSize: 13 },
   actionBtn: { height: 36, borderRadius: 8, width: 110, paddingHorizontal: 12 },
   actionBtnText: { fontSize: 14 },
+  actionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   typePill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 7, borderRadius: 999, backgroundColor: "#eef2ff" },
   cardMetaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 7 },
   typeText: { color: theme.COLORS.primary, fontSize: 10, fontWeight: "800" },
